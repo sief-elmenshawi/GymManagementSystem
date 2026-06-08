@@ -56,10 +56,10 @@ namespace GymManagement.Controllers
             if (!ModelState.IsValid) return View(model);
 
             var result = await planService.UpdatePlanAsync(id, model, ct);
-            if (result)
+            if (result.succes)
                 TempData["SuccessMessage"] = $"Plan updated successfully.";
             else
-                TempData["ErrorMessage"] = $"Failed to update the plan.";
+                TempData["ErrorMessage"] = result.error;
             return RedirectToAction(nameof(Index));
         }
 
@@ -67,10 +67,10 @@ namespace GymManagement.Controllers
         public async Task<IActionResult> Activate(int id, CancellationToken ct)
         {
             var result = await planService.ToggleActivationAsync(id, ct);
-            if (result)
+            if (result.succes)
                 TempData["SuccessMessage"] = $"Plan activation toggled successfully.";
             else
-                TempData["ErrorMessage"] = $"Failed to toggle plan activation.";
+                TempData["ErrorMessage"] = result.error;
             return RedirectToAction(nameof(Index));
         }
     }

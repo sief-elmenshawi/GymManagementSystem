@@ -40,12 +40,12 @@ namespace GymManagement.PL.Controllers
                 return View(model);
             }
             var result = await trainerService.CreateTrainerAsync(model, ct);
-            if (result)
+            if (result.succes)
             {
                 TempData["SuccessMessage"] = "Trainer created successfully.";
                 return RedirectToAction(nameof(Index));
             }
-            TempData["ErrorMessage"] = "Failed to create trainer. Please try again.";
+            TempData["ErrorMessage"] = result.error;
             return View(model);
         }
 
@@ -67,10 +67,10 @@ namespace GymManagement.PL.Controllers
             if (!ModelState.IsValid) return View(model);
 
             var result = await trainerService.UpdateTrainerDetailsAsync(id, model, ct);
-            if (result)
+            if (result.succes)
                 TempData["SuccessMessage"] = "Trainer updated successfully.";
             else
-                TempData["ErrorMessage"] = "Failed to update trainer. Please try again.";
+                TempData["ErrorMessage"] = result.error;
             return RedirectToAction(nameof(Index));
 
 
@@ -91,10 +91,10 @@ namespace GymManagement.PL.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken ct)
         {
             var result = await trainerService.RemoveTrainerAsync(id, ct);
-            if (result)
+            if (result.succes)
                 TempData["SuccessMessage"] = "Trainer deleted successfully.";
             else
-                TempData["ErrorMessage"] = "Failed to delete trainer. Please try again.";
+                TempData["ErrorMessage"] = result.error;
             return RedirectToAction(nameof(Index));
         }
     }

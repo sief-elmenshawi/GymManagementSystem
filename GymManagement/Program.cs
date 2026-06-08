@@ -1,10 +1,13 @@
+using GymManagement.BLL.MappingProfile;
 using GymManagement.BLL.Service.Classes;
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
+using GymManagement.DAL.Data.DataSeeding;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.PL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -12,7 +15,7 @@ namespace GymManagement
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -31,8 +34,11 @@ namespace GymManagement
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<ISessionRepository, SessionRepository>();
             builder.Services.AddScoped<ISessionService, SessionService>();
+            builder.Services.AddAutoMapper(m=>m.AddProfile(new MappingProfile()));
 
             var app = builder.Build();
+
+            await app.MigrateAndSeedDatabaseAsync();
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())

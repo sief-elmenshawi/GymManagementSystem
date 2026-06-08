@@ -2,6 +2,15 @@
 @{
     ViewData["Title"] = "Edit Plan";
 }
+@if (TempData["ErrorMessage"] != null)
+{
+    <div id="Alert" class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="container mt-4">
     <header class="mb-4">
         <h3 class="text-primary-color">Edit Plan</h3>
@@ -59,3 +68,7 @@
         </div>
     </div>
 </div>
+@section Scripts
+{
+    <partial name="_AlertBoxScript" />
+}

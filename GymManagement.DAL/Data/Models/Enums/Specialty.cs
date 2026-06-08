@@ -9,8 +9,8 @@ namespace GymManagement.DAL.Data.Models.Enums
     public enum Specialty
     {
         GeneralFitness = 1,
-        Yoga = 2,
-        Boxing = 3,
-        CrossFit = 4,
+        Yoga ,
+        Boxing ,
+        CrossFit ,
     }
 }
