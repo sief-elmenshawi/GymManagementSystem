@@ -32,6 +32,11 @@ namespace GymManagement.DAL.Repositorities.Classes
             return _set.AsNoTracking().AnyAsync(predicate, ct);
         }
 
+        public Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken ct = default)
+        {
+            return predicate is null ? _set.AsNoTracking().CountAsync(ct) : _set.AsNoTracking().CountAsync(predicate, ct); 
+        }
+
         public void Delete(TEntity entity)
         {
             _set.Remove(entity);

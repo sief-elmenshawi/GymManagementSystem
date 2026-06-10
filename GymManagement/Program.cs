@@ -34,6 +34,8 @@ namespace GymManagement
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<ISessionRepository, SessionRepository>();
             builder.Services.AddScoped<ISessionService, SessionService>();
+            builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+            builder.Services.AddScoped<IAttachementService, AttachementService>();
             builder.Services.AddAutoMapper(m=>m.AddProfile(new MappingProfile()));
 
             var app = builder.Build();

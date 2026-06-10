@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using GymManagement.BLL.Common;
 using GymManagement.BLL.Service.Interfaces;
+using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.MemberViewModels;
 using GymManagement.DAL.Data.Models;
 using GymManagement.DAL.Repositorities.Interfaces;
@@ -16,11 +17,13 @@ namespace GymManagement.BLL.Service.Classes
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
+        private readonly IAttachementService attachement;
 
-        public MemberService(IUnitOfWork unitOfWork , IMapper mapper)
+        public MemberService(IUnitOfWork unitOfWork , IMapper mapper , IAttachementService attachement)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            this.attachement = attachement;
         }
 
         public async Task<Result> CreateMemberAsync(CreateMemberViewModel model, CancellationToken ct)
@@ -35,6 +38,12 @@ namespace GymManagement.BLL.Service.Classes
             // Else Return True Add Member
 
             var member = mapper.Map<Member>(model);
+            
+            var NewPhotoName = await attachement.UploadAsync(model.PhotoFile.OpenReadStream(),model.PhotoFile.FileName , "MemberPictures" , ct);
+
+            if (string.IsNullOrEmpty(NewPhotoName)) return Result.Validation("Must Upload Photo");
+            member.Photo = NewPhotoName;
+
 
             unitOfWork.GetRepository<Member>().Add(member);
             var result = await unitOfWork.SaveChangesAsync(ct);
@@ -120,6 +129,12 @@ namespace GymManagement.BLL.Service.Classes
 
             //var result = await memberRepository.DeleteAsync(member , ct);
             unitOfWork.GetRepository<Member>().Delete(member);
+
+            if (member.Photo is not null)
+            {
+                attachement.Delet(member.Photo, "MemberPictures");
+            }
+
             var result = await unitOfWork.SaveChangesAsync(ct);
             return result > 0 ? Result.Ok() : Result.Fail("Can  not Remove Member ");
         }

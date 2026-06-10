@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GymManagement.BLL.Services.Interfaces
+{
+    public interface IAttachementService
+    {
+        Task<string?> UploadAsync(Stream fileStream, string fileName, string folderName, CancellationToken ct = default);
+        
+        bool Delet(string fileName, string folderName );
+
+        (Stream stream, string contentType)? GetFile(string fileName, string FolderName);
+    }
+}
