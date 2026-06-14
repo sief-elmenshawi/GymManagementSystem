@@ -1,0 +1,242 @@
+@using GymManagement.BLL.ViewModels.ApplicationViewModels
+@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+<style>
+    * {
+        box-sizing: border-box;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+        margin: 0;
+        background: linear-gradient(135deg,#071a5a,#173fc1);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-container {
+        width: 1000px;
+        background: white;
+        border-radius: 25px;
+        padding: 35px;
+        display: flex;
+        gap: 40px;
+        box-shadow: 0 20px 50px rgba(0,0,0,.3);
+    }
+
+    .login-left {
+        width: 45%;
+        padding: 30px;
+    }
+
+    .logo {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .logo h2 {
+            color: #122d91;
+            margin: 0;
+        }
+
+
+    .login-left input {
+        width: 100%;
+        padding: 14px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+
+
+    .remember {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+
+    .btn-login {
+        width: 100%;
+        margin-top: 20px;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        background: #101b85;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+
+    .login-right {
+        width: 55%;
+        background: linear-gradient(135deg,#4338ca,#1d4ed8);
+        color: white;
+        border-radius: 15px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
+
+
+        .login-right h1 {
+            font-size: 35px;
+        }
+
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        margin-top: 40px;
+    }
+
+    .stat {
+        background: rgba(255,255,255,.15);
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+
+        .stat h3 {
+            margin: 0;
+        }
+
+
+    .validation {
+        color: red;
+        font-size: 13px;
+    }
+
+</style>
+
+
+<div class="login-container">
+
+
+    <div class="login-left">
+
+        <div class="logo">
+            <h2>⚡ Route Fitness</h2>
+            <p>Gym Management System</p>
+        </div>
+
+
+        <form asp-action="Login" method="post">
+
+
+            <input asp-for="Email"
+                   placeholder="Email Address" />
+
+            <span asp-validation-for="Email"
+                  class="validation"></span>
+
+
+
+            <input asp-for="Password"
+                   type="password"
+                   placeholder="Password" />
+
+
+            <span asp-validation-for="Password"
+                  class="validation"></span>
+
+
+
+            <div class="remember">
+
+                <input asp-for="RememberMe" />
+
+                <label>
+                    Remember me for 24 hours
+                </label>
+
+            </div>
+
+
+
+            <button class="btn-login">
+                LOGIN TO DASHBOARD
+            </button>
+
+
+            @if (ViewBag.Error != null)
+            {
+                <p class="validation">
+                    @ViewBag.Error
+                </p>
+            }
+
+
+        </form>
+
+
+    </div>
+
+
+
+
+    <div class="login-right">
+
+        <h1>
+            💪
+            <br />
+            Your body can stand
+            <br />
+            almost anything
+        </h1>
+
+
+        <p>
+            It's your mind that needs convincing.
+            Push yourself, stay committed,
+            and transform your body.
+        </p>
+
+
+        <div class="stats">
+
+            <div class="stat">
+                <h3>500+</h3>
+                <span>Members</span>
+            </div>
+
+
+            <div class="stat">
+                <h3>50+</h3>
+                <span>Trainers</span>
+            </div>
+
+
+            <div class="stat">
+                <h3>24/7</h3>
+                <span>Support</span>
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}

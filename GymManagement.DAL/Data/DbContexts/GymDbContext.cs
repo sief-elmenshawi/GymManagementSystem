@@ -1,10 +1,11 @@
 ﻿using GymManagement.DAL.Data.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
 namespace GymManagement.DAL.Data.DbContexts
 {
-    public class GymDbContext : DbContext
+    public class GymDbContext : IdentityDbContext<ApplicationUser>
     {
         public GymDbContext(DbContextOptions<GymDbContext> options) : base(options)
         {
@@ -16,9 +17,12 @@ namespace GymManagement.DAL.Data.DbContexts
         //}
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+            base.OnModelCreating(modelBuilder); // Identity Configurations
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly()); // Application Configurations
+
         }
 
+        #region DbSets
         public DbSet<Plan> Plans { get; set; }
         public DbSet<Member> Members { get; set; }
         public DbSet<Address> Addresses { get; set; }
@@ -28,6 +32,9 @@ namespace GymManagement.DAL.Data.DbContexts
         public DbSet<Membership> Memberships { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<Trainer> Trainers { get; set; }
+
+        #endregion
+
 
     }
 }

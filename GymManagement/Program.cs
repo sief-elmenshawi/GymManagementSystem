@@ -5,9 +5,11 @@ using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.DAL.Data.DataSeeding;
 using GymManagement.DAL.Data.DbContexts;
+using GymManagement.DAL.Data.Models;
 using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using GymManagement.PL;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -37,6 +39,26 @@ namespace GymManagement
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
             builder.Services.AddScoped<IAttachementService, AttachementService>();
             builder.Services.AddAutoMapper(m=>m.AddProfile(new MappingProfile()));
+
+            builder.Services.AddIdentity<ApplicationUser , IdentityRole>(options=>
+            {
+                //options.Password.RequiredLength = 6;
+                //options.Password.RequireLowercase = true;
+                //options.Password.RequireUppercase = true;
+
+                options.User.RequireUniqueEmail = false;
+
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
+
+            }).AddEntityFrameworkStores<GymDbContext>();
+
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/Account/Login";
+
+                options.AccessDeniedPath = "/Account/AccessDenied";
+            });
 
             var app = builder.Build();
 
