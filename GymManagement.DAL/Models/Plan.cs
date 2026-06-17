@@ -1,4 +1,4 @@
-﻿namespace GymManagement.DAL.Data.Models
+﻿namespace GymManagement.DAL.Models
 {
     public class Plan : BaseEntity
     {

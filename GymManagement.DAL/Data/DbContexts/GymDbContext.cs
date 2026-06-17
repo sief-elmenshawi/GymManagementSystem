@@ -1,4 +1,4 @@
-﻿using GymManagement.DAL.Data.Models;
+﻿using GymManagement.DAL.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;

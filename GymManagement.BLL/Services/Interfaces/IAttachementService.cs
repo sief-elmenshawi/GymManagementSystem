@@ -8,10 +8,9 @@ namespace GymManagement.BLL.Services.Interfaces
 {
     public interface IAttachementService
     {
+        // Upload 
         Task<string?> UploadAsync(Stream fileStream, string fileName, string folderName, CancellationToken ct = default);
-        
-        bool Delet(string fileName, string folderName );
-
-        (Stream stream, string contentType)? GetFile(string fileName, string FolderName);
+        bool Delete(string fileName, string folderName);
+        (Stream Stream, string ContentType)? GetFile(string fileName, string folderName);
     }
 }

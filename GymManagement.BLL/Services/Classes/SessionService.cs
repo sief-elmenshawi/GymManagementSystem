@@ -2,8 +2,9 @@
 using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.SessionViewModels;
-using GymManagement.DAL.Data.Models;
-using GymManagement.DAL.Data.Models.Enums;
+using GymManagement.DAL.Models;
+using GymManagement.DAL.Models.Enums;
+using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -51,17 +52,19 @@ namespace GymManagement.BLL.Services.Classes
 
         public async Task<IEnumerable<SessionViewModel>?> GetAllSessionsAync(CancellationToken ct = default)
         {
-            var sessionRepository = unitOfWork.SessionRepository;
-            var sessions = await sessionRepository.GetAllSessionsWithTrainerAndCategoryAsync(ct);
-            if (sessions == null || !sessions.Any()) return null;
+            var sessions = await unitOfWork.SessionRepository.GetAllSessionsWithTrainerAndCategoryAsync(ct: ct);
 
-            var mappedSession = mapper.Map<IEnumerable<SessionViewModel>>(sessions);
-            
-            foreach(var session in mappedSession)
+
+            if (sessions?.Any() != true) return null;
+
+            sessions = sessions.OrderByDescending(X => X.StartDate);
+            var MappedSessions = mapper.Map<IEnumerable<SessionViewModel>>(sessions);
+
+            foreach (var session in MappedSessions)
             {
-                session.AvailableSlots = session.Capacity - await sessionRepository.GetCountOfBookSlotsAsync(session.Id, ct);
-            };
-            return mappedSession;
+                session.AvailableSlots = session.Capacity - await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(session.Id, ct);
+            }
+            return MappedSessions;
 
         }
 
@@ -79,7 +82,7 @@ namespace GymManagement.BLL.Services.Classes
             else
             {
                 var mappedSession = mapper.Map<SessionViewModel>(session);
-                mappedSession.AvailableSlots = mappedSession.Capacity - await unitOfWork.SessionRepository.GetCountOfBookSlotsAsync(sessionId, ct);
+                mappedSession.AvailableSlots = mappedSession.Capacity - await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(sessionId, ct);
 
                 return Result<SessionViewModel>.Ok(mappedSession);
 
@@ -94,7 +97,7 @@ namespace GymManagement.BLL.Services.Classes
             if (session.StartDate <= DateTime.Now)
                 return Result<UpdateSessionViewModel>.Fail("Can not Update Session that has Started");
 
-            var bookingCount = await unitOfWork.SessionRepository.GetCountOfBookSlotsAsync(sessionId, ct);
+            var bookingCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(sessionId, ct);
             if (bookingCount > 0)
                 return Result<UpdateSessionViewModel>.Fail("Can not Update Session that has Booking");
 
@@ -115,7 +118,7 @@ namespace GymManagement.BLL.Services.Classes
             if (session.EndDate >= DateTime.Now)
                 return Result.Fail("Can Not Delete Session That Not Ended Yet");
 
-            var BookingCount = await unitOfWork.SessionRepository.GetCountOfBookSlotsAsync(sessionId, ct);
+            var BookingCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(sessionId, ct);
             if (BookingCount > 0) return Result.Fail("Can Not Delete Session That Has Booking");
 
             unitOfWork.SessionRepository.Delete(session);
@@ -135,7 +138,7 @@ namespace GymManagement.BLL.Services.Classes
             if (model.EndDate <= model.StartDate)
                 return Result.Validation("End Date Must Be After StartDate");
 
-            var BookedCount = await unitOfWork.SessionRepository.GetCountOfBookSlotsAsync(id);
+            var BookedCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(id);
             if (BookedCount > 0)
                 return Result.Fail("Can Not Update Session That Has Booking");
 

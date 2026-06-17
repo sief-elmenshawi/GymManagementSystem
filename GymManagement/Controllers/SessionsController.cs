@@ -1,4 +1,5 @@
-﻿using GymManagement.BLL.Services.Interfaces;
+﻿using GymManagement.BLL.Services.Classes;
+using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.MemberViewModels;
 using GymManagement.BLL.ViewModels.SessionViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -128,8 +129,8 @@ namespace GymManagement.PL.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken ct)
         {
             var result = await sessionService.RemoveSessionAysnc(id, ct);
-
-            TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] = result.succes ? "SessionDeleted" : result.error;
+            TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
+                result.succes ? "Session deleted successfully." : result.error;
             return RedirectToAction(nameof(Index));
         }
             

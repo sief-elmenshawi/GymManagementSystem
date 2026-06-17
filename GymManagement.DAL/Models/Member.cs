@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Data.Models
+namespace GymManagement.DAL.Models
 {
     public class Member : GymUser
     {
-        public string? Photo { get; set; }
+        public string Photo { get; set; } = default!;
 
         public HealthRecord HealthRecord { get; set; } = null!;
 

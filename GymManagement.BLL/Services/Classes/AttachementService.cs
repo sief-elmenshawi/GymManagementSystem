@@ -11,83 +11,95 @@ namespace GymManagement.BLL.Services.Classes
 {
     public class AttachementService : IAttachementService
     {
-        private readonly long maxFileSize = 5 * 1024 * 1024;
-        private readonly string[] allowedExtentions = { ".jpg", ".png", ".jpeg" };
-        private readonly ILogger<AttachementService> logger;
-        private readonly IWebHostEnvironment environment;
+        private readonly long _maxFileSize = 5 * 1024 * 1024; // 5 MB
+        private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png" };
 
-        public AttachementService(ILogger<AttachementService> logger, IWebHostEnvironment environment)
+        private readonly IWebHostEnvironment _env;
+        private readonly ILogger<AttachementService> _logger;
+
+        public AttachementService(IWebHostEnvironment env, ILogger<AttachementService> logger)
+
         {
-            this.logger = logger;
-            this.environment = environment;
+            _env = env;
+            _logger = logger;
+
         }
-
-        public bool Delet(string fileName, string folderName)
+        public bool Delete(string fileName, string folderName)
         {
-            if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(folderName)) return false;
+            if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(folderName))
+                return false;
 
             try
             {
-                var fullPath = Path.Combine(environment.ContentRootPath, folderName,fileName );
+                var fullPath = Path.Combine( _env.ContentRootPath, folderName, fileName );
 
-                if(!File.Exists(fullPath)) return false;
+                if (!File.Exists(fullPath))
+                    return false;
 
                 File.Delete(fullPath);
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to Delete The Attachment");
+                _logger.LogError(ex, "Failed to delete attachment {File}.", fileName);
                 return false;
             }
-        }
-
-        public (Stream stream, string contentType)? GetFile(string fileName, string FolderName)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<string?> UploadAsync(Stream fileStream, string fileName, string folderName, CancellationToken ct = default)
         {
             if (fileStream is null || !fileStream.CanRead) return null;
 
+
             if (fileStream.Length == 0) return null;
-            
-            if(fileStream.Length > maxFileSize)
+            if (fileStream.Length > _maxFileSize)
             {
-                logger.LogWarning("Rejected File Too Large");
+                _logger.LogWarning("Rejected upload: file too large ({Size} bytes).", fileStream.Length);
                 return null;
             }
 
-            var extention = Path.GetExtension(fileName);
-            if(string.IsNullOrEmpty(extention) || !allowedExtentions.Contains(extention))
+            var extension = Path.GetExtension(fileName);
+            if (string.IsNullOrEmpty(extension) || !_allowedExtensions.Contains(extension))
             {
-                logger.LogWarning("Rejected wrong Extenstion File ");
+                _logger.LogWarning("Rejected upload: extension {Ext} not allowed.", extension);
                 return null;
             }
 
-            var uploadedFolder =  Path.Combine(environment.ContentRootPath,folderName);  
+            var uploadsFolder = Path.Combine(_env.ContentRootPath, folderName);
+            Directory.CreateDirectory(uploadsFolder);
 
-            Directory.CreateDirectory(uploadedFolder);
-
-            var storedFileName = $"{Guid.NewGuid()}{extention}";
-
-            var filePath = Path.Combine(uploadedFolder, storedFileName);
+            var storedFileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, storedFileName);
 
             try
             {
-                await using var fs = new FileStream(filePath ,FileMode.CreateNew , FileAccess.Write , FileShare.None);
-                await fileStream.CopyToAsync(fs);
+                await using var fs = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                await fileStream.CopyToAsync(fs, ct);
                 return storedFileName;
-
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Faile to Upload file");
+                _logger.LogError(ex, "Failed to upload file {FileName}.", fileName);
                 return null;
-               
             }
+        }
+        public (Stream Stream, string ContentType)? GetFile(string fileName, string folderName)
+        {
+            if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(folderName)) return null;
 
+            var fullPath = Path.Combine(_env.ContentRootPath, folderName, fileName);
+
+            if (!File.Exists(fullPath)) return null;
+
+            var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                _ => "application/octet-stream"
+            };
+
+            var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return (stream, contentType);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using GymManagement.DAL.Data.DbContexts;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;

@@ -1,4 +1,9 @@
-﻿@if (TempData["ErrorMessage"] != null)
+﻿﻿@{
+ViewData["Title"] = "Delete Member";
+Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@if (TempData["ErrorMessage"] != null)
 {
     <div id="Alert" class="alert alert-danger alert-dismissible fade show">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>

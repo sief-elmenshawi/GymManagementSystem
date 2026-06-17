@@ -1,6 +1,8 @@
 ﻿@model MemberToUpdateViewModel
 @{
-    ViewData["Title"] = "Edit Member";
+    ViewData["Title"] = "Member Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
 }
 @if (TempData["ErrorMessage"] != null)
 {
@@ -18,8 +20,8 @@
                     <div class="card card-details border-0 p-2 shadow">
                         <div class="card-body text-center">
                             <div class="text-center mt-3">
-                                <img src="~/images/@Model.Photo" alt="@Model.Name" class="rounded-circle"
-                                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #fff; margin-top: -60px;" />
+                                @* <img src="~/images/@Model.Photo" alt="@Model.Name" class="rounded-circle"
+                                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #fff; margin-top: -60px;" /> *@
                             </div>
                             <div class="card-body text-center">
                                 <h2 class="mb-1 text-primary-color">@Model.Name</h2>

@@ -1,6 +1,6 @@
 ﻿using GymManagement.BLL.ViewModels.ApplicationViewModels;
 using GymManagement.Controllers;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,62 +9,72 @@ namespace GymManagement.PL.Controllers
 {
     public class AccountController : Controller 
     {
-        private readonly UserManager<ApplicationUser> userManager;
-        private readonly SignInManager<ApplicationUser> signInManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(UserManager<ApplicationUser> userManager , SignInManager<ApplicationUser> signInManager)
+        public AccountController(SignInManager<ApplicationUser> signInManager ,UserManager<ApplicationUser> userManager, ILogger<AccountController> logger)
         {
-            this.userManager = userManager;
-            this.signInManager = signInManager;
+            _signInManager = signInManager;
+            _userManager = userManager;
+            _logger = logger;
         }
-        [HttpGet]
+        #region Login
         public IActionResult Login()
         {
             return View();
         }
-
         [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model , CancellationToken ct)
+        public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct = default)
         {
             if (!ModelState.IsValid) return View(model);
 
-            var user = await userManager.FindByEmailAsync(model.Email);
-            
-            if (user == null || string.IsNullOrEmpty(user.UserName))
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user is null || string.IsNullOrEmpty(user.UserName))
             {
-                ModelState.AddModelError(string.Empty, "Invalid Email or Password");
+                ModelState.AddModelError("InvalidLogin", "Invalid email or password.");
                 return View(model);
             }
-            var result = await signInManager.PasswordSignInAsync(user.UserName,model.Password,model.RememberMe , true);
 
-            if(result.Succeeded)
+            var result = await _signInManager.PasswordSignInAsync(
+                user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
+
+            if (result.Succeeded)
             {
-                return RedirectToAction(nameof(HomeController.Index) , "Home");
+                _logger.LogInformation("User {UserId} signed in.", user.Id);
+                return RedirectToAction(nameof(HomeController.Index), "Home");
             }
-
             if (result.IsLockedOut)
-                ModelState.AddModelError(string.Empty, "This Account is LockOut");
-            
-            if(result.IsNotAllowed)
-                ModelState.AddModelError(string.Empty, "Un Authorized");
+            {
+                _logger.LogWarning("User {UserId} is locked out.", user.Id);
+                ModelState.AddModelError("InvalidLogin", "This account is temporarily locked. Try again later.");
+            }
+            else if (result.IsNotAllowed)
+            {
+                ModelState.AddModelError("InvalidLogin", "Sign-in is not allowed for this account.");
+            }
             else
-                ModelState.AddModelError(string.Empty, "Invalid Email or Password");
+            {
+                ModelState.AddModelError("InvalidLogin", "Invalid email or password.");
+            }
             return View(model);
-
         }
+
+        #endregion
+
+        #region Sign Out
 
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            await signInManager.SignOutAsync();
+            await _signInManager.SignOutAsync();
             return RedirectToAction(nameof(Login));
         }
-
-        public IActionResult AccessDenied()
-        {
-             return View();
-        }
+        #endregion
+        public IActionResult AccessDenied() => View();
 
     }
+
 }
+

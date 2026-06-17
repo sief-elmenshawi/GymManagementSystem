@@ -1,5 +1,5 @@
 ﻿using GymManagement.DAL.Data.DbContexts;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
 using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -13,13 +13,19 @@ namespace GymManagement.DAL.Repositorities.Classes
     {
         private readonly GymDbContext dbContext;
         private readonly Dictionary<string, object> repositories = [];
-        public UnitOfWork(GymDbContext dbContext , ISessionRepository sessionRepository)
+        public UnitOfWork(GymDbContext dbContext , ISessionRepository sessionRepository , IBookingRepository bookingRepository,IMembershipRepository membershipRepository)
         {
             this.dbContext = dbContext;
-            this.SessionRepository = sessionRepository;
+            SessionRepository = sessionRepository;
+            BookingRepository = bookingRepository;
+            MembershipRepository = membershipRepository;
         }
 
         public ISessionRepository SessionRepository {  get;}
+
+        public IMembershipRepository MembershipRepository { get; }
+
+        public IBookingRepository BookingRepository { get; }
 
         public IGenericRepository<TEntity> GetRepository<TEntity>() where TEntity : BaseEntity, new()
         {

@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
+using GymManagement.BLL.ViewModels.MembershipViewModels;
 using GymManagement.BLL.ViewModels.MemberViewModels;
 using GymManagement.BLL.ViewModels.PlanViewModels;
 using GymManagement.BLL.ViewModels.SessionViewModels;
 using GymManagement.BLL.ViewModels.TrainerViewModels;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,7 @@ namespace GymManagement.BLL.MappingProfile
             PlanAutoMapper();
             TrainerAutoMapper();
             SessionAutoMapper();
+            MembershipAutoMapper();
 
         }
 
@@ -114,6 +116,23 @@ namespace GymManagement.BLL.MappingProfile
             CreateMap<Category,CategorySelectViewModel>();
 
             CreateMap<Session , UpdateSessionViewModel>().ReverseMap();
+        }
+
+        private void MembershipAutoMapper() 
+        {
+            CreateMap<Membership, MemberShipForMemberViewModel>()
+                     .ForMember(dist => dist.MemberName, Option => Option.MapFrom(Src => Src.Member.Name))
+                     .ForMember(dist => dist.PlanName, Option => Option.MapFrom(Src => Src.Plan.Name))
+                     .ForMember(dist => dist.StartDate, Option => Option.MapFrom(X => X.CreatedAt));
+
+            CreateMap<Membership, MemberShipViewModel>()
+                     .ForMember(dist => dist.MemberName, Option => Option.MapFrom(Src => Src.Member.Name))
+                     .ForMember(dist => dist.PlanName, Option => Option.MapFrom(Src => Src.Plan.Name))
+                                          .ForMember(dist => dist.StartDate, Option => Option.MapFrom(X => X.CreatedAt));
+
+            CreateMap<CreateMemberShipViewModel, Membership>();
+            CreateMap<Member, MemberSelectListViewModel>();
+            CreateMap<Plan, PlanSelectListViewModel>();
         }
 
     }

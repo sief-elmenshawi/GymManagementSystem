@@ -1,6 +1,7 @@
 ﻿@model IEnumerable<MemberViewModel>
 @{
-    ViewData["Title"] = "Member Index";
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container">
@@ -29,18 +30,18 @@
                 <a asp-controller="Members" asp-action="Create" class="btn btn-fill fw-medium rounded-pill px-3 py-3"> + Add Member </a>
             </header>
 
-            @if (Model.Any())
+            @if (Model != null && Model.Any())
             {
 
                 <div class="table-responsive " style="overflow: visible;">
                     <table class="table table-borderless">
                         <thead>
                             <tr>
-                                <th><span>Photo</span></th>
-                                <th><span>Name</span></th>
-                                <th><span>Email</span></th>
-                                <th><span>Gender</span></th>
-                                <th><span>Phone</span></th>
+                                <th><span>@nameof(MemberViewModel.Photo)</span></th>
+                                <th><span>@nameof(MemberViewModel.Name)</span></th>
+                                <th><span>@nameof(MemberViewModel.Email)</span></th>
+                                <th><span>@nameof(MemberViewModel.Gender)</span></th>
+                                <th><span>@nameof(MemberViewModel.Phone)</span></th>
                                 <th><span>Action</span></th>
                             </tr>
                         </thead>
@@ -51,8 +52,17 @@
                                 <tr>
                                     <td>
                                         <span class="avatar">
-                                            <img src="~/images/@member.Photo" alt="Default Avatar" class="rounded-circle"
-                                                 style="width: 40px; height: 40px;" />
+                                            @if (!string.IsNullOrEmpty(member.Photo))
+                                            {
+                                                <img src="@Url.Action("Picture", "Members", new { id = member.Id })"
+                                                     alt="@member.Name"
+                                                     class="rounded-circle"
+                                                     style="width: 50px; height: 50px;" />
+                                            }
+                                            else
+                                            {
+                                                <img src="~/images/Ellipse 7.jpg" alt="@member.Name" class="rounded-circle" style="width: 50px; height: 50px;" />
+                                            }
                                         </span>
                                     </td>
                                     <td><span>@member.Name</span></td>

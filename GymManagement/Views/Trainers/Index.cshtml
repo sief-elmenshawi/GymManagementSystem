@@ -1,6 +1,7 @@
 ﻿@model IEnumerable<TrainerViewModel>
 @{
     ViewData["Title"] = "Trainers";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container">
@@ -27,12 +28,10 @@
             <p class="text-muted">Professional fitness instructors</p>
         </div>
 
-        @if(User.IsInRole("SuperAdmin"))
-        {
         <a asp-controller="Trainers" asp-action="Create" class="btn btn-fill fw-medium rounded-pill px-4 py-3">
             <i class="bi bi-plus-lg me-2"></i>Add Trainer
         </a>          
-        }
+        
     </header>
 
     @if (Model != null && Model.Any())
@@ -71,8 +70,7 @@
                                                 <span>View Details</span>
                                             </a>
                                         </li>
-                                        @if(User.IsInRole("SuperAdmin"))
-                                        {
+                                        
                                             
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
@@ -88,7 +86,7 @@
                                                 <span>Delete</span>
                                             </a>
                                         </li>
-                                        }
+                                        
                                     </ul>
                                 </div>
                             </td>

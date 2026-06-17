@@ -3,17 +3,17 @@ using GymManagement.BLL.Service.Classes;
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
-using GymManagement.DAL.Data.DataSeeding;
 using GymManagement.DAL.Data.DbContexts;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
 using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using GymManagement.PL;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
-namespace GymManagement
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+
+namespace GymManagementPL
 {
     public class Program
     {
@@ -23,42 +23,57 @@ namespace GymManagement
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
             builder.Services.AddDbContext<GymDbContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            //builder.Services.AddScoped<IPlanRepository, PlanRepository>();
-            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            builder.Services.AddScoped<IMemberService, MemberService>();
-            builder.Services.AddScoped<IPlanService, PlanService>();
-            builder.Services.AddScoped<ITrainerService, TrainerService>();
+            #region Repositories + UoW
+
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IMembershipRepository, MembershipRepository>();
             builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+            builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+
+            #endregion
+
+            #region Domain services
+
+
+            builder.Services.AddScoped<IMemberService, MemberService>();
+            builder.Services.AddScoped<ITrainerService, TrainerService>();
+            builder.Services.AddScoped<IPlanService, PlanService>();
             builder.Services.AddScoped<ISessionService, SessionService>();
+            builder.Services.AddScoped<IMembershipService, MembershipService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
             builder.Services.AddScoped<IAttachementService, AttachementService>();
-            builder.Services.AddAutoMapper(m=>m.AddProfile(new MappingProfile()));
 
-            builder.Services.AddIdentity<ApplicationUser , IdentityRole>(options=>
+
+            #endregion
+
+            builder.Services.AddAutoMapper(M => M.AddProfile(new MappingProfile()));
+
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(Config =>
             {
-                //options.Password.RequiredLength = 6;
-                //options.Password.RequireLowercase = true;
-                //options.Password.RequireUppercase = true;
-
-                options.User.RequireUniqueEmail = false;
-
-                options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
+                //Config.Password.RequiredLength = 6;
+                //Config.Password.RequireLowercase = true;
+                //Config.Password.RequireUppercase = true;
+                Config.User.RequireUniqueEmail = true;
+                Config.Lockout.MaxFailedAccessAttempts = 5;
+                Config.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
 
             }).AddEntityFrameworkStores<GymDbContext>();
 
             builder.Services.ConfigureApplicationCookie(options =>
             {
+                // redirect unauthenticated users (401)
                 options.LoginPath = "/Account/Login";
-
+                // redirect forbidden users (403)
                 options.AccessDeniedPath = "/Account/AccessDenied";
-            });
+            });// Default Paths
+
 
             var app = builder.Build();
 
@@ -68,22 +83,21 @@ namespace GymManagement
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
+
+            app.MapStaticAssets();
+
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
-                .WithStaticAssets();
-
-            app.Run();
+                pattern: "{controller=Account}/{action=Login}/{id?}");
+            await app.RunAsync();
         }
     }
 }

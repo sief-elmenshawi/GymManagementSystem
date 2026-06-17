@@ -1,6 +1,7 @@
 ﻿using GymManagement.DAL.Data.DataSeeding;
 using GymManagement.DAL.Data.DbContexts;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
+using GymManagementPL;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

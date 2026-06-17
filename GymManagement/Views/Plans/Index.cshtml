@@ -1,4 +1,8 @@
 ﻿@model IEnumerable<PlanViewModel>
+@{
+    ViewData["Title"] = "Plans";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
 @if (TempData["SuccessMessage"] != null)
 {
     <div id="Alert" class="alert alert-success alert-dismissible fade show" >
@@ -91,3 +95,6 @@ else if (TempData["ErrorMessage"] != null)
         </div>
     }
 </div>
+@section Scripts {
+    <partial name="_AlertBoxScript.cshtml" />
+}

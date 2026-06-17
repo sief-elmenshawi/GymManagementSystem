@@ -2,7 +2,9 @@
 @model TrainerToUpdateViewModel
 @{
     ViewData["Title"] = "Edit Trainer";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 @if (TempData["SuccessMessage"] != null)
 {
     <div id="Alert" class="alert alert-success alert-dismissible fade show">
@@ -116,5 +118,6 @@ else if (TempData["ErrorMessage"] != null)
 </div>
 @section Scripts
 {
+    <partial name="_ValidationScriptsPartial" />
     <partial name="_AlertBoxScript" />
 }

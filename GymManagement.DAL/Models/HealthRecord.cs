@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Data.Models
+namespace GymManagement.DAL.Models
 {
     public class HealthRecord : BaseEntity
     {

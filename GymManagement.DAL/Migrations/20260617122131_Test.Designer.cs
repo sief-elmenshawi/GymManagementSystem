@@ -4,6 +4,7 @@ using GymManagement.DAL.Data.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymManagement.DAL.Data.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617122131_Test")]
+    partial class Test
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace GymManagement.DAL.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.ApplicationUser", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -95,7 +98,7 @@ namespace GymManagement.DAL.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Booking", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Booking", b =>
                 {
                     b.Property<int>("SessionId")
                         .HasColumnType("int");
@@ -122,7 +125,7 @@ namespace GymManagement.DAL.Data.Migrations
                     b.ToTable("Bookings");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Category", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -182,7 +185,7 @@ namespace GymManagement.DAL.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.HealthRecord", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.HealthRecord", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -222,7 +225,7 @@ namespace GymManagement.DAL.Data.Migrations
                     b.ToTable("HealthRecords");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Member", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Member", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -258,6 +261,7 @@ namespace GymManagement.DAL.Data.Migrations
                         .HasColumnType("nvarchar(11)");
 
                     b.Property<string>("Photo")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -279,7 +283,7 @@ namespace GymManagement.DAL.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Membership", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Membership", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -314,7 +318,7 @@ namespace GymManagement.DAL.Data.Migrations
                     b.ToTable("Memberships");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Plan", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Plan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -358,7 +362,7 @@ namespace GymManagement.DAL.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Session", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Session", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -405,7 +409,7 @@ namespace GymManagement.DAL.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Trainer", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Trainer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -600,15 +604,15 @@ namespace GymManagement.DAL.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Booking", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Booking", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.Member", "Member")
+                    b.HasOne("GymManagement.DAL.Models.Member", "Member")
                         .WithMany("Bookings")
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GymManagement.DAL.Data.Models.Session", "Session")
+                    b.HasOne("GymManagement.DAL.Models.Session", "Session")
                         .WithMany("Bookings")
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -619,20 +623,20 @@ namespace GymManagement.DAL.Data.Migrations
                     b.Navigation("Session");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.HealthRecord", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.HealthRecord", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.Member", "Member")
+                    b.HasOne("GymManagement.DAL.Models.Member", "Member")
                         .WithOne("HealthRecord")
-                        .HasForeignKey("GymManagement.DAL.Data.Models.HealthRecord", "MemberId")
+                        .HasForeignKey("GymManagement.DAL.Models.HealthRecord", "MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Member", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Member", b =>
                 {
-                    b.OwnsOne("GymManagement.DAL.Data.Models.Address", "Address", b1 =>
+                    b.OwnsOne("GymManagement.DAL.Models.Address", "Address", b1 =>
                         {
                             b1.Property<int>("MemberId")
                                 .HasColumnType("int");
@@ -664,15 +668,15 @@ namespace GymManagement.DAL.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Membership", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Membership", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.Member", "Member")
+                    b.HasOne("GymManagement.DAL.Models.Member", "Member")
                         .WithMany("Memberships")
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GymManagement.DAL.Data.Models.Plan", "Plan")
+                    b.HasOne("GymManagement.DAL.Models.Plan", "Plan")
                         .WithMany("Memberships")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -683,15 +687,15 @@ namespace GymManagement.DAL.Data.Migrations
                     b.Navigation("Plan");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Session", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Session", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.Category", "Category")
+                    b.HasOne("GymManagement.DAL.Models.Category", "Category")
                         .WithMany("Sessions")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GymManagement.DAL.Data.Models.Trainer", "Trainer")
+                    b.HasOne("GymManagement.DAL.Models.Trainer", "Trainer")
                         .WithMany("Sessions")
                         .HasForeignKey("TrainerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -702,9 +706,9 @@ namespace GymManagement.DAL.Data.Migrations
                     b.Navigation("Trainer");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Trainer", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Trainer", b =>
                 {
-                    b.OwnsOne("GymManagement.DAL.Data.Models.Address", "Address", b1 =>
+                    b.OwnsOne("GymManagement.DAL.Models.Address", "Address", b1 =>
                         {
                             b1.Property<int>("TrainerId")
                                 .HasColumnType("int");
@@ -747,7 +751,7 @@ namespace GymManagement.DAL.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.ApplicationUser", null)
+                    b.HasOne("GymManagement.DAL.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -756,7 +760,7 @@ namespace GymManagement.DAL.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.ApplicationUser", null)
+                    b.HasOne("GymManagement.DAL.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -771,7 +775,7 @@ namespace GymManagement.DAL.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GymManagement.DAL.Data.Models.ApplicationUser", null)
+                    b.HasOne("GymManagement.DAL.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -780,19 +784,19 @@ namespace GymManagement.DAL.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("GymManagement.DAL.Data.Models.ApplicationUser", null)
+                    b.HasOne("GymManagement.DAL.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Category", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Category", b =>
                 {
                     b.Navigation("Sessions");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Member", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Member", b =>
                 {
                     b.Navigation("Bookings");
 
@@ -802,17 +806,17 @@ namespace GymManagement.DAL.Data.Migrations
                     b.Navigation("Memberships");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Plan", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Plan", b =>
                 {
                     b.Navigation("Memberships");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Session", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Session", b =>
                 {
                     b.Navigation("Bookings");
                 });
 
-            modelBuilder.Entity("GymManagement.DAL.Data.Models.Trainer", b =>
+            modelBuilder.Entity("GymManagement.DAL.Models.Trainer", b =>
                 {
                     b.Navigation("Sessions");
                 });

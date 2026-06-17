@@ -1,4 +1,4 @@
-﻿using GymManagement.DAL.Data.Models;
+﻿using GymManagement.DAL.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System;
@@ -49,22 +49,40 @@ namespace GymManagement.DAL.Data.DataSeeding
 						Email = "Serag@gmail.com",
 						PhoneNumber = "01123456789",
 
-					};
-					 var userResult = await userManager.CreateAsync(MainUser, "P@ssw0rd");
-					await userManager.AddToRoleAsync(MainUser, "SuperAdmin");
+					}; 
+                    var MainuserResult = await userManager.CreateAsync(MainUser, "P@ssw0rd");
 
-					if(!userResult.Succeeded)
+					if(!MainuserResult.Succeeded)
 					{
-						logger.LogError("Failed To Seed Users");
+						logger.LogError($"Failed To Seed MainUser {MainUser.UserName}");
 						return;
 					}
-				}
+					await userManager.AddToRoleAsync(MainUser, "SuperAdmin");
+
+					var User = new ApplicationUser()
+                    {
+                        FirstName = "Nader",
+                        LastName = "Ibrahim",
+                        UserName = "Nader",
+                        Email = "Nader@gmail.com",
+                        PhoneNumber = "01123457789",
+
+                    };
+					var userResult = await userManager.CreateAsync(User, "P@ssw0rd");
+
+                    if (!userResult.Succeeded)
+                    {
+                        logger.LogError($"Failed To Seed User {User.UserName}"); 
+                        return;
+                    }
+					await userManager.AddToRoleAsync(User, "Admin");
+                }
 				return;
             }
 			catch (Exception ex)
 			{
-				logger.LogError("Failed To Seed Identity Data");
-				throw;
+				logger.LogError(ex,"Failed To Seed Identity Data");
+				return;
 			}
         }
     }

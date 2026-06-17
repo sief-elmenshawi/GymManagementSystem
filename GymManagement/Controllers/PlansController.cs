@@ -1,6 +1,6 @@
-﻿using GymManagement.BLL.Services.Interfaces;
+﻿using GymManagement.BLL.Services.Classes;
+using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.PlanViewModels;
-using GymManagement.DAL.Data.Models;
 using GymManagement.DAL.Repositorities.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,21 +59,22 @@ namespace GymManagement.Controllers
 
             var result = await planService.UpdatePlanAsync(id, model, ct);
             if (result.succes)
+            {
                 TempData["SuccessMessage"] = $"Plan updated successfully.";
+                return RedirectToAction(nameof(Index));
+            }
             else
                 TempData["ErrorMessage"] = result.error;
-            return RedirectToAction(nameof(Index));
+            return View(model);
         }
 
         [HttpPost]
         public async Task<IActionResult> Activate(int id, CancellationToken ct)
         {
             var result = await planService.ToggleActivationAsync(id, ct);
-            if (result.succes)
-                TempData["SuccessMessage"] = $"Plan activation toggled successfully.";
-            else
-                TempData["ErrorMessage"] = result.error;
-            return RedirectToAction(nameof(Index));
+            TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
+                result.succes ? "Plan status changed." : result.error;
+            return RedirectToAction(nameof(Index)); ;
         }
     }
 }

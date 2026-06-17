@@ -1,6 +1,7 @@
 ﻿using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.AnalyticsViewModels;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
+using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -20,22 +21,22 @@ namespace GymManagement.BLL.Services.Classes
         }
         public async Task<AnalyticsViewModel> GetAnalyticsDataAysnc(CancellationToken ct)
         {
-            var sessions = await unitOfWork.GetRepository<Session>().GetAllAsync(ct:ct);
-
-            var totalMembers = await unitOfWork.GetRepository<Member>().CountAsync(ct:ct);
-
-            var totalTrainers = await unitOfWork.GetRepository<Trainer>().CountAsync(ct:ct);
-
-            var ActiveMembers = await unitOfWork.GetRepository<Membership>().CountAsync(m=>m.EndDate > DateTime.Now);
+            var now = DateTime.Now;
+            var upcomingSessions = await unitOfWork.GetRepository<Session>().CountAsync(s => s.StartDate > now);
+            var ongoingSessions = await unitOfWork.GetRepository<Session>().CountAsync(X => X.StartDate <= now && X.EndDate >= now);
+            var completedSessions = await unitOfWork.GetRepository<Session>().CountAsync(X => X.EndDate < now);
+            var totalMembers = await unitOfWork.GetRepository<Member>().CountAsync(ct: ct);
+            var totalTrainers = await unitOfWork.GetRepository<Trainer>().CountAsync(ct: ct);
+            var activeMembers = await unitOfWork.GetRepository<Membership>().CountAsync(m => m.EndDate > now, ct);
 
             return new AnalyticsViewModel
             {
                 TotalMembers = totalMembers,
                 TotalTrainers = totalTrainers,
-                ActiveMembers = ActiveMembers,
-                UpcomingSessions = sessions.Count(x=>x.StartDate > DateTime.Now),
-                OngoingSessions = sessions.Count(x=>x.StartDate <= DateTime.Now && x.EndDate >=DateTime.Now),
-                CompletedSessions = sessions.Count(x=>x.EndDate  <= DateTime.Now)
+                ActiveMembers = activeMembers,
+                UpcomingSessions = upcomingSessions,
+                OngoingSessions = ongoingSessions,
+                CompletedSessions = completedSessions
 
             };
 

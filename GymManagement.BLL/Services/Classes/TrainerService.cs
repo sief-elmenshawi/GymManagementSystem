@@ -2,7 +2,7 @@
 using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.TrainerViewModels;
-using GymManagement.DAL.Data.Models;
+using GymManagement.DAL.Models;
 using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
