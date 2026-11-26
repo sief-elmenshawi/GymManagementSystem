@@ -33,8 +33,7 @@ namespace GymManagement.PL
             var seedFolderPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "Files");
             await GymDataSeeding.SeedAsync(dbContext, seedFolderPath, logger);
 
-            var seedPassword = Configuration["SeedUsers:Password"]
-                ?? Environment.GetEnvironmentVariable("GYM_SEED_PASSWORD");
+            var seedPassword = SeedCredentials.ResolvePassword(Configuration);
             await IdentityDataSeeding.SeedAsync(roleManager, userManager, logger, seedPassword);
         }
     }

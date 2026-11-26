@@ -115,6 +115,17 @@ namespace GymManagementPL
                     AutoMapperLicense.LuckyPennyEnvironmentVariable);
             }
 
+            if (!app.Environment.IsDevelopment()
+                && SeedCredentials.ResolvePassword(builder.Configuration) is null)
+            {
+                app.Logger.LogWarning(
+                    "Seed admin password is not configured in {Environment} environment. " +
+                    "Set {Variable} or {ConfigKey} to seed the default users; seeding will be skipped otherwise.",
+                    app.Environment.EnvironmentName,
+                    SeedCredentials.EnvironmentVariable,
+                    SeedCredentials.ConfigurationKey);
+            }
+
             await app.MigrateAndSeedDatabaseAsync();
 
             // Configure the HTTP request pipeline.

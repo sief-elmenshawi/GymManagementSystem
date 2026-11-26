@@ -145,88 +145,117 @@ The project applies:
 # 📂 Project Structure
 
 ```text
-GymManagementSystem
+GymManagementSolution
 
 │
-├── GymManagement.Presentation
+├── GymManagement              # ASP.NET Core MVC presentation layer
 │
 ├── GymManagement.BLL
 │
 ├── GymManagement.DAL
 │
-└── GymManagement.sln
+├── GymManagement.Tests
+│
+└── GymManagementSolution.slnx
 ```
 
 ---
 
 # ⚙️ Installation & Setup
 
-## 1. Clone Repository
+## 1. Prerequisites
+
+* [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+* SQL Server (LocalDB, Express, Developer, or a remote instance)
+* EF Core CLI tools (only needed to manage migrations manually):
+
+```bash
+dotnet tool install --global dotnet-ef --version 9.0.16
+```
+
+---
+
+## 2. Clone Repository
 
 ```bash
 git clone https://github.com/sief-elmenshawi/GymManagementSystem.git
+cd GymManagementSystem
 ```
 
 ---
 
-## 2. Configure Database Connection
+## 3. Configure Database Connection
 
-Update the connection string inside:
+The committed `GymManagement/appsettings.json` intentionally contains **no connection string**. A local copy with a connection string (and a local `dotnet-tools.json`) is kept uncommitted on the development machine and is never pushed.
 
-```text
-appsettings.json
+For a fresh clone, provide the connection string through **User Secrets** or an environment variable instead of committing it:
+
+```bash
+dotnet user-secrets init --project GymManagement
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=.;Database=GymManagement;Trusted_Connection=True;TrustServerCertificate=True;" --project GymManagement
 ```
 
-Example:
+PowerShell alternative:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=.;Database=GymManagementDB;Trusted_Connection=True;TrustServerCertificate=True"
-  }
-}
+```powershell
+$env:ConnectionStrings__DefaultConnection = 'Server=.;Database=GymManagement;Trusted_Connection=True;TrustServerCertificate=True;'
 ```
 
 ---
 
-## 3. Apply Database Migration
+## 4. Database Migrations and Seeding
 
-Using Package Manager Console:
+Pending migrations are applied automatically when the application starts, followed by identity/data seeding. Manual migration commands are still available:
+
+```bash
+dotnet ef database update --project GymManagement.DAL --startup-project GymManagement
+```
+
+In Package Manager Console, set **Default project** to `GymManagement.DAL` and run:
 
 ```powershell
 Update-Database
 ```
 
-or using CLI:
+Default seed users are created only when a seed password is configured:
+
+* Development: `GymManagement/appsettings.Development.json` (`SeedUsers:Password`)
+* Any environment: `GYM_SEED_PASSWORD` environment variable or `SeedUsers:Password` in configuration
+
+No seed password is stored in source code. If no password is found in a non-development environment, the host logs a warning and skips identity seeding.
+
+---
+
+## 5. Run Application
 
 ```bash
-dotnet ef database update
+dotnet run --project GymManagement
 ```
 
 ---
 
-## 4. Run Application
-
-```bash
-dotnet run
-```
-
----
-
-## 5. Run Automated Tests
+## 6. Run Automated Tests
 
 ```bash
 dotnet test GymManagementSolution.slnx
 ```
 
-The `GymManagement.Tests` project contains unit tests for the mapping profile, session/booking/analytics services, and AutoMapper license resolution.
+The `GymManagement.Tests` project contains unit tests for mapping, services, seed-password resolution, and AutoMapper license resolution.
+
+SQL Server end-to-end tests (login, member create/edit/delete, booking create/cancel) are skipped unless a test connection string is supplied. They create and drop a disposable `GymManagement_E2ETests` database:
+
+```powershell
+$env:GYM_TEST_CONNECTION_STRING = 'Server=.;Database=GymManagement_E2ETests;Trusted_Connection=True;TrustServerCertificate=True;'
+dotnet test GymManagementSolution.slnx
+```
 
 ---
 
-## 6. Production Configuration
+## 7. Production Configuration
 
 * **AutoMapper license:** set `AUTOMAPPER_LICENSE_KEY` (or the shared `LUCKYPENNY_LICENSE_KEY`) as an environment variable, or `AutoMapper:LicenseKey` in configuration. No key is required in Development. In non-development environments the host logs a clear error when no key is found.
-* **Seed admin password:** set `GYM_SEED_PASSWORD` or `SeedUsers:Password` in configuration. Seeding is skipped (with a warning) when no password is configured.
+* **Seed admin password:** set `GYM_SEED_PASSWORD` or `SeedUsers:Password` in configuration before first startup in Production. Seeding is skipped (with a warning) when no password is configured.
+* **Connection string:** provide `ConnectionStrings__DefaultConnection` through the hosting environment or a secrets manager. Do not commit environment-specific files.
 
 ---
 
@@ -246,7 +275,7 @@ The `GymManagement.Tests` project contains unit tests for the mapping profile, s
 * Add payment integration
 * Add notification system using SignalR
 * Add dashboard analytics
-* Add integration and end-to-end tests
+* Add browser-driven UI tests (Playwright/Selenium)
 
 ---
 
