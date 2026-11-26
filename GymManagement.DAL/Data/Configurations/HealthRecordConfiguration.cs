@@ -16,6 +16,9 @@ namespace GymManagement.DAL.Data.Configurations
             builder.Property(x => x.BloodType).HasMaxLength(5);
 
             builder.Property(x => x.Note).HasMaxLength(500);
+
+            builder.Property(x => x.Height).HasPrecision(18, 4);
+            builder.Property(x => x.Weight).HasPrecision(18, 4);
         }
     }
 }

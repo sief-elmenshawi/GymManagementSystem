@@ -9,9 +9,11 @@ using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using GymManagement.PL;
 
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace GymManagementPL
 {
@@ -20,6 +22,13 @@ namespace GymManagementPL
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // AutoMapper 15+ logs a license warning in non-production environments.
+            // Production reads the key from configuration or the AUTOMAPPER_LICENSE_KEY env var.
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Logging.AddFilter("LuckyPennySoftware.AutoMapper.License", LogLevel.None);
+            }
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
@@ -53,7 +62,11 @@ namespace GymManagementPL
 
             #endregion
 
-            builder.Services.AddAutoMapper(M => M.AddProfile(new MappingProfile()));
+            builder.Services.AddAutoMapper(cfg =>
+            {
+                cfg.LicenseKey = builder.Configuration["AutoMapper:LicenseKey"];
+                cfg.AddProfile<MappingProfile>();
+            });
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(Config =>
             {
@@ -74,6 +87,11 @@ namespace GymManagementPL
                 options.AccessDeniedPath = "/Account/AccessDenied";
             });// Default Paths
 
+            var httpsPort = builder.Configuration.GetValue<int?>("HttpsPort");
+            if (httpsPort.HasValue)
+            {
+                builder.Services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = httpsPort.Value);
+            }
 
             var app = builder.Build();
 
@@ -86,17 +104,26 @@ namespace GymManagementPL
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
-
-            app.MapStaticAssets();
+            // Only redirect when an HTTPS endpoint/port is actually configured.
+            if (httpsPort.HasValue || app.Urls.Any(url => url.StartsWith("https", StringComparison.OrdinalIgnoreCase)))
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapStaticAssets();
+
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Account}/{action=Login}/{id?}");
+            app.MapControllerRoute(
+                name: "controllerDefault",
+                pattern: "{controller}/{id?}",
+                defaults: new { action = "Index" });
+
             await app.RunAsync();
         }
     }

@@ -26,13 +26,16 @@ namespace GymManagement.PL
 
             if (pendingMigrations.Any())
             {
-                logger.LogInformation($"Appling {pendingMigrations.Count()} Pending Migrations");
+                logger.LogInformation($"Applying {pendingMigrations.Count()} Pending Migrations");
                 await dbContext.Database.MigrateAsync();
             }
 
             var seedFolderPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "Files");
             await GymDataSeeding.SeedAsync(dbContext, seedFolderPath, logger);
-            await IdentityDataSeeding.SeedAsync(roleManager, userManager, logger);
+
+            var seedPassword = Configuration["SeedUsers:Password"]
+                ?? Environment.GetEnvironmentVariable("GYM_SEED_PASSWORD");
+            await IdentityDataSeeding.SeedAsync(roleManager, userManager, logger, seedPassword);
         }
     }
 }

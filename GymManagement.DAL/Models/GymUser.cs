@@ -23,6 +23,6 @@ namespace GymManagement.DAL.Models
         // Gender 
         public Gender Gender { get; set; }
         //Address
-        public Address Address { get; set; }
+        public Address Address { get; set; } = default!;
     }
 }

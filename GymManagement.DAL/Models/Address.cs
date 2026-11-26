@@ -12,9 +12,9 @@ namespace GymManagement.DAL.Models
     public class Address
     {
         [Required, MaxLength(50)]
-        public string Street { get; set; }
+        public string Street { get; set; } = default!;
         [Required , MaxLength(50)]
-        public string City { get; set; }
+        public string City { get; set; } = default!;
         public int BuildingNumber { get; set; }
     }
 }
