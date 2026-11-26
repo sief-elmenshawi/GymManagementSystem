@@ -32,6 +32,11 @@ namespace GymManagement.BLL.MappingProfile
 
             CreateMap<UpdatePlanViewModel, Plan>()
                 .ForMember(dest=>dest.Name ,opt=>opt.MapFrom(src=>src.PlanName))
+                .ForMember(dest=>dest.IsActive, opt=>opt.Ignore())
+                .ForMember(dest=>dest.Memberships, opt=>opt.Ignore())
+                .ForMember(dest=>dest.Id, opt=>opt.Ignore())
+                .ForMember(dest=>dest.CreatedAt, opt=>opt.Ignore())
+                .ForMember(dest=>dest.UpdatedAt, opt=>opt.Ignore())
                 .ReverseMap();               
         }
 
@@ -39,7 +44,10 @@ namespace GymManagement.BLL.MappingProfile
         {
             CreateMap<Member, MemberViewModel>()
              .ForMember(dest => dest.Address, opt => opt.MapFrom(src => $"{src.Address.BuildingNumber} - {src.Address.Street} - {src.Address.City}"))
-             .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth.ToShortDateString()));
+             .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth.ToShortDateString()))
+             .ForMember(dest => dest.PlanName, opt => opt.Ignore())
+             .ForMember(dest => dest.MembershipStartDate, opt => opt.Ignore())
+             .ForMember(dest => dest.MembershipEndDate, opt => opt.Ignore());
 
             CreateMap<HealthRecord, HealthRecordViewModel>().ReverseMap();
 
@@ -51,6 +59,15 @@ namespace GymManagement.BLL.MappingProfile
             CreateMap<MemberToUpdateViewModel, Member>()
                 .ForMember(dest => dest.Name, opt => opt.Ignore())
                 .ForMember(dest => dest.Photo, opt => opt.Ignore())
+                .ForMember(dest => dest.HealthRecord, opt => opt.Ignore())
+                .ForMember(dest => dest.Memberships, opt => opt.Ignore())
+                .ForMember(dest => dest.Bookings, opt => opt.Ignore())
+                .ForMember(dest => dest.DateOfBirth, opt => opt.Ignore())
+                .ForMember(dest => dest.Gender, opt => opt.Ignore())
+                .ForMember(dest => dest.Address, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
                 .AfterMap((src, dest) =>
                 {
                     dest.Address.BuildingNumber = src.BuildingNumber;
@@ -65,7 +82,13 @@ namespace GymManagement.BLL.MappingProfile
                    Street = src.Street,
                    City = src.City,
                }))
-               .ForMember(dest => dest.HealthRecord, opt => opt.MapFrom(src => src.HealthRecordViewModel));
+               .ForMember(dest => dest.HealthRecord, opt => opt.MapFrom(src => src.HealthRecordViewModel))
+               .ForMember(dest => dest.Photo, opt => opt.Ignore())
+               .ForMember(dest => dest.Memberships, opt => opt.Ignore())
+               .ForMember(dest => dest.Bookings, opt => opt.Ignore())
+               .ForMember(dest => dest.Id, opt => opt.Ignore())
+               .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+               .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
         }
 
         private void TrainerAutoMapper()
@@ -73,7 +96,8 @@ namespace GymManagement.BLL.MappingProfile
             CreateMap<Trainer, TrainerViewModel>()
                 .ForMember(dest => dest.Specialties, opt => opt.MapFrom(src => src.Specialty))
                 .ForMember(dest => dest.Address, opt => opt.MapFrom(src => $"{src.Address.BuildingNumber} - {src.Address.Street} - {src.Address.City}"))
-                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth.ToShortDateString()));
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth.ToShortDateString()))
+                .ForMember(dest => dest.Photo, opt => opt.Ignore());
 
 
             CreateMap<Trainer, TrainerToUpdateViewModel>()
@@ -84,6 +108,14 @@ namespace GymManagement.BLL.MappingProfile
 
             CreateMap<TrainerToUpdateViewModel, Trainer>()
                 .ForMember(dest => dest.Specialty, opt => opt.MapFrom(src => src.Specialties))
+                .ForMember(dest => dest.HiringDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Sessions, opt => opt.Ignore())
+                .ForMember(dest => dest.DateOfBirth, opt => opt.Ignore())
+                .ForMember(dest => dest.Gender, opt => opt.Ignore())
+                .ForMember(dest => dest.Address, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
                 .AfterMap((src, dest) =>
                 {
                     dest.Address.BuildingNumber = src.BuildingNumber;
@@ -100,7 +132,12 @@ namespace GymManagement.BLL.MappingProfile
                     Street = src.Street,
                     City = src.City,
 
-                }));
+                }))
+                .ForMember(dest => dest.HiringDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Sessions, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
                 
         }
 
@@ -108,9 +145,17 @@ namespace GymManagement.BLL.MappingProfile
         {
             CreateMap<Session, SessionViewModel>()
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName))
-                .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => src.Trainer.Name)).ReverseMap();
+                .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => src.Trainer.Name))
+                .ForMember(dest => dest.AvailableSlots, opt => opt.Ignore())
+                .ReverseMap();
 
-            CreateMap<CreateSessionViewModel, Session>();
+            CreateMap<CreateSessionViewModel, Session>()
+                .ForMember(dest => dest.Trainer, opt => opt.Ignore())
+                .ForMember(dest => dest.Category, opt => opt.Ignore())
+                .ForMember(dest => dest.Bookings, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
 
             CreateMap<Trainer, TrainerSelectViewModel>();
             CreateMap<Category,CategorySelectViewModel>();
@@ -130,7 +175,13 @@ namespace GymManagement.BLL.MappingProfile
                      .ForMember(dist => dist.PlanName, Option => Option.MapFrom(Src => Src.Plan.Name))
                                           .ForMember(dist => dist.StartDate, Option => Option.MapFrom(X => X.CreatedAt));
 
-            CreateMap<CreateMemberShipViewModel, Membership>();
+            CreateMap<CreateMemberShipViewModel, Membership>()
+                .ForMember(dest => dest.Member, opt => opt.Ignore())
+                .ForMember(dest => dest.Plan, opt => opt.Ignore())
+                .ForMember(dest => dest.EndDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
             CreateMap<Member, MemberSelectListViewModel>();
             CreateMap<Plan, PlanSelectListViewModel>();
         }

@@ -213,6 +213,23 @@ dotnet run
 
 ---
 
+## 5. Run Automated Tests
+
+```bash
+dotnet test GymManagementSolution.slnx
+```
+
+The `GymManagement.Tests` project contains unit tests for the mapping profile, session/booking/analytics services, and AutoMapper license resolution.
+
+---
+
+## 6. Production Configuration
+
+* **AutoMapper license:** set `AUTOMAPPER_LICENSE_KEY` (or the shared `LUCKYPENNY_LICENSE_KEY`) as an environment variable, or `AutoMapper:LicenseKey` in configuration. No key is required in Development. In non-development environments the host logs a clear error when no key is found.
+* **Seed admin password:** set `GYM_SEED_PASSWORD` or `SeedUsers:Password` in configuration. Seeding is skipped (with a warning) when no password is configured.
+
+---
+
 # 🔐 Default Roles
 
 | Role    | Permissions              |
@@ -229,7 +246,7 @@ dotnet run
 * Add payment integration
 * Add notification system using SignalR
 * Add dashboard analytics
-* Add automated testing
+* Add integration and end-to-end tests
 
 ---
 

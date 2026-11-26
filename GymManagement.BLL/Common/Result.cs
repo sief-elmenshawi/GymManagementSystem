@@ -20,6 +20,6 @@ namespace GymManagement.BLL.Common
 
         public static Result<T> Ok(T value) => new Result<T>(true, value);
         public static Result<T> Fail(string error , ResultKind kind = ResultKind.Conflict) => new (false,default,error,kind);
-        public static Result<T> NotFound(string error = "Not Foumd") =>new Result<T>(false,default,error , ResultKind.NotFound);
+        public static Result<T> NotFound(string error = "Not Found") =>new Result<T>(false,default,error , ResultKind.NotFound);
     }
 }

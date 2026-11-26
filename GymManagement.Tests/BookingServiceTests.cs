@@ -1,0 +1,238 @@
+using System.Linq.Expressions;
+using GymManagement.BLL.Common;
+using GymManagement.BLL.Services.Classes;
+using GymManagement.DAL.Models;
+using GymManagement.Tests.Support;
+using Moq;
+using Xunit;
+
+namespace GymManagement.Tests;
+
+public class BookingServiceTests
+{
+    private readonly UnitOfWorkMock _uow = new();
+    private readonly BookingService _service;
+
+    public BookingServiceTests()
+    {
+        _service = new BookingService(_uow.UnitOfWork.Object, TestMapper.Create());
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenSessionDoesNotExist_ReturnsNotFound()
+    {
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.NotFound, result.kind);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenSessionAlreadyStarted_ReturnsConflict()
+    {
+        SetupSession(TestData.FutureSession(start: DateTime.Now.AddMinutes(-10), end: DateTime.Now.AddHours(1)));
+
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.Conflict, result.kind);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenMemberHasNoActiveMembership_ReturnsConflict()
+    {
+        SetupSession(TestData.FutureSession());
+        SetupMembership(active: false);
+
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.Conflict, result.kind);
+        Assert.Equal("Member does not have an active membership.", result.error);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenMemberAlreadyBooked_ReturnsConflict()
+    {
+        SetupSession(TestData.FutureSession());
+        SetupMembership(active: true);
+        SetupAlreadyBooked(true);
+
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.Conflict, result.kind);
+        Assert.Equal("Member is already booked for this session.", result.error);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenSessionIsFull_ReturnsConflict()
+    {
+        var session = TestData.FutureSession(capacity: 2);
+        SetupSession(session);
+        SetupMembership(active: true);
+        SetupAlreadyBooked(false);
+        _uow.SessionRepository
+            .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.Conflict, result.kind);
+        Assert.Equal("Session is full.", result.error);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenValid_AddsBookingAndSaves()
+    {
+        var session = TestData.FutureSession(capacity: 10);
+        var model = TestData.CreateBooking(memberId: 5, sessionId: session.Id);
+        SetupSession(session);
+        SetupMembership(active: true);
+        SetupAlreadyBooked(false);
+        _uow.SessionRepository
+            .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(4);
+
+        var result = await _service.CreateNewBookingAsync(model);
+
+        Assert.True(result.succes);
+        _uow.BookingRepository.Verify(
+            r => r.Add(It.Is<Booking>(b => b.MemberId == model.MemberId
+                                       && b.SessionId == model.SessionId
+                                       && !b.IsAttended)),
+            Times.Once);
+        _uow.UnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelBooking_WhenSessionDoesNotExist_ReturnsNotFound()
+    {
+        var result = await _service.CancelBookingAsync(5, 30);
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.NotFound, result.kind);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CancelBooking_WhenSessionAlreadyStarted_ReturnsConflict()
+    {
+        SetupSession(TestData.FutureSession(start: DateTime.Now.AddMinutes(-10), end: DateTime.Now.AddHours(1)));
+
+        var result = await _service.CancelBookingAsync(5, 30);
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.Conflict, result.kind);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CancelBooking_WhenBookingDoesNotExist_ReturnsNotFound()
+    {
+        SetupSession(TestData.FutureSession());
+
+        var result = await _service.CancelBookingAsync(5, 30);
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.NotFound, result.kind);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task CancelBooking_WhenBookingExists_DeletesAndSaves()
+    {
+        var session = TestData.FutureSession();
+        var booking = new Booking { Id = 1, MemberId = 5, SessionId = session.Id };
+        SetupSession(session);
+        SetupBooking(booking);
+
+        var result = await _service.CancelBookingAsync(5, session.Id);
+
+        Assert.True(result.succes);
+        _uow.BookingRepository.Verify(r => r.Delete(booking), Times.Once);
+        _uow.UnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarkAttended_WhenBookingDoesNotExist_ReturnsNotFound()
+    {
+        var result = await _service.MarkAttendedAsync(5, 30);
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.NotFound, result.kind);
+        VerifyNoSave();
+    }
+
+    [Fact]
+    public async Task MarkAttended_WhenBookingExists_SetsAttendanceAndSaves()
+    {
+        var booking = new Booking { Id = 1, MemberId = 5, SessionId = 30 };
+        SetupBooking(booking);
+
+        var result = await _service.MarkAttendedAsync(5, 30);
+
+        Assert.True(result.succes);
+        Assert.True(booking.IsAttended);
+        Assert.NotNull(booking.UpdatedAt);
+        _uow.BookingRepository.Verify(r => r.Update(booking), Times.Once);
+        _uow.UnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMembersForOngoingSession_IncludesAttendanceAndMemberName()
+    {
+        var member = TestData.Member();
+        var bookings = new List<Booking>
+        {
+            new() { Id = 1, MemberId = member.Id, SessionId = 30, IsAttended = true, Member = member },
+            new() { Id = 2, MemberId = 6, SessionId = 30, IsAttended = false, Member = new Member { Name = "Member Two" } },
+        };
+        _uow.BookingRepository
+            .Setup(r => r.GetBySessionIdAsync(30, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(bookings);
+
+        var result = (await _service.GetMembersForOngoingBySessionIdAsync(30)).ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Member One", result[0].MemberName);
+        Assert.True(result[0].IsAttended);
+        Assert.False(result[1].IsAttended);
+    }
+
+    private void SetupSession(Session session) =>
+        _uow.SessionRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+    private void SetupMembership(bool active) =>
+        _uow.MembershipRepository
+            .Setup(r => r.AnyAsync(
+                It.IsAny<Expression<Func<Membership, bool>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(active);
+
+    private void SetupAlreadyBooked(bool alreadyBooked) =>
+        _uow.BookingRepository
+            .Setup(r => r.AnyAsync(
+                It.IsAny<Expression<Func<Booking, bool>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(alreadyBooked);
+
+    private void SetupBooking(Booking? booking) =>
+        _uow.BookingRepository
+            .Setup(r => r.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<Booking, bool>>>(),
+                true,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(booking);
+
+    private void VerifyNoSave() =>
+        _uow.UnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+}
