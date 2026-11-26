@@ -4,8 +4,7 @@ namespace GymManagementPL;
 
 /// <summary>
 /// Resolves the AutoMapper license key from configuration or from the environment variables
-/// documented by AutoMapper. Resolving it here as well lets the host log a clear diagnostic
-/// when a non-development environment starts without a key.
+/// documented by AutoMapper. Non-development environments require a key and fail fast at startup.
 /// </summary>
 public static class AutoMapperLicense
 {
@@ -30,6 +29,22 @@ public static class AutoMapperLicense
         return candidates
             .Select(key => key?.Trim())
             .FirstOrDefault(key => !string.IsNullOrEmpty(key));
+    }
+
+    /// <summary>
+    /// Returns a configured key or throws a clear startup exception when none exists.
+    /// </summary>
+    public static string RequireKey(IConfiguration configuration, string environmentName)
+    {
+        var key = ResolveKey(configuration);
+        if (key is not null)
+        {
+            return key;
+        }
+
+        throw new InvalidOperationException(
+            $"AutoMapper license key is missing in {environmentName} environment. " +
+            $"Set {ConfigurationKey}, {AutoMapperEnvironmentVariable}, or {LuckyPennyEnvironmentVariable} to a valid key.");
     }
 
     public static bool IsConfigured(IConfiguration configuration) => ResolveKey(configuration) is not null;

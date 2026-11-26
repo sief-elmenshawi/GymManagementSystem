@@ -55,6 +55,27 @@ public sealed class AutoMapperLicenseTests
         Assert.False(AutoMapperLicense.IsConfigured(configuration));
     }
 
+    [Fact]
+    public void RequireKey_ReturnsConfiguredKey()
+    {
+        var configuration = CreateConfiguration(("AutoMapper:LicenseKey", "config-key"));
+
+        Assert.Equal("config-key", AutoMapperLicense.RequireKey(configuration, "Production"));
+    }
+
+    [Fact]
+    public void RequireKey_Throws_WhenNoKeyIsConfigured()
+    {
+        var configuration = CreateConfiguration();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => AutoMapperLicense.RequireKey(configuration, "Staging"));
+
+        Assert.Contains("Staging", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(AutoMapperLicense.ConfigurationKey, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(AutoMapperLicense.AutoMapperEnvironmentVariable, exception.Message, StringComparison.Ordinal);
+    }
+
     private static IConfiguration CreateConfiguration(params (string Key, string? Value)[] values) =>
         new ConfigurationBuilder()
             .AddInMemoryCollection(values.ToDictionary(v => v.Key, v => v.Value))

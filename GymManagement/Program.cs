@@ -62,12 +62,13 @@ namespace GymManagementPL
 
             #endregion
 
-            var autoMapperLicenseKey = AutoMapperLicense.ResolveKey(builder.Configuration);
+            var autoMapperLicenseKey = builder.Environment.IsDevelopment()
+                ? AutoMapperLicense.ResolveKey(builder.Configuration)
+                : AutoMapperLicense.RequireKey(builder.Configuration, builder.Environment.EnvironmentName);
 
             builder.Services.AddAutoMapper(cfg =>
             {
-                // Leave the key unset when missing so AutoMapper can still discover the
-                // environment variables on its own; the host logs a diagnostic below.
+                // Development allows a missing key; non-development environments fail fast above.
                 if (autoMapperLicenseKey is not null)
                 {
                     cfg.LicenseKey = autoMapperLicenseKey;
@@ -102,18 +103,6 @@ namespace GymManagementPL
             }
 
             var app = builder.Build();
-
-            if (!app.Environment.IsDevelopment() && autoMapperLicenseKey is null)
-            {
-                app.Logger.LogError(
-                    "AutoMapper license key is missing in {Environment} environment. " +
-                    "Set {ConfigKey}, {AutoMapperVariable}, or {SharedVariable} to a valid key. " +
-                    "AutoMapper will continue with its unlicensed/diagnostic behaviour until then.",
-                    app.Environment.EnvironmentName,
-                    AutoMapperLicense.ConfigurationKey,
-                    AutoMapperLicense.AutoMapperEnvironmentVariable,
-                    AutoMapperLicense.LuckyPennyEnvironmentVariable);
-            }
 
             if (!app.Environment.IsDevelopment()
                 && SeedCredentials.ResolvePassword(builder.Configuration) is null)
