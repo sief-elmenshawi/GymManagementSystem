@@ -33,6 +33,7 @@ Give a registered `Member` a safe landing page after login that shows their own 
 * The current user is resolved from `UserManager.GetUserId(User)`; every profile/booking action derives `MemberId` from the linked `Member.ApplicationUserId`. No route or form value can select another member.
 * All booking views and mutations reuse `IBookingService`, so capacity, duplicate, started-session, and active-membership rules stay identical to staff booking.
 * Profile editing reuses `IMemberService` and updates the linked Identity email/user name/phone in the same EF transaction; a failure rolls both back.
+* Every profile save requires the current password. Changing the sign-in email marks it unconfirmed, sends a fresh confirmation link outside the transaction, and blocks the next sign-in until that link is used. Keeping the same email preserves `EmailConfirmed`.
 * Health records remain staff-managed; members see only `Recorded` / `Not recorded`.
 * `Member` + another role follows the staff home policy (`SuperAdmin` -> dashboard, otherwise analytics); only a member-only account lands in `/Member`.
 
@@ -45,8 +46,8 @@ Give a registered `Member` a safe landing page after login that shows their own 
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
-* E2E coverage: login redirect to `/Member`, own booking visible, other member's booking hidden, unlinked-account notice and AccessDenied redirect, self-edit with Identity sync, self-book/self-cancel, started-session and missing-membership rejection
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `126 Passed / 0 Failed / 2 Skipped` (browser tests opt-in)
+* E2E coverage: login redirect to `/Member`, own booking visible, other member's booking hidden, unlinked-account notice and AccessDenied redirect, self-edit with Identity sync, wrong-current-password rollback, unchanged-email confirmation preserved, fresh confirmation after email change, self-book/self-cancel, started-session and missing-membership rejection
 
 ## Risks and follow-ups
 

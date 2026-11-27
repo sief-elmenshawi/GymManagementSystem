@@ -4,7 +4,9 @@ using GymManagement.BLL.ViewModels.ApplicationViewModels;
 using GymManagement.Controllers;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
+using GymManagement.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +42,7 @@ namespace GymManagement.PL.Controllers
             return View();
         }
         [HttpPost]
+        [EnableRateLimiting(AuthenticationRateLimiting.PolicyName)]
         public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct = default)
         {
             if (!ModelState.IsValid) return View(model);
@@ -243,6 +246,7 @@ namespace GymManagement.PL.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [EnableRateLimiting(AuthenticationRateLimiting.PolicyName)]
         public async Task<IActionResult> ResendEmailConfirmation(
             ResendEmailConfirmationViewModel model,
             CancellationToken ct = default)
@@ -276,6 +280,7 @@ namespace GymManagement.PL.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [EnableRateLimiting(AuthenticationRateLimiting.PolicyName)]
         public async Task<IActionResult> ForgotPassword(
             ForgotPasswordViewModel model,
             CancellationToken ct = default)
@@ -337,6 +342,7 @@ namespace GymManagement.PL.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [EnableRateLimiting(AuthenticationRateLimiting.PolicyName)]
         public async Task<IActionResult> ResetPassword(
             ResetPasswordViewModel model,
             CancellationToken ct = default)

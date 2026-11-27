@@ -9,6 +9,7 @@ using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using GymManagement.PL;
 using GymManagement.Infrastructure.Email;
+using GymManagement.Infrastructure.RateLimiting;
 
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
@@ -36,9 +37,12 @@ namespace GymManagementPL
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 
+            builder.Services.AddAuthenticationRateLimiting(builder.Configuration);
+
             builder.Services.Configure<EmailOptions>(
                 builder.Configuration.GetSection(EmailOptions.SectionName));
             builder.Services.AddSingleton<DevelopmentMailbox>();
+            builder.Services.AddSingleton<IEmailDeliveryMonitor, EmailDeliveryMonitor>();
             builder.Services.AddScoped<IAppEmailSender, AppEmailSender>();
 
             builder.Services.AddDbContext<GymDbContext>(options =>
@@ -144,6 +148,9 @@ namespace GymManagementPL
             }
 
             app.UseRouting();
+            // Endpoint-specific policies ([EnableRateLimiting]) require the limiter
+            // to run after routing so the matched endpoint metadata is available.
+            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
 

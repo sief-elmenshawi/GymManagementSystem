@@ -72,5 +72,5 @@ All account actions allow anonymous access. The development mailbox endpoints ar
 ## Risks and follow-ups
 
 * **Resolved:** resend-confirmation GET/POST exists and reissues a link only for an existing unconfirmed account, with the same generic response for confirmed and unknown emails.
-* **Accepted by design:** SMTP delivery failures are logged but do not roll back registration or change the confirmation state; operations should monitor those logs.
+* **Accepted by design:** SMTP delivery failures are logged but do not roll back registration or change the confirmation state. They now also increment the `GymManagement.Email` / `email_delivery_failures` counter (tagged by reason and SMTP host); see [Production configuration](../deployment/PRODUCTION_CONFIGURATION.md#email-delivery-monitoring) for alert guidance.
 * **Accepted by design:** the development mailbox is in-memory, cleared on restart, and mapped only in Development. Production uses configured SMTP and has no mailbox endpoint.

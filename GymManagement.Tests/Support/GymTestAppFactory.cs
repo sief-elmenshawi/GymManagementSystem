@@ -9,7 +9,11 @@ internal sealed class GymTestAppFactory : WebApplicationFactory<Program>
 {
     private readonly Dictionary<string, string?> _settings;
 
-    public GymTestAppFactory(string connectionString, string databaseName, string seedPassword)
+    public GymTestAppFactory(
+        string connectionString,
+        string databaseName,
+        string seedPassword,
+        IDictionary<string, string?>? extraSettings = null)
     {
         _settings = new Dictionary<string, string?>
         {
@@ -17,6 +21,14 @@ internal sealed class GymTestAppFactory : WebApplicationFactory<Program>
                 TestDatabase.ToTestConnectionString(connectionString, databaseName),
             ["SeedUsers:Password"] = seedPassword,
         };
+
+        if (extraSettings is not null)
+        {
+            foreach (var setting in extraSettings)
+            {
+                _settings[setting.Key] = setting.Value;
+            }
+        }
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

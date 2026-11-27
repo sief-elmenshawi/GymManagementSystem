@@ -36,6 +36,8 @@ Environment-variable names use `__` for configuration sections (for example, `Em
 | `Email__Smtp__UseSsl` | Optional | SSL/STARTTLS. Runtime default: `true`. |
 | `Email__Smtp__User` | Conditional | SMTP username when the relay requires authentication. |
 | `Email__Smtp__Password` | Conditional | SMTP secret when the relay requires authentication. |
+| `AuthenticationRateLimit__PermitLimit` | Optional | Requests per client IP and account endpoint per window. Runtime default: `8`. |
+| `AuthenticationRateLimit__WindowSeconds` | Optional | Fixed-window length in seconds. Runtime default: `60`. |
 | `GYM_TEST_CONNECTION_STRING` | Test runs only | Enables SQL integration/E2E/performance tests. Do not set in Production. |
 
 Do not fill values in `production.env.example`. Copy it to a secure location and keep the copy out of Git.
@@ -119,8 +121,29 @@ For orchestrators, populate the same names from the platform's secret mechanism 
 | SMTP host missing | Each attempted confirmation/reset email is logged as an error and skipped. Registration still succeeds, but the user cannot sign in until confirmed. |
 | Pending EF migrations | Applied automatically at startup before seeding. |
 | HTTPS redirection | Enabled only when an HTTPS URL/port is configured. |
+| Too many login/reset requests from one IP | The endpoint returns `429` with `Retry-After`; other endpoints are unaffected. |
 
-Because `SignIn.RequireConfirmedAccount` is `true`, Production must have working email delivery for self-service registration and password recovery.
+Because `SignIn.RequireConfirmedAccount` is `true`, Production must have working email delivery for self-service registration, password recovery, and member email changes.
+
+## Email delivery monitoring
+
+`AppEmailSender` reports every outcome through `IEmailDeliveryMonitor`. The default `EmailDeliveryMonitor` cannot throw on delivery failure, so the existing "log and skip" behavior is unchanged: registration and profile edits still commit when SMTP is unavailable.
+
+| Signal | Name / template | Notes |
+| --- | --- | --- |
+| Meter | `GymManagement.Email` | Export with an OpenTelemetry metrics exporter. |
+| Counter | `email_delivery_failures` | Tags: `reason` (`NotConfigured` / `SmtpError`), `smtp_host` (`none` when unset). No addresses in tags. |
+| Counter | `email_delivery_successes` | Increments for SMTP sends and Development mailbox captures. |
+| Log | `Email delivery is not configured... Failed for {Email} (subject: {Subject}).` | Log level `Error`; occurs once per attempted email when no SMTP host is set. |
+| Log | `Failed to send account email to {Email} (subject: {Subject}, smtp host: {SmtpHost}).` | Log level `Error` with the SMTP exception attached. |
+
+Recommended alerts:
+
+* Page when `rate(email_delivery_failures[5m]) > 0` in Production — with `RequireConfirmedAccount = true`, users cannot sign in or confirm a changed email while delivery is broken.
+* Warn when `email_delivery_successes` stays at zero while registrations or reset requests are occurring.
+* A log-based alert on the two `Error` templates above is equivalent if metrics are not exported yet.
+
+To add a webhook or ticket integration, replace the `IEmailDeliveryMonitor` singleton in the host composition with an implementation that forwards `RecordFailure` to that system; keep the counters/logs as the fallback signal. Do not put webhook secrets in `appsettings.json` — use the same environment/secret sources described above.
 
 ## Verify before and after deployment
 
@@ -169,6 +192,7 @@ dotnet ef migrations list --project GymManagement.DAL --startup-project GymManag
 | `FAIL: Environment must be Production` | Set `ASPNETCORE_ENVIRONMENT=Production` in the same process/service context. |
 | `AutoMapper ... not a well-formed JWT` | Use a real three-segment license key from one of the supported variables. The checker does not print it. |
 | Startup warning about seed admin password | Expected when no seed password is set; default users are not created. |
-| `Email delivery is not configured` in logs | Set `Email__Smtp__Host` and any provider-required credentials. Production has no mailbox fallback. |
+| `Email delivery is not configured` in logs / `email_delivery_failures{reason="NotConfigured"}` | Set `Email__Smtp__Host` and any provider-required credentials. Production has no mailbox fallback. |
+| `Failed to send account email` / `email_delivery_failures{reason="SmtpError"}` | Check relay reachability, credentials, `Email__From`, port and SSL settings; the exception is attached to the log. |
 | User secrets work locally but not on the server | User Secrets are Development-only; use one of the mechanisms above. |
 | Script reports a missing key that you know is set | Run the checker in the same account/context as the service, or pass `-EnvFile` explicitly. |

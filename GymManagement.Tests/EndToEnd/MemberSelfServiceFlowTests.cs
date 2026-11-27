@@ -2,6 +2,7 @@ using System.Net;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
 using GymManagement.DAL.Models.Enums;
+using GymManagement.Infrastructure.Email;
 using GymManagement.Tests.Support;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +71,7 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
                 ["BuildingNumber"] = "22",
                 ["City"] = "Alexandria",
                 ["Street"] = "Self Service Street",
+                ["CurrentPassword"] = Password,
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
             });
         AccountTestFlows.AssertRedirect(response, "/Member");
@@ -89,12 +91,87 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
             Assert.Equal(newEmail, user.Email);
             Assert.Equal(newEmail, user.UserName);
             Assert.Equal(newPhone, user.PhoneNumber);
-            Assert.True(user.EmailConfirmed);
+            Assert.False(user.EmailConfirmed);
             Assert.False(await db.Users.AnyAsync(user => user.Email == email));
         }
 
+        // The new address must be confirmed before the next sign-in.
+        await AccountTestFlows.ConfirmEmailAsync(browser, newEmail);
+
         using var loginBrowser = CreateBrowser(factory);
         await LoginAsync(loginBrowser, newEmail);
+    }
+
+    [SqlServerFact]
+    public async Task EditProfile_WrongCurrentPassword_LeavesProfileUnchanged()
+    {
+        var factory = RequireFactory();
+        var email = NewEmail("self.wrong.password");
+        var newEmail = NewEmail("self.wrong.updated");
+        await RegisterAndConfirmAsync(factory, email);
+
+        using var browser = CreateBrowser(factory);
+        await LoginAsync(browser, email);
+
+        var editPage = await browser.GetStringAsync("/Member/EditProfile");
+        using var response = await browser.PostFormAsync(
+            "/Member/EditProfile",
+            new Dictionary<string, string>
+            {
+                ["Email"] = newEmail,
+                ["Phone"] = NewPhone(),
+                ["BuildingNumber"] = "99",
+                ["City"] = "Cairo",
+                ["Street"] = "Unchanged Street",
+                ["CurrentPassword"] = "Wrong@12345",
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("current password is incorrect", body, StringComparison.OrdinalIgnoreCase);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+        Assert.True(await db.Members.AnyAsync(member => member.Email == email));
+        Assert.False(await db.Members.AnyAsync(member => member.Email == newEmail));
+        var user = await db.Users.AsNoTracking().SingleAsync(user => user.Email == email);
+        Assert.True(user.EmailConfirmed);
+    }
+
+    [SqlServerFact]
+    public async Task EditProfile_UnchangedEmail_KeepsEmailConfirmed()
+    {
+        var factory = RequireFactory();
+        var email = NewEmail("self.same.email");
+        var newPhone = NewPhone();
+        await RegisterAndConfirmAsync(factory, email);
+        factory.Services.GetRequiredService<DevelopmentMailbox>().Clear();
+
+        using var browser = CreateBrowser(factory);
+        await LoginAsync(browser, email);
+
+        var editPage = await browser.GetStringAsync("/Member/EditProfile");
+        using var response = await browser.PostFormAsync(
+            "/Member/EditProfile",
+            new Dictionary<string, string>
+            {
+                ["Email"] = email,
+                ["Phone"] = newPhone,
+                ["BuildingNumber"] = "12",
+                ["City"] = "Giza",
+                ["Street"] = "Same Email Street",
+                ["CurrentPassword"] = Password,
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
+            });
+        AccountTestFlows.AssertRedirect(response, "/Member");
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+        var user = await db.Users.AsNoTracking().SingleAsync(user => user.Email == email);
+        Assert.Equal(newPhone, user.PhoneNumber);
+        Assert.True(user.EmailConfirmed);
+        Assert.Empty(factory.Services.GetRequiredService<DevelopmentMailbox>().GetByEmail(email));
     }
 
     [SqlServerFact]

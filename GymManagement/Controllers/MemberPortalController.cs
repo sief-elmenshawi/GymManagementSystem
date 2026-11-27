@@ -1,3 +1,4 @@
+using System.Net;
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.BookingViewModels;
@@ -21,17 +22,23 @@ namespace GymManagement.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMemberService _memberService;
         private readonly IBookingService _bookingService;
+        private readonly IAppEmailSender _emailSender;
+        private readonly ILogger<MemberPortalController> _logger;
 
         public MemberPortalController(
             GymDbContext dbContext,
             UserManager<ApplicationUser> userManager,
             IMemberService memberService,
-            IBookingService bookingService)
+            IBookingService bookingService,
+            IAppEmailSender emailSender,
+            ILogger<MemberPortalController> logger)
         {
             _dbContext = dbContext;
             _userManager = userManager;
             _memberService = memberService;
             _bookingService = bookingService;
+            _emailSender = emailSender;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(CancellationToken ct = default)
@@ -156,6 +163,27 @@ namespace GymManagement.Controllers
 
             if (!ModelState.IsValid) return View(model);
 
+            if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+            {
+                ModelState.AddModelError(
+                    nameof(model.CurrentPassword),
+                    "The current password is required.");
+                return View(model);
+            }
+
+            if (!await _userManager.CheckPasswordAsync(current.User, model.CurrentPassword))
+            {
+                ModelState.AddModelError(
+                    nameof(model.CurrentPassword),
+                    "The current password is incorrect.");
+                return View(model);
+            }
+
+            var emailChanged = !string.Equals(
+                current.User.Email,
+                model.Email,
+                StringComparison.OrdinalIgnoreCase);
+
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
             try
             {
@@ -174,6 +202,12 @@ namespace GymManagement.Controllers
                 current.User.Email = model.Email;
                 current.User.UserName = model.Email;
                 current.User.PhoneNumber = model.Phone;
+                if (emailChanged)
+                {
+                    // A new address is not verified until the member follows the link
+                    // sent below; sign-in already requires a confirmed email.
+                    current.User.EmailConfirmed = false;
+                }
 
                 var identityResult = await _userManager.UpdateAsync(current.User);
                 if (!identityResult.Succeeded)
@@ -196,7 +230,15 @@ namespace GymManagement.Controllers
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = "Your profile has been updated.";
+            if (emailChanged)
+            {
+                // Email delivery is deliberately outside the database transaction.
+                await SendEmailChangeConfirmationAsync(current.User, ct);
+            }
+
+            TempData["SuccessMessage"] = emailChanged
+                ? "Your profile has been updated. Confirm your new email address before signing in again."
+                : "Your profile has been updated.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -257,6 +299,30 @@ namespace GymManagement.Controllers
 
         private static string FullName(ApplicationUser? user) =>
             $"{user?.FirstName} {user?.LastName}".Trim();
+
+        private async Task SendEmailChangeConfirmationAsync(
+            ApplicationUser user,
+            CancellationToken ct)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var callbackUrl = Url.Action(
+                "ConfirmEmail",
+                "Account",
+                new { userId = user.Id, token },
+                Request.Scheme) ?? "/Account/ConfirmEmail";
+
+            await _emailSender.SendAsync(
+                user.Email!,
+                "Confirm your new gym email address",
+                $"<p>Hello {WebUtility.HtmlEncode(user.FirstName)},</p>" +
+                $"<p>Your sign-in email was changed. Confirm the new address before signing in again:</p>" +
+                $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Confirm email address</a></p>",
+                ct);
+
+            _logger.LogInformation(
+                "Email change confirmation issued for user {UserId}.",
+                user.Id);
+        }
 
         private void AddIdentityErrors(IdentityResult result)
         {

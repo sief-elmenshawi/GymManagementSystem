@@ -9,24 +9,26 @@ namespace GymManagement.Infrastructure.Email;
 /// Uses SMTP when configured. In Development, unconfigured SMTP falls back to an
 /// in-memory mailbox. In other environments a missing configuration is logged as
 /// an error instead of leaking confirmation links or storing sensitive messages.
+/// Failures are reported through <see cref="IEmailDeliveryMonitor"/>; delivery never
+/// rolls back the database operation that requested it.
 /// </summary>
 public sealed class AppEmailSender : IAppEmailSender
 {
     private readonly EmailOptions _options;
     private readonly DevelopmentMailbox _mailbox;
     private readonly IWebHostEnvironment _environment;
-    private readonly ILogger<AppEmailSender> _logger;
+    private readonly IEmailDeliveryMonitor _monitor;
 
     public AppEmailSender(
         IOptions<EmailOptions> options,
         DevelopmentMailbox mailbox,
         IWebHostEnvironment environment,
-        ILogger<AppEmailSender> logger)
+        IEmailDeliveryMonitor monitor)
     {
         _options = options.Value;
         _mailbox = mailbox;
         _environment = environment;
-        _logger = logger;
+        _monitor = monitor;
     }
 
     public async Task SendAsync(
@@ -47,12 +49,16 @@ public sealed class AppEmailSender : IAppEmailSender
                     subject,
                     htmlBody,
                     DateTimeOffset.UtcNow));
+                _monitor.RecordSuccess();
                 return;
             }
 
-            _logger.LogError(
-                "Email delivery is not configured. Set Email__Smtp__Host (and credentials) " +
-                "to enable confirmation and password-reset emails.");
+            _monitor.RecordFailure(new EmailDeliveryFailure(
+                EmailDeliveryFailureReason.NotConfigured,
+                toEmail,
+                subject,
+                smtp.Host,
+                Exception: null));
             return;
         }
 
@@ -78,6 +84,7 @@ public sealed class AppEmailSender : IAppEmailSender
             }
 
             await client.SendMailAsync(message, ct);
+            _monitor.RecordSuccess();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -85,7 +92,12 @@ public sealed class AppEmailSender : IAppEmailSender
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send account email to {Email}.", toEmail);
+            _monitor.RecordFailure(new EmailDeliveryFailure(
+                EmailDeliveryFailureReason.SmtpError,
+                toEmail,
+                subject,
+                smtp.Host,
+                ex));
         }
     }
 }

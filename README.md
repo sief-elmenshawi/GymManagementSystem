@@ -116,7 +116,7 @@ GymManagementSolution
 │   ├── Migrations / Seeders
 │   └── List projection DTOs
 │
-├── GymManagement.Tests        Unit, SQL performance, and HTTP E2E tests
+├── GymManagement.Tests        Unit, SQL performance, HTTP E2E, and opt-in browser UI tests
 │
 └── GymManagementSolution.slnx
 ```
@@ -135,7 +135,7 @@ Dependency direction: `GymManagement` → `GymManagement.BLL` → `GymManagement
 | Identity | ASP.NET Core Identity with `IdentityRole` |
 | Frontend | Razor, HTML5, CSS, Bootstrap, JavaScript, jQuery |
 | Assets | Frontend libraries vendored under `wwwroot/lib` for offline use |
-| Testing | xUnit, Moq, EF Core SQL Server integration tests |
+| Testing | xUnit, Moq, EF Core SQL Server integration tests, Playwright/Chromium UI tests |
 
 Patterns used: Repository, Unit of Work, Dependency Injection, and layered services.
 
@@ -181,6 +181,9 @@ Environment variables:
 | `AUTOMAPPER_LICENSE_KEY` | AutoMapper key required outside Development |
 | `LUCKYPENNY_LICENSE_KEY` | Shared fallback for the AutoMapper key |
 | `GYM_TEST_CONNECTION_STRING` | Enables SQL Server integration/E2E/performance tests |
+| `GYM_RUN_BROWSER_TESTS` | Set to `1` to enable Chromium-driven UI tests |
+| `AuthenticationRateLimit__PermitLimit` | Login/reset requests per client IP per window (default `8`) |
+| `AuthenticationRateLimit__WindowSeconds` | Rate-limit window in seconds (default `60`) |
 | `Email__From` | Sender address for account emails (default `no-reply@gymmanagement.local`) |
 | `Email__Smtp__Host` | SMTP host; when empty, Development uses the local mailbox |
 | `Email__Smtp__Port` | SMTP port (default `587`) |
@@ -188,7 +191,9 @@ Environment variables:
 | `Email__Smtp__User` | SMTP username |
 | `Email__Smtp__Password` | SMTP password/secret |
 
-In Development, confirmation and reset messages are captured in memory and can be read from `GET /dev-mailbox/{email}` (`DELETE /dev-mailbox` clears them). These endpoints are never mapped outside Development. In other environments, configure SMTP; otherwise email delivery is skipped and logged as an error.
+In Development, confirmation and reset messages are captured in memory and can be read from `GET /dev-mailbox/{email}` (`DELETE /dev-mailbox` clears them). These endpoints are never mapped outside Development. In other environments, configure SMTP; otherwise email delivery is skipped and logged as an error. Failures also increment the `email_delivery_failures` counter; see [email delivery monitoring](docs/deployment/PRODUCTION_CONFIGURATION.md#email-delivery-monitoring).
+
+Anonymous login, resend-confirmation, forgot-password and reset-password POSTs are rate limited per client IP and endpoint (`AuthenticationRateLimit__*` settings above). Exceeding the limit returns `429` with `Retry-After`.
 
 > Never commit real connection strings, passwords, or license keys.
 
@@ -233,13 +238,29 @@ The production checker is optional for local runs; it validates names for a depl
 
 SQL-dependent tests are skipped unless `GYM_TEST_CONNECTION_STRING` is set. With it, tests create and drop disposable databases named `GymManagement_E2E_*` and `GymManagement_PerfTest_*`.
 
+### Browser-driven UI tests
+
+`BrowserUiFlowTests` use Playwright with headless Chromium against a real Kestrel process. They are skipped by default; the skip message lists any missing prerequisite. To run them locally:
+
+```powershell
+# Once per machine / after a Playwright version upgrade
+powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net9.0\playwright.ps1 install chromium
+
+$conn = (Get-Content GymManagement/appsettings.json -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
+$env:GYM_TEST_CONNECTION_STRING = $conn
+$env:GYM_RUN_BROWSER_TESTS = '1'
+dotnet test GymManagementSolution.slnx --nologo --filter FullyQualifiedName~BrowserUiFlowTests
+```
+
+The fixture starts the app on a free localhost port with a disposable `GymManagement_E2E_Browser_*` database and Development mailbox, then tears both down. Never set `GYM_RUN_BROWSER_TESTS` in Production.
+
 EF tooling can also be checked without starting the web app:
 
 ```bash
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full verification: build `0 Warning(s), 0 Error(s)`, tests `107 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
+Last full verification: build `0 Warning(s), 0 Error(s)`, tests `126 Passed / 0 Failed / 2 Skipped` (browser tests are opt-in), no vulnerable packages, EF tooling OK. With `GYM_RUN_BROWSER_TESTS=1` the browser subset passes `2 / 2`.
 
 ---
 
@@ -277,7 +298,6 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 * Add payment integration
 * Add notification system using SignalR
 * Expand role-based authorization to more controllers
-* Add browser-driven UI tests on top of the existing HTTP E2E tests
 
 ---
 

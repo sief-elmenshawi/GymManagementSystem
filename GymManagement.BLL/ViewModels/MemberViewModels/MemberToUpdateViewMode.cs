@@ -31,5 +31,10 @@ namespace GymManagement.BLL.ViewModels.MemberViewModels
         [StringLength(150, MinimumLength = 2, ErrorMessage = "Street must be between 2 and 150 characters")]
         [RegularExpression(@"^[a-zA-Z0-9\s]+$", ErrorMessage = "Street can only contain letters, numbers, and spaces")]
         public string Street { get; set; } = default!;
+
+        // Required only by the member self-service edit; staff edits use the same VM.
+        [DataType(DataType.Password)]
+        [Display(Name = "Current password")]
+        public string? CurrentPassword { get; set; }
     }
 }
