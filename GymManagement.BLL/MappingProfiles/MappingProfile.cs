@@ -45,6 +45,15 @@ namespace GymManagement.BLL.MappingProfile
             CreateMap<Member, MemberViewModel>()
              .ForMember(dest => dest.Address, opt => opt.MapFrom(src => $"{src.Address.BuildingNumber} - {src.Address.Street} - {src.Address.City}"))
              .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth.ToShortDateString()))
+             .ForMember(dest => dest.HasPhoto, opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.Photo)))
+             .ForMember(dest => dest.PlanName, opt => opt.Ignore())
+             .ForMember(dest => dest.MembershipStartDate, opt => opt.Ignore())
+             .ForMember(dest => dest.MembershipEndDate, opt => opt.Ignore());
+
+            CreateMap<MemberListInfo, MemberViewModel>()
+             .ForMember(dest => dest.Photo, opt => opt.Ignore())
+             .ForMember(dest => dest.Address, opt => opt.Ignore())
+             .ForMember(dest => dest.DateOfBirth, opt => opt.Ignore())
              .ForMember(dest => dest.PlanName, opt => opt.Ignore())
              .ForMember(dest => dest.MembershipStartDate, opt => opt.Ignore())
              .ForMember(dest => dest.MembershipEndDate, opt => opt.Ignore());
@@ -176,6 +185,8 @@ namespace GymManagement.BLL.MappingProfile
                      .ForMember(dist => dist.MemberName, Option => Option.MapFrom(Src => Src.Member.Name))
                      .ForMember(dist => dist.PlanName, Option => Option.MapFrom(Src => Src.Plan.Name))
                                           .ForMember(dist => dist.StartDate, Option => Option.MapFrom(X => X.CreatedAt));
+
+            CreateMap<MembershipListInfo, MemberShipViewModel>();
 
             CreateMap<CreateMemberShipViewModel, Membership>()
                 .ForMember(dest => dest.Member, opt => opt.Ignore())

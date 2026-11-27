@@ -14,8 +14,10 @@ namespace GymManagement.DAL.Repositorities.Interfaces
               Expression<Func<Session, bool>>? predicate = null,
               CancellationToken ct = default);
 
-        Task<IEnumerable<SessionListInfo>> GetSessionsWithAvailableSlotsAsync(
+        Task<List<SessionListInfo>> GetSessionsWithAvailableSlotsAsync(
               Expression<Func<Session, bool>>? predicate = null,
+              int page = 1,
+              int pageSize = 12,
               CancellationToken ct = default);
 
         Task<int> GetCountOfBookedSlotsAsync(int sessionId , CancellationToken ct = default);

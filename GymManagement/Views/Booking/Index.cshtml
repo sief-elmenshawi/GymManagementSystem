@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SessionViewModel>
+﻿@model PagedResult<SessionViewModel>
 
 @{
     ViewData["Title"] = "Bookings";
@@ -6,7 +6,7 @@
 
 <div class="container">
   
-    @if (Model != null && Model.Any())
+    @if (Model?.Items.Any() == true)
     {
 
         <header class="d-flex justify-content-between mt-5 mb-4 align-items-center">
@@ -17,7 +17,7 @@
         </header>
 
             <div class="row g-4 ">
-                @foreach (var session in Model.Where(X => X.Status == "Upcoming"))
+                @foreach (var session in Model.Items.Where(X => X.Status == "Upcoming"))
                 {
                     <div class="col-12 col-md-6 col-lg-4">
                         <div class="card h-100 shadow-sm border-0 session-card">
@@ -74,7 +74,7 @@
             </div>
         </header>
             <div class="row g-4 ">
-                @foreach (var session in Model.Where(X => X.Status == "Ongoing"))
+                @foreach (var session in Model.Items.Where(X => X.Status == "Ongoing"))
                 {
                     <div class="col-12 col-md-6 col-lg-4">
                         <div class="card h-100 shadow-sm border-0 session-card">
@@ -124,6 +124,8 @@
                 }
 
             </div>
+
+        @await Html.PartialAsync("_Pager", Model.Paging)
     }
     else
     {

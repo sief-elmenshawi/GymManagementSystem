@@ -61,28 +61,20 @@ namespace GymManagement.BLL.Service.Classes
                 return Result.Ok();
          }
 
-        public async Task<IEnumerable<MemberViewModel>> GetAllMembersAsync(CancellationToken ct = default)
+        public async Task<PagedResult<MemberViewModel>> GetAllMembersAsync(
+            CancellationToken ct = default, int page = 1, int pageSize = 20)
         {
-            var members = await unitOfWork.GetRepository<Member>().GetAllAsync(ct: ct);
-            return mapper.Map<List<MemberViewModel>>(members);
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
 
-            #region MyRegion
-            //List<MemberViewModel> membersViewModel= new List<MemberViewModel>();
-            //foreach (var member in members)
-            //{
-            //    var memberViewModel = new MemberViewModel()
-            //    {
-            //        Name = member.Name,
-            //        Email = member.Email,
-            //        Gender = member.Gender.ToString(),
-            //        Phone = member.Phone,
-            //        Photo = member.Photo,
-            //        Id = member.Id,
-            //    };
-            //   membersViewModel.Add(memberViewModel);
-            //}
-            //return membersViewModel; 
-            #endregion
+            var members = await unitOfWork.MemberRepository.GetMembersForListAsync(page, pageSize, ct);
+            var totalCount = await unitOfWork.GetRepository<Member>().CountAsync(ct: ct);
+
+            return new PagedResult<MemberViewModel>
+            {
+                Items = mapper.Map<List<MemberViewModel>>(members),
+                Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
+            };
         }
 
         public async Task<string?> GetMemberPhotoAsync(int memberId, CancellationToken ct = default)

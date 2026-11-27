@@ -12,7 +12,8 @@ namespace GymManagement.BLL.Services.Interfaces
     {
         Task<Result<SessionViewModel>> GetSessionByIdAysnc(int sessionId, CancellationToken ct);
          
-        Task<IEnumerable<SessionViewModel>?> GetAllSessionsAync(CancellationToken ct = default);
+        Task<PagedResult<SessionViewModel>?> GetAllSessionsAync(
+            CancellationToken ct = default, int page = 1, int pageSize = 12);
 
         Task<Result> CreateSessionAync(CreateSessionViewModel model, CancellationToken ct = default);
 

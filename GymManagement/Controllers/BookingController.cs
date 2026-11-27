@@ -16,8 +16,8 @@ namespace GymManagementPL.Controllers
 		{
 			_bookingService = bookingService;
 		}
-        public async Task<IActionResult> Index(CancellationToken ct)
-          => View(await _bookingService.GetAllSessionsAsync(ct));
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
+          => View(await _bookingService.GetAllSessionsAsync(ct, page));
 
 
         [HttpGet]

@@ -22,9 +22,9 @@ namespace GymManagement.PL.Controllers
 
         // Get BaseUrl/Member/Index
         // Index- List all Member
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
         {
-            var members = await memberService.GetAllMembersAsync(ct);
+            var members = await memberService.GetAllMembersAsync(ct, page);
             return View(members);
         }
 

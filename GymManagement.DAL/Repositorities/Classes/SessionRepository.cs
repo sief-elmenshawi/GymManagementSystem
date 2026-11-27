@@ -31,8 +31,10 @@ namespace GymManagement.DAL.Repositorities.Classes
             return await query.ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<SessionListInfo>> GetSessionsWithAvailableSlotsAsync(
+        public async Task<List<SessionListInfo>> GetSessionsWithAvailableSlotsAsync(
             Expression<Func<Session, bool>>? predicate = null,
+            int page = 1,
+            int pageSize = 12,
             CancellationToken ct = default)
         {
             var sessions = dbContext.Sessions.AsNoTracking();
@@ -41,7 +43,7 @@ namespace GymManagement.DAL.Repositorities.Classes
                 sessions = sessions.Where(predicate);
             }
 
-            return await sessions
+            var query = sessions
                 .Select(s => new SessionListInfo
                 {
                     Id = s.Id,
@@ -53,6 +55,11 @@ namespace GymManagement.DAL.Repositorities.Classes
                     CategoryName = s.Category.CategoryName,
                     AvailableSlots = s.Capacity - s.Bookings.Count(),
                 })
+                .OrderByDescending(s => s.StartDate);
+
+            return await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync(ct);
         }
 

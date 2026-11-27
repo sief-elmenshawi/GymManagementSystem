@@ -20,14 +20,33 @@ namespace GymManagement.DAL.Repositorities.Classes
             _dbContext = dbContext;
         }
 
-        public async Task<List<Membership>> GetAllMembershipsWithMemberAndPlanAsync(Expression<Func<Membership, bool>>? predicate = null,
-           CancellationToken ct = default)
+        public async Task<List<MembershipListInfo>> GetMembershipsForListAsync(
+            Expression<Func<Membership, bool>>? predicate = null,
+            int page = 1,
+            int pageSize = 20,
+            CancellationToken ct = default)
         {
-            IQueryable<Membership> query = _dbContext.Memberships.AsNoTracking().Include(m => m.Plan).Include(m => m.Member);
+            IQueryable<Membership> memberships = _dbContext.Memberships.AsNoTracking();
+            if (predicate is not null)
+            {
+                memberships = memberships.Where(predicate);
+            }
 
-            if (predicate is not null) query = query.Where(predicate);
-
-            return await query.ToListAsync(ct);
+            return await memberships
+                .Select(m => new MembershipListInfo
+                {
+                    MemberId = m.MemberId,
+                    PlanId = m.PlanId,
+                    MemberName = m.Member.Name,
+                    PlanName = m.Plan.Name,
+                    StartDate = m.CreatedAt,
+                    EndDate = m.EndDate,
+                })
+                .OrderByDescending(m => m.EndDate)
+                .ThenBy(m => m.MemberId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
         }
 
     }

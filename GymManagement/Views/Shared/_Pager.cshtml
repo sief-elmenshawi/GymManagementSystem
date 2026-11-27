@@ -1,0 +1,37 @@
+@model PagingInfo
+
+@if (Model.TotalPages > 1)
+{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            @if (Model.HasPrevious)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="@action" asp-controller="@controller" asp-route-page="@(Model.Page - 1)">Previous</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            }
+
+            <li class="page-item disabled">
+                <span class="page-link">Page @Model.Page of @Model.TotalPages</span>
+            </li>
+
+            @if (Model.HasNext)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="@action" asp-controller="@controller" asp-route-page="@(Model.Page + 1)">Next</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            }
+        </ul>
+    </nav>
+}

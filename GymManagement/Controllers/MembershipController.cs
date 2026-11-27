@@ -17,8 +17,8 @@ namespace GymManagementPL.Controllers
             _membershipService = membershipService;
         }
 
-        public async Task<IActionResult> Index(CancellationToken ct)
-            => View(await _membershipService.GetAllMembershipsAsync(ct));
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
+            => View(await _membershipService.GetAllMembershipsAsync(ct, page));
 
         [HttpGet]
         public async Task<IActionResult> Create(CancellationToken ct)

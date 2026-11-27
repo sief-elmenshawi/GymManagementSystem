@@ -13,12 +13,18 @@ namespace GymManagement.DAL.Repositorities.Classes
     {
         private readonly GymDbContext dbContext;
         private readonly Dictionary<string, object> repositories = [];
-        public UnitOfWork(GymDbContext dbContext , ISessionRepository sessionRepository , IBookingRepository bookingRepository,IMembershipRepository membershipRepository)
+        public UnitOfWork(
+            GymDbContext dbContext,
+            ISessionRepository sessionRepository,
+            IBookingRepository bookingRepository,
+            IMembershipRepository membershipRepository,
+            IMemberRepository memberRepository)
         {
             this.dbContext = dbContext;
             SessionRepository = sessionRepository;
             BookingRepository = bookingRepository;
             MembershipRepository = membershipRepository;
+            MemberRepository = memberRepository;
         }
 
         public ISessionRepository SessionRepository {  get;}
@@ -26,6 +32,8 @@ namespace GymManagement.DAL.Repositorities.Classes
         public IMembershipRepository MembershipRepository { get; }
 
         public IBookingRepository BookingRepository { get; }
+
+        public IMemberRepository MemberRepository { get; }
 
         public IGenericRepository<TEntity> GetRepository<TEntity>() where TEntity : BaseEntity, new()
         {

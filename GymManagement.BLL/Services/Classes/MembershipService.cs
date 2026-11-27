@@ -7,6 +7,7 @@ using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -62,11 +63,22 @@ namespace GymManagement.BLL.Services.Classes
             return result > 0 ? Result.Ok() : Result.Fail("Failed To Delete Membership");
         }
 
-        public async Task<IEnumerable<MemberShipViewModel>> GetAllMembershipsAsync(CancellationToken ct = default)
+        public async Task<PagedResult<MemberShipViewModel>> GetAllMembershipsAsync(
+            CancellationToken ct = default, int page = 1, int pageSize = 20)
         {
-            var memberships = await unitOfWork.MembershipRepository
-                .GetAllMembershipsWithMemberAndPlanAsync(m => m.EndDate > DateTime.Now, ct);
-            return mapper.Map<IEnumerable<MemberShipViewModel>>(memberships);
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            Expression<Func<Membership, bool>> predicate = m => m.EndDate > DateTime.Now;
+
+            var memberships = await unitOfWork.MembershipRepository.GetMembershipsForListAsync(
+                predicate, page, pageSize, ct);
+            var totalCount = await unitOfWork.MembershipRepository.CountAsync(predicate, ct);
+
+            return new PagedResult<MemberShipViewModel>
+            {
+                Items = mapper.Map<List<MemberShipViewModel>>(memberships),
+                Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
+            };
         }
 
         public async Task<IEnumerable<PlanSelectListViewModel>> GetPlansForDropDownAsync(CancellationToken ct = default)

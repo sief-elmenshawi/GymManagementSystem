@@ -5,7 +5,8 @@ namespace GymManagement.BLL.Service.Interfaces
 {
     public interface IMemberService
     {
-        Task<IEnumerable<MemberViewModel>> GetAllMembersAsync(CancellationToken ct = default);
+        Task<PagedResult<MemberViewModel>> GetAllMembersAsync(
+            CancellationToken ct = default, int page = 1, int pageSize = 20);
 
         Task<Result> CreateMemberAsync(CreateMemberViewModel model, CancellationToken ct = default);
 

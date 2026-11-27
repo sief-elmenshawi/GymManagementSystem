@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SessionViewModel>
+﻿@model PagedResult<SessionViewModel>
 @{
     ViewData["Title"] = "Sessions";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -32,10 +32,10 @@ else if (TempData["ErrorMessage"] != null)
         </a>
     </header>
 
-    @if (Model != null && Model.Any())
+    @if (Model?.Items.Any() == true)
     {
         <div class="row g-4">
-            @foreach (var session in Model)
+            @foreach (var session in Model.Items)
             {
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 session-card">
@@ -92,6 +92,8 @@ else if (TempData["ErrorMessage"] != null)
                 </div>
             }
         </div>
+
+        @await Html.PartialAsync("_Pager", Model.Paging)
     }
     else
     {

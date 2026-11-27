@@ -15,6 +15,7 @@ internal sealed class UnitOfWorkMock
     public Mock<ISessionRepository> SessionRepository { get; } = new();
     public Mock<IBookingRepository> BookingRepository { get; } = new();
     public Mock<IMembershipRepository> MembershipRepository { get; } = new();
+    public Mock<IMemberRepository> MemberListRepository { get; } = new();
 
     public UnitOfWorkMock()
     {
@@ -27,6 +28,7 @@ internal sealed class UnitOfWorkMock
         UnitOfWork.Setup(u => u.SessionRepository).Returns(SessionRepository.Object);
         UnitOfWork.Setup(u => u.BookingRepository).Returns(BookingRepository.Object);
         UnitOfWork.Setup(u => u.MembershipRepository).Returns(MembershipRepository.Object);
+        UnitOfWork.Setup(u => u.MemberRepository).Returns(MemberListRepository.Object);
 
         // Happy-path default; individual tests can override it.
         UnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);

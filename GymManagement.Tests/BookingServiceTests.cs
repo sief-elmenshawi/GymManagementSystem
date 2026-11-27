@@ -213,17 +213,29 @@ public class BookingServiceTests
         _uow.SessionRepository
             .Setup(r => r.GetSessionsWithAvailableSlotsAsync(
                 It.IsAny<Expression<Func<Session, bool>>?>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { session });
+            .ReturnsAsync(new List<SessionListInfo> { session });
+        _uow.SessionRepository
+            .Setup(r => r.CountAsync(
+                It.IsAny<Expression<Func<Session, bool>>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
 
-        var result = (await _service.GetAllSessionsAsync(CancellationToken.None))!.ToList();
+        var result = await _service.GetAllSessionsAsync(CancellationToken.None, 3, 5);
 
-        Assert.Single(result);
-        Assert.Equal(4, result[0].AvailableSlots);
-        Assert.Equal("Trainer One", result[0].TrainerName);
+        Assert.Single(result.Items);
+        Assert.Equal(4, result.Items[0].AvailableSlots);
+        Assert.Equal("Trainer One", result.Items[0].TrainerName);
+        Assert.Equal(3, result.Paging.Page);
+        Assert.Equal(5, result.Paging.PageSize);
+        Assert.Equal(1, result.Paging.TotalCount);
         _uow.SessionRepository.Verify(
             r => r.GetSessionsWithAvailableSlotsAsync(
                 It.IsAny<Expression<Func<Session, bool>>?>(),
+                3,
+                5,
                 It.IsAny<CancellationToken>()),
             Times.Once);
         _uow.SessionRepository.Verify(

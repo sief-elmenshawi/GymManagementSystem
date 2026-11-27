@@ -1,4 +1,4 @@
-﻿@model IEnumerable<MemberViewModel>
+﻿@model PagedResult<MemberViewModel>
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -30,7 +30,7 @@
                 <a asp-controller="Members" asp-action="Create" class="btn btn-fill fw-medium rounded-pill px-3 py-3"> + Add Member </a>
             </header>
 
-            @if (Model != null && Model.Any())
+            @if (Model?.Items.Any() == true)
             {
 
                 <div class="table-responsive " style="overflow: visible;">
@@ -47,12 +47,12 @@
                         </thead>
                         <tbody>
                             @* loop through members and display their data *@
-                            @foreach (var member in Model)
+                            @foreach (var member in Model.Items)
                             {
                                 <tr>
                                     <td>
                                         <span class="avatar">
-                                            @if (!string.IsNullOrEmpty(member.Photo))
+                                            @if (member.HasPhoto)
                                             {
                                                 <img src="@Url.Action("Picture", "Members", new { id = member.Id })"
                                                      alt="@member.Name"
@@ -128,6 +128,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                @await Html.PartialAsync("_Pager", Model.Paging)
             }
             else
             {

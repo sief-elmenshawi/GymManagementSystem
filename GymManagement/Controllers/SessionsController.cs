@@ -20,9 +20,9 @@ namespace GymManagement.PL.Controllers
         }
 
 
-        public async Task<IActionResult> Index(CancellationToken ct )
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
         {
-            var sessions = await sessionService.GetAllSessionsAync(ct);
+            var sessions = await sessionService.GetAllSessionsAync(ct, page);
             return View(sessions);
         }
 

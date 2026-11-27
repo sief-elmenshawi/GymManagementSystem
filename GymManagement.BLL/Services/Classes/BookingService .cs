@@ -11,6 +11,7 @@ using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -87,14 +88,22 @@ namespace GymManagement.BLL.Services.Classes
             var result = await unitOfWork.SaveChangesAsync(ct);
             return result > 0 ? Result.Ok() : Result.Fail("Failed To Book Session");
         }
-        public async Task<IEnumerable<SessionViewModel>> GetAllSessionsAsync(CancellationToken ct = default)
+        public async Task<PagedResult<SessionViewModel>> GetAllSessionsAsync(
+            CancellationToken ct = default, int page = 1, int pageSize = 12)
         {
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            Expression<Func<Session, bool>> predicate = s => s.EndDate >= DateTime.Now;
 
-            var sessions = await unitOfWork.SessionRepository
-                .GetSessionsWithAvailableSlotsAsync(s => s.EndDate >= DateTime.Now, ct);
-            if (sessions is null || !sessions.Any()) return null!;
+            var sessions = await unitOfWork.SessionRepository.GetSessionsWithAvailableSlotsAsync(
+                predicate, page, pageSize, ct);
+            var totalCount = await unitOfWork.SessionRepository.CountAsync(predicate, ct);
 
-            return mapper.Map<IEnumerable<SessionViewModel>>(sessions);
+            return new PagedResult<SessionViewModel>
+            {
+                Items = mapper.Map<List<SessionViewModel>>(sessions),
+                Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
+            };
         }
         public async Task<IEnumerable<MemberForSessionViewModel>> GetMembersForUpcomingBySessionIdAsync(
          int sessionId, CancellationToken ct = default)

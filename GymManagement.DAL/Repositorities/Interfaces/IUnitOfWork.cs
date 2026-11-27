@@ -19,5 +19,7 @@ namespace GymManagement.DAL.Repositorities.Interfaces
 
         public IBookingRepository BookingRepository { get; }
 
+        public IMemberRepository MemberRepository { get; }
+
     }
 }

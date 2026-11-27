@@ -68,6 +68,57 @@ public class MappingProfileTests
     }
 
     [Fact]
+    public void MapsMemberListInfo_WithoutLoadingPhotoOrDetails()
+    {
+        var info = new MemberListInfo
+        {
+            Id = 7,
+            Name = "List Member",
+            Email = "list@example.com",
+            Phone = "01000000000",
+            Gender = Gender.Female,
+            HasPhoto = true,
+        };
+
+        var viewModel = _mapper.Map<MemberViewModel>(info);
+
+        Assert.Equal(7, viewModel.Id);
+        Assert.Equal("List Member", viewModel.Name);
+        Assert.Equal("list@example.com", viewModel.Email);
+        Assert.Equal("01000000000", viewModel.Phone);
+        Assert.Equal("Female", viewModel.Gender);
+        Assert.True(viewModel.HasPhoto);
+        Assert.Null(viewModel.Photo);
+        Assert.Null(viewModel.Address);
+        Assert.Null(viewModel.DateOfBirth);
+    }
+
+    [Fact]
+    public void MapsMembershipListInfo_ToMembershipViewModel()
+    {
+        var start = new DateTime(2026, 1, 1);
+        var end = new DateTime(2026, 12, 31);
+        var info = new MembershipListInfo
+        {
+            MemberId = 5,
+            PlanId = 9,
+            MemberName = "Member One",
+            PlanName = "Gold",
+            StartDate = start,
+            EndDate = end,
+        };
+
+        var viewModel = _mapper.Map<GymManagement.BLL.ViewModels.MembershipViewModels.MemberShipViewModel>(info);
+
+        Assert.Equal(5, viewModel.MemberId);
+        Assert.Equal(9, viewModel.PlanId);
+        Assert.Equal("Member One", viewModel.MemberName);
+        Assert.Equal("Gold", viewModel.PlanName);
+        Assert.Equal(start, viewModel.StartDate);
+        Assert.Equal(end, viewModel.EndDate);
+    }
+
+    [Fact]
     public void MapsUpdatePlanToPlan_AndBack()
     {
         var viewModel = new UpdatePlanViewModel

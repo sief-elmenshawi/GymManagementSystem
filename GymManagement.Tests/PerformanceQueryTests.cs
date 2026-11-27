@@ -80,6 +80,40 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
     }
 
     [SqlServerFact]
+    public async Task MemberListProjection_UsesSqlPagingAndDoesNotLoadPhotos()
+    {
+        var db = RequireDb();
+        var repository = new MemberRepository(db);
+        _counter.Reset();
+
+        var members = (await repository.GetMembersForListAsync(1, 10)).ToList();
+
+        Assert.Equal(2, members.Count);
+        Assert.Equal(new[] { "Booked Member", "Unbooked Member" }, members.Select(m => m.Name));
+        Assert.False(members.Single(m => m.Name == "Booked Member").HasPhoto);
+        Assert.True(members.Single(m => m.Name == "Unbooked Member").HasPhoto);
+        Assert.Equal(1, _counter.Count);
+    }
+
+    [SqlServerFact]
+    public async Task MembershipListProjection_UsesSqlPagingAndLoadsNamesInOneQuery()
+    {
+        var db = RequireDb();
+        var repository = new MembershipRepository(db);
+        _counter.Reset();
+
+        var memberships = (await repository.GetMembershipsForListAsync(m => m.EndDate > DateTime.Now))
+            .ToList();
+
+        var membership = Assert.Single(memberships);
+        Assert.Equal("Booked Member", membership.MemberName);
+        Assert.Equal("Gold", membership.PlanName);
+        Assert.Equal(new DateTime(2026, 1, 1), membership.StartDate);
+        Assert.True(membership.EndDate > DateTime.Now);
+        Assert.Equal(1, _counter.Count);
+    }
+
+    [SqlServerFact]
     public async Task AvailableMembers_AntiJoinExcludesBookedMembersInOneQuery()
     {
         var db = RequireDb();
@@ -112,13 +146,29 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
         };
         var bookedMember = NewMember("Booked Member", "perf.booked@example.com", "01011111111");
         var unbookedMember = NewMember("Unbooked Member", "perf.unbooked@example.com", "01022222222");
+        unbookedMember.Photo = "unbooked.png";
+        var plan = new Plan
+        {
+            Name = "Gold",
+            Description = "Gold plan",
+            DurationDays = 30,
+            Price = 100m,
+            IsActive = true,
+        };
 
         var full = NewSession("Full session", trainer, category);
         var empty = NewSession("Empty session", trainer, category);
-        db.AddRange(category, trainer, bookedMember, unbookedMember, full, empty);
+        db.AddRange(category, trainer, bookedMember, unbookedMember, plan, full, empty);
         await db.SaveChangesAsync();
 
         db.Bookings.Add(new Booking { MemberId = bookedMember.Id, SessionId = full.Id });
+        db.Memberships.Add(new Membership
+        {
+            MemberId = bookedMember.Id,
+            PlanId = plan.Id,
+            CreatedAt = new DateTime(2026, 1, 1),
+            EndDate = DateTime.Now.AddDays(30),
+        });
         await db.SaveChangesAsync();
     }
 

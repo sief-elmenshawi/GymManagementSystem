@@ -50,15 +50,21 @@ namespace GymManagement.BLL.Services.Classes
 
         }
 
-        public async Task<IEnumerable<SessionViewModel>?> GetAllSessionsAync(CancellationToken ct = default)
+        public async Task<PagedResult<SessionViewModel>?> GetAllSessionsAync(
+            CancellationToken ct = default, int page = 1, int pageSize = 12)
         {
-            var sessions = await unitOfWork.SessionRepository.GetSessionsWithAvailableSlotsAsync(ct: ct);
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
 
-            if (sessions is null || !sessions.Any()) return null;
+            var sessions = await unitOfWork.SessionRepository.GetSessionsWithAvailableSlotsAsync(
+                page: page, pageSize: pageSize, ct: ct);
+            var totalCount = await unitOfWork.SessionRepository.CountAsync(ct: ct);
 
-            return mapper.Map<IEnumerable<SessionViewModel>>(
-                sessions.OrderByDescending(session => session.StartDate));
-
+            return new PagedResult<SessionViewModel>
+            {
+                Items = mapper.Map<List<SessionViewModel>>(sessions),
+                Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
+            };
         }
 
         public async Task<IEnumerable<CategorySelectViewModel>> GetCategoriesForDropDownAsync(CancellationToken ct = default)
