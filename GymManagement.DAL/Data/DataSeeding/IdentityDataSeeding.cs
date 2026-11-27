@@ -6,7 +6,7 @@ namespace GymManagement.DAL.Data.DataSeeding
 {
     public static class IdentityDataSeeding
     {
-        private static readonly string[] Roles = { "SuperAdmin", "Admin" };
+        private static readonly string[] Roles = { "SuperAdmin", "Admin", "Member" };
 
         public static async Task SeedAsync(
             RoleManager<IdentityRole> roleManager,

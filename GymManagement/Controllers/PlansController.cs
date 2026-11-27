@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GymManagement.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public class PlansController : Controller
     {
         private readonly IPlanService planService;

@@ -10,7 +10,10 @@ namespace GymManagement.DAL.Models
     {
         public string Photo { get; set; } = default!;
 
-        public HealthRecord HealthRecord { get; set; } = null!;
+        public HealthRecord? HealthRecord { get; set; }
+
+        public string? ApplicationUserId { get; set; }
+        public ApplicationUser? ApplicationUser { get; set; }
 
         public ICollection<Membership> Memberships { get; set; } = new HashSet<Membership>();
 

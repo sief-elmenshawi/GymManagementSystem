@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace GymManagement.PL.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public class SessionsController : Controller
     {
         private readonly ISessionService sessionService;

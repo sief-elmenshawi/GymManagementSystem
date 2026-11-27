@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GymManagementPL.Controllers
 {
-	[Authorize]
+	[Authorize(Roles = "SuperAdmin,Admin")]
 	public class BookingController : Controller
 	{
 		private readonly IBookingService _bookingService;

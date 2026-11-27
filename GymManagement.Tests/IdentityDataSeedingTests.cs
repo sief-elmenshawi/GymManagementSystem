@@ -72,6 +72,23 @@ public sealed class IdentityDataSeedingTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task SeedAsync_CreatesMemberRole()
+    {
+        var roleManager = CreateRoleManager();
+        roleManager.Setup(manager => manager.RoleExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
+        roleManager.Setup(manager => manager.CreateAsync(It.IsAny<IdentityRole>()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        var userManager = CreateUserManager();
+
+        await IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), null);
+
+        roleManager.Verify(
+            manager => manager.CreateAsync(It.Is<IdentityRole>(role => role.Name == "Member")),
+            Times.Once);
+    }
+
     private static Mock<UserManager<ApplicationUser>> CreateUserManager() => new(
         Mock.Of<IUserStore<ApplicationUser>>(),
         null!, null!, null!, null!, null!, null!, null!, null!);

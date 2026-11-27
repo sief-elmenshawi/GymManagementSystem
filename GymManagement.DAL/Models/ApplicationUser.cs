@@ -12,5 +12,7 @@ namespace GymManagement.DAL.Models
         public string FirstName { get; set; } = default!;
         public string LastName { get; set; } = default!;
 
+        public Member? Member { get; set; }
+
     }
 }

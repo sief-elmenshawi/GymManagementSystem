@@ -232,6 +232,10 @@ namespace GymManagement.DAL.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ApplicationUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -267,6 +271,10 @@ namespace GymManagement.DAL.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique()
+                        .HasFilter("[ApplicationUserId] IS NOT NULL");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -641,6 +649,11 @@ namespace GymManagement.DAL.Data.Migrations
 
             modelBuilder.Entity("GymManagement.DAL.Models.Member", b =>
                 {
+                    b.HasOne("GymManagement.DAL.Models.ApplicationUser", "ApplicationUser")
+                        .WithOne("Member")
+                        .HasForeignKey("GymManagement.DAL.Models.Member", "ApplicationUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.OwnsOne("GymManagement.DAL.Models.Address", "Address", b1 =>
                         {
                             b1.Property<int>("MemberId")
@@ -671,6 +684,8 @@ namespace GymManagement.DAL.Data.Migrations
 
                     b.Navigation("Address")
                         .IsRequired();
+
+                    b.Navigation("ApplicationUser");
                 });
 
             modelBuilder.Entity("GymManagement.DAL.Models.Membership", b =>
@@ -796,6 +811,11 @@ namespace GymManagement.DAL.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GymManagement.DAL.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("Member");
+                });
+
             modelBuilder.Entity("GymManagement.DAL.Models.Category", b =>
                 {
                     b.Navigation("Sessions");
@@ -805,8 +825,7 @@ namespace GymManagement.DAL.Data.Migrations
                 {
                     b.Navigation("Bookings");
 
-                    b.Navigation("HealthRecord")
-                        .IsRequired();
+                    b.Navigation("HealthRecord");
 
                     b.Navigation("Memberships");
                 });

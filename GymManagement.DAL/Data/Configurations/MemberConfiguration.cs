@@ -17,6 +17,17 @@ namespace GymManagement.DAL.Data.Configurations
               .HasColumnName("JoinDate")
               .HasDefaultValueSql("GETUTCDATE()");
 
+            builder.Property(x => x.ApplicationUserId)
+              .HasMaxLength(450);
+
+            builder.HasIndex(x => x.ApplicationUserId)
+              .IsUnique()
+              .HasFilter("[ApplicationUserId] IS NOT NULL");
+
+            builder.HasOne(x => x.ApplicationUser)
+              .WithOne(x => x.Member)
+              .HasForeignKey<Member>(x => x.ApplicationUserId)
+              .OnDelete(DeleteBehavior.SetNull);
 
             base.Configure(builder);
         }

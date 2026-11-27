@@ -35,7 +35,7 @@ Let a `SuperAdmin` manage application accounts from `/Users` without editing the
 
 ## Non-goals
 
-* No public registration yet
+* Public registration lives at `/Account/Register` and always assigns `Member`
 * No self-service profile editing
 * No bulk user import/export
 * No new EF migration (uses existing ASP.NET Core Identity tables)

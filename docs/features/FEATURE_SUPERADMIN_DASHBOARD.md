@@ -27,7 +27,7 @@ Give a `SuperAdmin` a single landing page with an at-a-glance summary and direct
 
 ## Non-goals
 
-* User management is a separate feature at `/Users`; public registration is still not implemented
+* User management is a separate feature at `/Users`; public registration is at `/Account/Register`
 * No new CRUD endpoints
 * No new database table, entity, or migration
 * No change to analytics query shapes
@@ -54,4 +54,4 @@ No new API/data contract. The view uses the existing `AnalyticsViewModel` from `
 ## Risks and follow-ups
 
 * The dashboard currently links to existing screens; it does not embed or replace them.
-* Role coverage outside `Dashboard`, `Users`, and `Members` is still authentication-only. Broader role-based authorization is follow-up work.
+* Management controllers are restricted to `SuperAdmin`/`Admin`; `Home` remains available to authenticated members.

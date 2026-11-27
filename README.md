@@ -9,10 +9,18 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 ## 👤 Authentication and account security
 
 * ASP.NET Core Identity with unique emails and account lockout
-* Seeded `SuperAdmin` and `Admin` accounts (only when a seed password is configured)
+* Seeded `SuperAdmin`, `Admin`, and `Member` roles (user accounts only when a seed password is configured)
 * Global antiforgery validation for unsafe requests
 * HTTPS redirection only when an HTTPS URL/port is configured
 * Existing seeded user passwords are **not** reset on later startups
+
+## 📝 Public member registration
+
+* `/Account/Register` is public and linked from the login page
+* Creates an Identity account with **only** the `Member` role; role fields from the request are ignored
+* Creates a linked `Member` record with contact and address details
+* Health records are not collected during registration and can be added later by staff
+* Duplicate Identity/Member emails and member phone numbers are rejected
 
 ## 🧭 Super Admin dashboard
 
@@ -205,7 +213,7 @@ EF tooling can also be checked without starting the web app:
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full verification: build `0 Warning(s), 0 Error(s)`, tests `93 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
+Last full verification: build `0 Warning(s), 0 Error(s)`, tests `99 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
 
 ---
 
@@ -233,7 +241,7 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 | `Trainer` | No | Not seeded by `IdentityDataSeeding` |
 | `Member` | No | Not seeded by `IdentityDataSeeding` |
 
-Most controllers require authentication only; `DashboardController`, `UsersController`, and `MembersController` additionally require `SuperAdmin`.
+`HomeController` requires authentication only. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public registration and login are anonymous.
 
 ---
 

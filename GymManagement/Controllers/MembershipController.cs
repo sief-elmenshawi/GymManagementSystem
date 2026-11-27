@@ -7,7 +7,7 @@ using System.Data;
 
 namespace GymManagementPL.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public class MembershipController : Controller
     {
         private readonly IMembershipService _membershipService;
