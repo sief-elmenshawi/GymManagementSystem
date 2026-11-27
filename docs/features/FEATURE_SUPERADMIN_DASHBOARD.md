@@ -40,18 +40,18 @@ No new API/data contract. The view uses the existing `AnalyticsViewModel` from `
 
 1. User signs in.
 2. Login redirects to `/Home`.
-3. If the user is `SuperAdmin`, Home redirects to `/Dashboard`.
+3. If the user is `SuperAdmin`, Home redirects to `/Dashboard`; `Member` users go to `/Member`.
 4. Dashboard shows analytics counts and links to Members, Trainers, Sessions, Plans, Memberships, and Session Schedule.
 5. Non-`SuperAdmin` users requesting `/Dashboard` are redirected to `/Account/AccessDenied`.
 
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `89 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `103 Passed / 0 Failed / 0 Skipped`
 * Unit tests: `DashboardControllerTests`, `HomeControllerTests`
 * E2E tests: `HomeRoute_RedirectsSuperAdminToDashboard`, `Dashboard_IsForbiddenForAdmin`
 
 ## Risks and follow-ups
 
 * The dashboard currently links to existing screens; it does not embed or replace them.
-* Management controllers are restricted to `SuperAdmin`/`Admin`; `Home` remains available to authenticated members.
+* Management controllers are restricted to `SuperAdmin`/`Admin`; `Member` users land in the separate `/Member` portal.

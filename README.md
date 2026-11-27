@@ -19,14 +19,14 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 * `/Account/Register` is public and linked from the login page
 * Creates an Identity account with **only** the `Member` role; role fields from the request are ignored
 * Creates a linked `Member` record with contact and address details
-* Health records are not collected during registration and can be added later by staff
+* Health records are not collected during registration; staff can add/edit them from the member page
 * Duplicate Identity/Member emails and member phone numbers are rejected
 
 ## 🧭 Super Admin dashboard
 
 * `/Dashboard` is restricted to `SuperAdmin`
 * Shows analytics summary cards and quick links to every management page
-* `Home` redirects `SuperAdmin` users to the dashboard; other authenticated users keep the analytics home page
+* `Home` redirects `SuperAdmin` users to the dashboard and `Member` users to `/Member`; admins keep the analytics home page
 * Users without `SuperAdmin` are redirected to `AccessDenied`
 * Includes a shortcut to `/Users` for account management
 
@@ -44,8 +44,15 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 
 * Create, edit, delete, and list members
 * Store contact details, address, date of birth, gender, and optional photo
-* View member health records
+* View, create, and edit member health records from the member details page
 * Member list is paged and uses a lightweight projection (the photo payload is not loaded)
+
+## 🧍 Member portal
+
+* `/Member` is restricted to the `Member` role
+* Shows the signed-in member's profile, health-record status, and **only their own bookings**
+* Accounts with the `Member` role but no linked profile get a clear contact-admin notice
+* Staff navigation links are hidden from members
 
 ## 🏋️ Trainer management
 
@@ -213,7 +220,7 @@ EF tooling can also be checked without starting the web app:
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full verification: build `0 Warning(s), 0 Error(s)`, tests `99 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
+Last full verification: build `0 Warning(s), 0 Error(s)`, tests `103 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
 
 ---
 
@@ -241,7 +248,7 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 | `Trainer` | No | Not seeded by `IdentityDataSeeding` |
 | `Member` | No | Not seeded by `IdentityDataSeeding` |
 
-`HomeController` requires authentication only. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public registration and login are anonymous.
+`HomeController` requires authentication only and redirects by role. `MemberPortalController` requires `Member`. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public registration and login are anonymous.
 
 ---
 

@@ -2,61 +2,58 @@
 @{
     ViewData["Title"] = "Edit Health Record";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var memberId = ViewContext.RouteData.Values["id"];
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary-color text-white text-center py-4">
-                    <h3 class="mb-1">Health Record</h3>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="card border-0 bg-light p-4 h-100">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="bg-primary-color rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                        <span class="text-white fw-bold">H</span>
-                                    </div>
-                                    <h6 class="text-muted mb-0">Height</h6>
-                                </div>
-                                <h4 class="text-primary-color mb-0">@Model.Height <small>cm</small></h4>
-                            </div>
-                        </div>
+<div class="container mt-5 mb-5">
+    <header class="mb-4">
+        <h2 class="text-primary-color mb-1">Edit Health Record</h2>
+        <p class="text-muted mb-0">Member: <strong>@ViewBag.MemberName</strong></p>
+    </header>
 
-                        <div class="col-md-6">
-                            <div class="card border-0 bg-light p-4 h-100">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="bg-primary-color rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                        <span class="text-white fw-bold">W</span>
-                                    </div>
-                                    <h6 class="text-muted mb-0">Weight</h6>
-                                </div>
-                                <h4 class="text-primary-color mb-0">@Model.Weight <small>kg</small></h4>
-                            </div>
-                        </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form asp-action="HealthRecordEdit" asp-route-id="@memberId" method="post">
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
-                        <div class="col-md-6">
-                            <div class="card border-0 bg-light p-4 h-100">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="bg-danger rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                        <span class="text-white fw-bold">B</span>
-                                    </div>
-                                    <h6 class="text-muted mb-0">Blood Type</h6>
-                                </div>
-                                <h4 class="text-danger mb-0">@Model.BloodType</h4>
-                            </div>
-                        </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Height" class="form-label"></label>
+                        <input asp-for="Height" class="form-control" />
+                        <span asp-validation-for="Height" class="text-danger small"></span>
                     </div>
-
-                    <div class="card-footer bg-white border-0 p-4">
-                        <div class="d-flex justify-content-between gap-2">
-                            <a asp-controller="Members" asp-action="Index" class="btn btn-fill flex-fill">Back to List</a>
-                        </div>
+                    <div class="col-md-6">
+                        <label asp-for="Weight" class="form-label"></label>
+                        <input asp-for="Weight" class="form-control" />
+                        <span asp-validation-for="Weight" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="BloodType" class="form-label"></label>
+                        <select asp-for="BloodType" class="form-select">
+                            <option value="">-- Select --</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                        <span asp-validation-for="BloodType" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Note" class="form-label"></label>
+                        <input asp-for="Note" class="form-control" />
+                        <span asp-validation-for="Note" class="text-danger small"></span>
                     </div>
                 </div>
-            </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn bg-primary-color text-white">Save changes</button>
+                    <a asp-action="HealthRecordDetails" asp-route-id="@memberId" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>

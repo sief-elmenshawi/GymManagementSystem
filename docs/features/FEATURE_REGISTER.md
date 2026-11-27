@@ -32,7 +32,7 @@ Allow a visitor to create a gym member account without administrator interventio
 * The `Member` role is seeded alongside `SuperAdmin` and `Admin`.
 * Identity `UserName` is the email address; login continues to work by email.
 * The Identity account is deleted if role assignment or member creation fails.
-* Health data is not collected at registration. `Member.HealthRecord` is optional until staff add one.
+* Health data is not collected at registration. `Member.HealthRecord` is optional until staff add/edit it from `/Members/HealthRecordCreate/{id}`.
 * `Photo` is stored as an empty string until a staff member uploads one.
 * Deleting the Identity user clears the link (`FK ... ON DELETE SET NULL`) instead of deleting gym history.
 
@@ -57,15 +57,16 @@ Allow a visitor to create a gym member account without administrator interventio
 2. Visitor submits name, email, phone, date of birth, gender, address, and password.
 3. The app creates the Identity user, assigns only `Member`, and creates the linked `Member` record.
 4. The visitor is redirected to login with a success message and signs in normally.
+5. `Home` redirects the new `Member` to `/Member` for their profile and bookings.
 
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `99 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `103 Passed / 0 Failed / 0 Skipped`
 * E2E coverage: role and link creation, duplicate email rejection, ignored admin-role field, login after registration, member forbidden from staff booking pages
 * EF migration `AddMemberUserLink` applied by the test host during startup
 
 ## Risks and follow-ups
 
 * Registration uses compensating deletes instead of one distributed transaction across Identity and gym data; failures are logged and surfaced as a generic error.
-* The `Member` role currently has no dedicated member portal. Authenticated members can view the home page but cannot change gym data.
+* The member portal is read-only; profile editing, password reset, and self-service booking are still follow-ups.

@@ -50,7 +50,7 @@ Let a `SuperAdmin` manage application accounts from `/Users` without editing the
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `93 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `103 Passed / 0 Failed / 0 Skipped`
 * E2E coverage: seeded user list, create with role assignment, admin forbidden, last-SuperAdmin demotion guard
 
 ## Risks and follow-ups

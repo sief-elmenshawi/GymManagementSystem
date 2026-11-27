@@ -1,0 +1,95 @@
+@model MemberPortalViewModel
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5 mb-5">
+    <header class="bg-primary-color text-white rounded-3 p-4 shadow-sm mb-4">
+        <h2 class="mb-1 fw-semibold">My Gym Profile</h2>
+        <p class="mb-0 text-light opacity-75">Your membership details and your bookings only</p>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.Notice))
+    {
+        <div class="alert alert-warning" role="alert">@Model.Notice</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                    <h4 class="text-primary-color mb-3">@Model.Name</h4>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted">Email</dt>
+                        <dd class="col-sm-7">@Model.Email</dd>
+                        @if (Model.HasLinkedMember)
+                        {
+                            <dt class="col-sm-5 text-muted">Phone</dt>
+                            <dd class="col-sm-7">@Model.Phone</dd>
+                            <dt class="col-sm-5 text-muted">Date of birth</dt>
+                            <dd class="col-sm-7">@Model.DateOfBirth</dd>
+                            <dt class="col-sm-5 text-muted">Gender</dt>
+                            <dd class="col-sm-7">@Model.Gender</dd>
+                            <dt class="col-sm-5 text-muted">Address</dt>
+                            <dd class="col-sm-7">@Model.Address</dd>
+                            <dt class="col-sm-5 text-muted">Health record</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge @(Model.HasHealthRecord ? "bg-success" : "bg-secondary")">
+                                    @(Model.HasHealthRecord ? "Recorded" : "Not recorded")
+                                </span>
+                            </dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                    <h4 class="text-primary-color mb-3">My Bookings</h4>
+                    @if (Model.Bookings.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Session</th>
+                                        <th>Category</th>
+                                        <th>Coach</th>
+                                        <th>Starts</th>
+                                        <th>Attended</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var booking in Model.Bookings)
+                                    {
+                                        <tr>
+                                            <td>@booking.Description</td>
+                                            <td>@booking.Category</td>
+                                            <td>@booking.Trainer</td>
+                                            <td>@booking.StartDate</td>
+                                            <td>
+                                                <span class="badge @(booking.IsAttended ? "bg-success" : "bg-secondary")">
+                                                    @(booking.IsAttended ? "Yes" : "No")
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-calendar-x display-5 text-muted"></i>
+                            <p class="text-muted mt-3 mb-0">No bookings yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

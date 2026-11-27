@@ -67,8 +67,10 @@
                             <div class="card-footer bg-white border-0 p-4">
                                 <div class="d-flex justify-content-between gap-2">
                                     <a asp-controller="Members" asp-action="Index" class="btn btn-fill flex-fill">
-                                        Back to
-                                        List
+                                        Back to List
+                                    </a>
+                                    <a asp-controller="Members" asp-action="HealthRecordEdit" asp-route-id="@ViewContext.RouteData.Values["id"]" class="btn btn-outline-primary flex-fill">
+                                        Edit Health Record
                                     </a>
                                 </div>
                             </div>

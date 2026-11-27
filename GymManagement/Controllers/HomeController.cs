@@ -25,6 +25,11 @@ namespace GymManagement.Controllers
                 return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
             }
 
+            if (User.IsInRole("Member"))
+            {
+                return Redirect("/Member");
+            }
+
             var data = await analyticsService.GetAnalyticsDataAysnc(ct);
             return View(data);
         }

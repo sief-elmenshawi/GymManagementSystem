@@ -118,6 +118,40 @@ namespace GymManagement.BLL.Service.Classes
 
         }
 
+        public async Task<Result> SaveMemberHealthRecordAsync(
+            int memberId,
+            HealthRecordViewModel model,
+            CancellationToken ct = default)
+        {
+            var memberRepo = unitOfWork.GetRepository<Member>();
+            if (!await memberRepo.AnyAsync(m => m.Id == memberId, ct))
+                return Result.NotFound("Member not found.");
+
+            var repo = unitOfWork.GetRepository<HealthRecord>();
+            var record = await repo.FirstOrDefaultAsync(
+                x => x.MemberId == memberId,
+                tracking: true,
+                ct: ct);
+
+            if (record is null)
+            {
+                record = mapper.Map<HealthRecord>(model);
+                record.MemberId = memberId;
+                record.CreatedAt = DateTime.UtcNow;
+                repo.Add(record);
+            }
+            else
+            {
+                mapper.Map(model, record);
+                record.MemberId = memberId;
+                record.UpdatedAt = DateTime.UtcNow;
+                repo.Update(record);
+            }
+
+            var saved = await unitOfWork.SaveChangesAsync(ct);
+            return saved > 0 ? Result.Ok() : Result.Fail("Failed to save health record.");
+        }
+
         public async Task<MemberToUpdateViewModel?> GetMemberToUpdatAsync(int MemberId, CancellationToken ct = default)
         {
             var member = await unitOfWork.GetRepository<Member>().GetByIdAsync(MemberId, ct);

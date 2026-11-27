@@ -154,6 +154,10 @@ namespace GymManagementPL
                 pattern: "Users/{action=Index}/{id?}",
                 defaults: new { controller = "Users" });
             app.MapControllerRoute(
+                name: "member",
+                pattern: "Member/{action=Index}/{id?}",
+                defaults: new { controller = "MemberPortal" });
+            app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Account}/{action=Login}/{id?}");
 

@@ -76,7 +76,97 @@ namespace GymManagement.PL.Controllers
 
             //Check Is Health Record null => return Index With Error Message
             //Health Record is Not Null => return View(Data)
-        } 
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> HealthRecordCreate(int id, CancellationToken ct)
+        {
+            if (!await TrySetMemberNameAsync(id, ct))
+                return RedirectToAction(nameof(Index));
+
+            return View(new HealthRecordViewModel());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> HealthRecordCreate(
+            int id,
+            HealthRecordViewModel model,
+            CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                await TrySetMemberNameAsync(id, ct);
+                return View(model);
+            }
+
+            var result = await memberService.SaveMemberHealthRecordAsync(id, model, ct);
+            if (!result.succes)
+            {
+                if (!await TrySetMemberNameAsync(id, ct))
+                    return RedirectToAction(nameof(Index));
+
+                ModelState.AddModelError(string.Empty, result.error ?? "Failed to save health record.");
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = "Health record created successfully.";
+            return RedirectToAction(nameof(HealthRecordDetails), new { id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> HealthRecordEdit(int id, CancellationToken ct)
+        {
+            var record = await memberService.GetMemberHealthRecordAsync(id, ct);
+            if (record is null)
+            {
+                TempData["ErrorMessage"] = "Health record not found.";
+                return RedirectToAction(nameof(HealthRecordCreate), new { id });
+            }
+
+            if (!await TrySetMemberNameAsync(id, ct))
+                return RedirectToAction(nameof(Index));
+
+            return View(record);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> HealthRecordEdit(
+            int id,
+            HealthRecordViewModel model,
+            CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                await TrySetMemberNameAsync(id, ct);
+                return View(model);
+            }
+
+            var result = await memberService.SaveMemberHealthRecordAsync(id, model, ct);
+            if (!result.succes)
+            {
+                if (!await TrySetMemberNameAsync(id, ct))
+                    return RedirectToAction(nameof(Index));
+
+                ModelState.AddModelError(string.Empty, result.error ?? "Failed to save health record.");
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = "Health record updated successfully.";
+            return RedirectToAction(nameof(HealthRecordDetails), new { id });
+        }
+
+        private async Task<bool> TrySetMemberNameAsync(int memberId, CancellationToken ct)
+        {
+            var member = await memberService.GetMemberDetailsByIdAsync(memberId, ct);
+            if (member is null)
+            {
+                TempData["ErrorMessage"] = "Member not found.";
+                return false;
+            }
+
+            ViewBag.MemberName = member.Name;
+            return true;
+        }
         #endregion
 
         #region Create Member
