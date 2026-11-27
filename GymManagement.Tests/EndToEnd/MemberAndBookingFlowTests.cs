@@ -198,6 +198,20 @@ public sealed class MemberAndBookingFlowTests
         Assert.DoesNotContain("Integration Booking Member", afterCancel, StringComparison.OrdinalIgnoreCase);
     }
 
+    [SqlServerFact]
+    public async Task PostWithoutAntiforgeryToken_IsRejected()
+    {
+        using var factory = await CreateFactoryAsync();
+        var browser = CreateBrowser(factory);
+        await LoginAsync(browser);
+
+        var response = await browser.PostFormAsync(
+            "/Members/CreateMember",
+            new Dictionary<string, string>());
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private static BrowserClient CreateBrowser(GymTestAppFactory factory) =>
         new(factory.CreateClient(new WebApplicationFactoryClientOptions
         {

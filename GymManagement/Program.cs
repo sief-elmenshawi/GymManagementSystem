@@ -11,6 +11,7 @@ using GymManagement.PL;
 
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,8 @@ namespace GymManagementPL
             }
 
             // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews(options =>
+                options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 
             builder.Services.AddDbContext<GymDbContext>(options =>
             {
@@ -96,7 +98,7 @@ namespace GymManagementPL
                 options.AccessDeniedPath = "/Account/AccessDenied";
             });// Default Paths
 
-            var httpsPort = builder.Configuration.GetValue<int?>("HttpsPort");
+            var httpsPort = HostingConfiguration.GetHttpsPort(builder.Configuration);
             if (httpsPort.HasValue)
             {
                 builder.Services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = httpsPort.Value);
@@ -125,7 +127,7 @@ namespace GymManagementPL
             }
 
             // Only redirect when an HTTPS endpoint/port is actually configured.
-            if (httpsPort.HasValue || app.Urls.Any(url => url.StartsWith("https", StringComparison.OrdinalIgnoreCase)))
+            if (HostingConfiguration.ShouldUseHttpsRedirection(builder.Configuration))
             {
                 app.UseHttpsRedirection();
             }
