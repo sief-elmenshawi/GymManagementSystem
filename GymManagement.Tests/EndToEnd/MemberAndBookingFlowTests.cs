@@ -19,7 +19,8 @@ namespace GymManagement.Tests.EndToEnd;
 public sealed class MemberAndBookingFlowTests : IAsyncLifetime
 {
     private const string SeedPassword = "Test@12345";
-    private const string AdminEmail = "Serag@gmail.com";
+    private const string SuperAdminEmail = "Serag@gmail.com";
+    private const string AdminEmail = "Nader@gmail.com";
 
     private readonly string? _connectionString =
         Environment.GetEnvironmentVariable("GYM_TEST_CONNECTION_STRING");
@@ -238,14 +239,28 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
     }
 
     [SqlServerFact]
-    public async Task HomeRoute_ResolvesToHomeController()
+    public async Task HomeRoute_RedirectsSuperAdminToDashboard()
     {
         using var browser = CreateBrowser(RequireFactory());
         await LoginAsync(browser);
 
-        var html = await browser.GetStringAsync("/Home");
+        using var redirect = await browser.GetAsync("/Home");
+        AssertRedirect(redirect, "/Dashboard");
 
+        var html = await browser.GetStringAsync("/Dashboard");
+        Assert.Contains("Super Admin Dashboard", html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Total Members", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [SqlServerFact]
+    public async Task Dashboard_IsForbiddenForAdmin()
+    {
+        using var browser = CreateBrowser(RequireFactory());
+        await LoginAsync(browser, AdminEmail);
+
+        using var response = await browser.GetAsync("/Dashboard");
+
+        AssertRedirect(response, "/Account/AccessDenied");
     }
 
     [SqlServerFact]
@@ -268,14 +283,14 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
             AllowAutoRedirect = false,
         }));
 
-    private static async Task LoginAsync(BrowserClient browser)
+    private static async Task LoginAsync(BrowserClient browser, string email = SuperAdminEmail)
     {
         var loginPage = await browser.GetStringAsync("/Account/Login");
         using var response = await browser.PostFormAsync(
             "/Account/Login",
             new Dictionary<string, string>
             {
-                ["Email"] = AdminEmail,
+                ["Email"] = email,
                 ["Password"] = SeedPassword,
                 ["RememberMe"] = "false",
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(loginPage),

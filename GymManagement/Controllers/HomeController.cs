@@ -20,6 +20,11 @@ namespace GymManagement.Controllers
 
         public async Task<IActionResult> Index(CancellationToken ct)
         {
+            if (User.IsInRole("SuperAdmin"))
+            {
+                return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
+            }
+
             var data = await analyticsService.GetAnalyticsDataAysnc(ct);
             return View(data);
         }
