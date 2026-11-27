@@ -1,281 +1,231 @@
 # 🏋️ Gym Management System
 
-A complete **Gym Management System** built using **ASP.NET Core MVC** to automate and manage gym operations including members, trainers, sessions, memberships, plans, and bookings.
-
-The project follows a clean layered architecture to achieve **scalability, maintainability, and separation of concerns**.
+An ASP.NET Core MVC application for managing gym members, trainers, plans, memberships, sessions, and bookings. It uses a layered architecture, EF Core with SQL Server, ASP.NET Core Identity, AutoMapper, and Razor views.
 
 ---
 
 # 🚀 Features
 
-## 👤 Authentication & Authorization
+## 👤 Authentication and account security
 
-* User authentication using **ASP.NET Core Identity**
-* Role-based authorization
-* Secure password hashing
-* User and role management
+* ASP.NET Core Identity with unique emails and account lockout
+* Seeded `SuperAdmin` and `Admin` accounts (only when a seed password is configured)
+* Global antiforgery validation for unsafe requests
+* HTTPS redirection only when an HTTPS URL/port is configured
+* Existing seeded user passwords are **not** reset on later startups
 
----
+## 👥 Member management
 
-## 👥 Member Management
+* Create, edit, delete, and list members
+* Store contact details, address, date of birth, gender, and optional photo
+* View member health records
+* Member list is paged and uses a lightweight projection (the photo payload is not loaded)
 
-* Add, update, delete, and view members
-* Manage member information
-* Track memberships and subscriptions
-* Handle member attachments
+## 🏋️ Trainer management
 
----
-
-## 🏋️ Trainer Management
-
-* Manage trainers
+* Create, edit, delete, and list trainers
+* Maintain specialty and contact details
 * Assign trainers to sessions
-* Maintain trainer information
 
----
+## 📅 Session management
 
-## 📅 Session Management
+* Create, edit, delete, and list sessions
+* Enforce capacity and schedule rules
+* Show available slots from booking counts in a single SQL query
+* Session list is ordered and paged in SQL
 
-* Create and manage gym sessions
-* Define session capacity
-* Assign trainers
-* Track session schedules
+## 💳 Membership management
 
----
+* Create and manage plans
+* Create and cancel member memberships
+* List active memberships with member and plan names via a flat SQL projection
+* Membership list is ordered and paged in SQL
 
-## 💳 Membership Management
+## 📌 Booking system
 
-* Create membership plans
-* Manage subscriptions
-* Track member memberships
+* Book members into sessions
+* Prevent bookings that violate business rules (membership, capacity, timing, duplicates)
+* Track attendance
+* Anti-join query for available members instead of loading all bookings into memory
 
----
+## 📊 Analytics
 
-## 📌 Booking System
-
-* Book sessions
-* Manage booking operations
-* Prevent invalid bookings based on business rules
+* Dashboard counts for upcoming, ongoing, and completed sessions
+* Member, trainer, and active-membership totals
 
 ---
 
 # 🏗️ Architecture
 
-The project is designed using a layered architecture:
-
-```text
-GymManagementSystem
-
-│
-├── Presentation Layer
-│   └── ASP.NET Core MVC
-│       ├── Controllers
-│       ├── Views
-│       └── ViewModels
-│
-├── Business Logic Layer
-│   └── Services
-│       ├── Business Rules
-│       ├── Application Logic
-│       └── DTOs
-│
-└── Data Access Layer
-    └── Entity Framework Core
-        ├── DbContext
-        ├── Entities
-        ├── Configurations
-        └── Migrations
-```
-
----
-
-# 🛠️ Technologies Used
-
-## Backend
-
-* C#
-* ASP.NET Core MVC
-* .NET 9
-* Entity Framework Core
-* LINQ
-
-## Database
-
-* SQL Server
-* Entity Framework Core Code First
-* Fluent API
-* Migrations
-
-## Frontend
-
-* Razor Views
-* HTML5
-* CSS3
-* Bootstrap
-* JavaScript
-* jQuery
-
-## Security
-
-* ASP.NET Core Identity
-* Role-Based Authorization
-
-## Tools
-
-* Visual Studio 2022
-* Git & GitHub
-* Swagger
-* Postman
-
----
-
-# 🧩 Design Patterns & Principles
-
-The project applies:
-
-* Repository Pattern
-* Unit of Work Pattern
-* Specification Pattern
-* Dependency Injection
-* SOLID Principles
-* Object-Oriented Programming (OOP)
-
----
-
-# 📂 Project Structure
-
 ```text
 GymManagementSolution
-
 │
-├── GymManagement              # ASP.NET Core MVC presentation layer
+├── GymManagement              Presentation layer (ASP.NET Core MVC)
+│   ├── Controllers
+│   ├── Views
+│   ├── Program.cs / ProgramExtensions.cs
+│   └── Identity, antiforgery, HTTPS, and configuration helpers
 │
-├── GymManagement.BLL
+├── GymManagement.BLL          Business logic layer
+│   ├── Services / Interfaces
+│   ├── ViewModels
+│   ├── AutoMapper profile
+│   └── Common (Result, PagedResult)
 │
-├── GymManagement.DAL
+├── GymManagement.DAL          Data access layer
+│   ├── GymDbContext
+│   ├── Entities / Configurations
+│   ├── Repositories / Unit of Work
+│   ├── Migrations / Seeders
+│   └── List projection DTOs
 │
-├── GymManagement.Tests
+├── GymManagement.Tests        Unit, SQL performance, and HTTP E2E tests
 │
 └── GymManagementSolution.slnx
 ```
 
+Dependency direction: `GymManagement` → `GymManagement.BLL` → `GymManagement.DAL`. Views primarily consume view models and `PagedResult<T>` from the BLL; a few forms also reference DAL enums directly.
+
 ---
 
-# ⚙️ Installation & Setup
+# 🛠️ Technologies
+
+| Area | Stack |
+| --- | --- |
+| Backend | C#, .NET 9, ASP.NET Core MVC |
+| Data | SQL Server, EF Core 9, Code First migrations, Fluent API |
+| Mapping | AutoMapper 16.3.0 |
+| Identity | ASP.NET Core Identity with `IdentityRole` |
+| Frontend | Razor, HTML5, CSS, Bootstrap, JavaScript, jQuery |
+| Assets | Frontend libraries vendored under `wwwroot/lib` for offline use |
+| Testing | xUnit, Moq, EF Core SQL Server integration tests |
+
+Patterns used: Repository, Unit of Work, Dependency Injection, and layered services.
+
+---
+
+# ⚙️ Installation and setup
 
 ## 1. Prerequisites
 
 * [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-* SQL Server (LocalDB, Express, Developer, or a remote instance)
-* EF Core CLI tools (only needed to manage migrations manually):
+* SQL Server (LocalDB, Express, Developer, or remote)
+* EF Core CLI tools, only for manual migration commands:
 
 ```bash
 dotnet tool install --global dotnet-ef --version 9.0.16
 ```
 
----
+A local `dotnet-tools.json` may be used instead, but it is environment-specific and must not be committed.
 
-## 2. Clone Repository
+## 2. Clone
 
 ```bash
 git clone https://github.com/sief-elmenshawi/GymManagementSystem.git
 cd GymManagementSystem
 ```
 
----
+## 3. Configure secrets
 
-## 3. Configure Database Connection
-
-The committed `GymManagement/appsettings.json` intentionally contains **no connection string**. A local copy with a connection string (and a local `dotnet-tools.json`) is kept uncommitted on the development machine and is never pushed.
-
-For a fresh clone, provide the connection string through **User Secrets** or an environment variable instead of committing it:
+The committed `GymManagement/appsettings.json` contains no connection string, seed password, or license key. Supply them through environment variables or a secrets manager. User Secrets are convenient for local Development only; ASP.NET Core does not load them in other environments.
 
 ```bash
 dotnet user-secrets init --project GymManagement
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=.;Database=GymManagement;Trusted_Connection=True;TrustServerCertificate=True;" --project GymManagement
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<your SQL Server connection string>" --project GymManagement
+dotnet user-secrets set "SeedUsers:Password" "<local seed password>" --project GymManagement
 ```
 
-PowerShell alternative:
+Environment variables:
 
-```powershell
-$env:ConnectionStrings__DefaultConnection = 'Server=.;Database=GymManagement;Trusted_Connection=True;TrustServerCertificate=True;'
-```
+| Variable | Purpose |
+| --- | --- |
+| `ConnectionStrings__DefaultConnection` | SQL Server database |
+| `GYM_SEED_PASSWORD` | Password for seeded admin users; takes precedence over `SeedUsers:Password` |
+| `AUTOMAPPER_LICENSE_KEY` | AutoMapper key required outside Development |
+| `LUCKYPENNY_LICENSE_KEY` | Shared fallback for the AutoMapper key |
+| `GYM_TEST_CONNECTION_STRING` | Enables SQL Server integration/E2E/performance tests |
 
----
+> Never commit real connection strings, passwords, or license keys.
 
-## 4. Database Migrations and Seeding
+## 4. Database and seeding
 
-Pending migrations are applied automatically when the application starts, followed by identity/data seeding. Manual migration commands are still available:
+Pending migrations are applied automatically at startup, followed by data and identity seeding.
+
+Manual migration command:
 
 ```bash
 dotnet ef database update --project GymManagement.DAL --startup-project GymManagement
 ```
 
-In Package Manager Console, set **Default project** to `GymManagement.DAL` and run:
+In Package Manager Console, set **Default project** to `GymManagement.DAL` and run `Update-Database`.
 
-```powershell
-Update-Database
-```
+Seeding creates missing roles/users only. If no password is configured, identity seeding is skipped with a warning. Changing the configured password later does not reset existing users.
 
-Default seed users are created only when a seed password is configured. An explicitly set environment variable takes precedence over configuration:
-
-* Development: `dotnet user-secrets set "SeedUsers:Password" "your-local-password" --project GymManagement`
-* Any environment: `GYM_SEED_PASSWORD` environment variable or `SeedUsers:Password` in configuration
-
-No seed password is stored in source code. If no password is found in a non-development environment, the host logs a warning and skips identity seeding.
-
----
-
-## 5. Run Application
+## 5. Run
 
 ```bash
 dotnet run --project GymManagement
 ```
 
+In Development, no AutoMapper license key is needed. In non-development environments the app fails fast at startup when no valid key is found.
+
 ---
 
-## 6. Run Automated Tests
+# ✅ Verification
 
 ```bash
-dotnet test GymManagementSolution.slnx
+dotnet build GymManagementSolution.slnx --nologo
+dotnet test GymManagementSolution.slnx --nologo
+dotnet list package --vulnerable --include-transitive
 ```
 
-The `GymManagement.Tests` project contains unit tests for mapping, services, seed-password resolution, and AutoMapper license resolution.
+SQL-dependent tests are skipped unless `GYM_TEST_CONNECTION_STRING` is set. With it, tests create and drop disposable databases named `GymManagement_E2E_*` and `GymManagement_PerfTest_*`.
 
-SQL Server end-to-end tests (login, routing, member create/edit/delete, booking create/cancel) are skipped unless a test connection string is supplied. Each test uses a uniquely named disposable database (`GymManagement_E2E_*`) that is dropped again after the test:
+EF tooling can also be checked without starting the web app:
 
-```powershell
-$env:GYM_TEST_CONNECTION_STRING = 'Server=.;Database=AnyDatabase;Trusted_Connection=True;TrustServerCertificate=True;'
-dotnet test GymManagementSolution.slnx
+```bash
+dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
----
-
-## 7. Production Configuration
-
-* **AutoMapper license:** set `AUTOMAPPER_LICENSE_KEY` (or the shared `LUCKYPENNY_LICENSE_KEY`) in the hosting environment, or `AutoMapper:LicenseKey` through a configuration provider. ASP.NET Core loads User Secrets only in Development, so use them for local development only. No key is required in Development. Non-development environments fail fast at startup with a clear error when no key is found.
-* **Seed admin password:** set `GYM_SEED_PASSWORD` or `SeedUsers:Password` in configuration before first startup in Production. Seeding is skipped (with a warning) when no password is configured.
-* **Connection string:** provide `ConnectionStrings__DefaultConnection` through the hosting environment or a secrets manager. Do not commit environment-specific files.
+Last full verification: build `0 Warning(s), 0 Error(s)`, tests `85 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
 
 ---
 
-# 🔐 Default Roles
+# ⚡ Performance notes
 
-| Role    | Permissions              |
-| ------- | ------------------------ |
-| Admin   | Full system management   |
-| Trainer | Manage assigned sessions |
-| Member  | View and book sessions   |
+List pages were changed to avoid N+1 queries and unbounded result sets:
+
+| Page | Before | Now |
+| --- | --- | --- |
+| Sessions | 2001 commands, full list | 2 commands: SQL-ordered page + count |
+| Booking | 961 commands, full list | 2 commands: filtered SQL page + count |
+| Members | All entities including photo payload | 20-row `MemberListInfo` projection + count |
+| Memberships | `Include(Member)` + `Include(Plan)` over all rows | 20-row `MembershipListInfo` projection + count |
+
+Indexes were added by migration `20261127005950_AddPerformanceIndexes` for session dates, ongoing sessions, membership end dates, and membership/plan foreign keys. Analytics queries were measured and left unchanged because alternatives were not clearly faster.
 
 ---
 
-# 🎯 Future Improvements
+# 🔐 Roles
 
-* Build RESTful Web API version
+| Role | Created by seeder | Notes |
+| --- | --- | --- |
+| `SuperAdmin` | Yes | Required for member management pages |
+| `Admin` | Yes | Authenticated account for general management |
+| `Trainer` | No | Not seeded by `IdentityDataSeeding` |
+| `Member` | No | Not seeded by `IdentityDataSeeding` |
+
+Most controllers require authentication only; `MembersController` additionally requires `SuperAdmin`.
+
+---
+
+# 🧭 Future improvements
+
+* Add a RESTful Web API version
 * Add payment integration
 * Add notification system using SignalR
-* Add dashboard analytics
-* Add browser-driven UI tests (Playwright/Selenium)
+* Expand role-based authorization to more controllers
+* Add browser-driven UI tests on top of the existing HTTP E2E tests
 
 ---
 
@@ -285,8 +235,6 @@ dotnet test GymManagementSolution.slnx
 
 .NET Developer
 
-GitHub:
-https://github.com/sief-elmenshawi
+GitHub: https://github.com/sief-elmenshawi
 
-LinkedIn:
-https://linkedin.com/in/sief-elmenshawi
+LinkedIn: https://linkedin.com/in/sief-elmenshawi
