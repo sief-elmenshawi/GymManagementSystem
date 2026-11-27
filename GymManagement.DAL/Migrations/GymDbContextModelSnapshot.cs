@@ -224,6 +224,70 @@ namespace GymManagement.DAL.Data.Migrations
                     b.ToTable("HealthRecords");
                 });
 
+            modelBuilder.Entity("GymManagement.DAL.Models.HealthRecordAudit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("ActorEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ActorUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BloodType")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("HealthRecordId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Height")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int?>("MemberId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Weight")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("HealthRecordId");
+
+                    b.HasIndex("MemberId");
+
+                    b.ToTable("HealthRecordAudits");
+                });
+
             modelBuilder.Entity("GymManagement.DAL.Models.Member", b =>
                 {
                     b.Property<int>("Id")
@@ -643,6 +707,30 @@ namespace GymManagement.DAL.Data.Migrations
                         .HasForeignKey("GymManagement.DAL.Models.HealthRecord", "MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("GymManagement.DAL.Models.HealthRecordAudit", b =>
+                {
+                    b.HasOne("GymManagement.DAL.Models.ApplicationUser", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("GymManagement.DAL.Models.HealthRecord", "HealthRecord")
+                        .WithMany()
+                        .HasForeignKey("HealthRecordId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymManagement.DAL.Models.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("HealthRecord");
 
                     b.Navigation("Member");
                 });

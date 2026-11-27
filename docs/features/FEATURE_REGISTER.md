@@ -32,7 +32,7 @@ Allow a visitor to create a gym member account without administrator interventio
 * The `Member` role is seeded alongside `SuperAdmin` and `Admin`.
 * Identity `UserName` is the email address; login continues to work by email.
 * `SignIn.RequireConfirmedAccount` and `RequireConfirmedEmail` are enabled globally; seeded and SuperAdmin-created accounts are auto-confirmed.
-* The Identity account is deleted if role assignment or member creation fails.
+* User creation, `Member` role assignment, and linked `Member` record creation commit in one EF transaction; any failure rolls the whole registration back.
 * Health data is not collected at registration. `Member.HealthRecord` is optional until staff add/edit it from `/Members/HealthRecordCreate/{id}`.
 * `Photo` is stored as an empty string until a staff member uploads one.
 * Deleting the Identity user clears the link (`FK ... ON DELETE SET NULL`) instead of deleting gym history.
@@ -46,7 +46,7 @@ Allow a visitor to create a gym member account without administrator interventio
 
 ## Non-goals
 
-* No self-service profile editing
+* No self-service profile editing in this anonymous flow; members edit their linked profile at `/Member/EditProfile`
 * No membership purchase or payment
 * No photo upload at registration
 * No health questionnaire at registration
@@ -63,11 +63,11 @@ Allow a visitor to create a gym member account without administrator interventio
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `107 Passed / 0 Failed / 0 Skipped`
-* E2E coverage: role and link creation, duplicate email rejection, ignored admin-role field, blocked pre-confirmation login, login after confirmation, member forbidden from staff booking pages
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
+* E2E coverage: role and link creation, duplicate email rejection, ignored admin-role field, blocked pre-confirmation login, login after confirmation, member forbidden from staff booking pages, missing-role rollback
 * EF migration `AddMemberUserLink` applied by the test host during startup
 
 ## Risks and follow-ups
 
-* Registration uses compensating deletes instead of one distributed transaction across Identity and gym data; failures are logged and surfaced as a generic error.
-* The member portal is read-only; profile editing and self-service booking are still follow-ups.
+* **Resolved:** Identity and gym data share one `GymDbContext`, so registration uses one explicit EF transaction instead of compensating deletes.
+* **Resolved:** the member portal now supports self-service profile editing and self-service booking/cancellation; see `FEATURE_MEMBER_PORTAL.md`.

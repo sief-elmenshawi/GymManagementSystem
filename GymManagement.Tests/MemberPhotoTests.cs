@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using GymManagement.DAL.Models;
 using GymManagement.PL.Controllers;
 using GymManagement.Tests.Support;
+using Microsoft.AspNetCore.Identity;
 using Moq;
 using Xunit;
 
@@ -53,7 +54,13 @@ public class MemberPhotoTests
         attachmentService
             .Setup(s => s.GetFile("member.png", "MembersPictures"))
             .Returns((stream, "image/png"));
-        var controller = new MembersController(memberService.Object, attachmentService.Object);
+        var userManager = new Mock<UserManager<ApplicationUser>>(
+            Mock.Of<IUserStore<ApplicationUser>>(),
+            null!, null!, null!, null!, null!, null!, null!, null!);
+        var controller = new MembersController(
+            memberService.Object,
+            attachmentService.Object,
+            userManager.Object);
 
         var result = await controller.Picture(5, CancellationToken.None);
 

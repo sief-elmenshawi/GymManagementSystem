@@ -1,0 +1,98 @@
+@model PagedResult<SessionViewModel>
+@{
+    ViewData["Title"] = "Sessions";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5 mb-5">
+    <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">Book a session</h2>
+            <p class="text-muted mb-0">Sessions with available slots. Your booking is always linked to your own profile.</p>
+        </div>
+        <a asp-controller="MemberPortal" asp-action="Index" class="btn btn-outline-secondary">Back to profile</a>
+    </header>
+
+    @if (TempData["SuccessMessage"] is string success)
+    {
+        <div class="alert alert-success" role="alert">@success</div>
+    }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            @if (Model.Items.Count == 0)
+            {
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x display-5 text-muted"></i>
+                    <p class="text-muted mt-3 mb-0">No upcoming sessions are available right now.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>Category</th>
+                                <th>Coach</th>
+                                <th>When</th>
+                                <th>Available</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var session in Model.Items)
+                            {
+                                <tr>
+                                    <td>@session.Description</td>
+                                    <td>@session.CategoryName</td>
+                                    <td>@session.TrainerName</td>
+                                    <td>
+                                        <div>@session.DateDisplay</div>
+                                        <small class="text-muted">@session.TimeRangeDisplay</small>
+                                    </td>
+                                    <td>@session.AvailableSlots / @session.Capacity</td>
+                                    <td>
+                                        @if (session.StartDate > DateTime.Now)
+                                        {
+                                            <form asp-controller="MemberPortal" asp-action="Book" method="post">
+                                                <input type="hidden" name="sessionId" value="@session.Id" />
+                                                <button type="submit" class="btn btn-sm btn-primary">Book</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Started</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (Model.Paging.TotalPages > 1)
+                {
+                    <nav class="mt-4" aria-label="Session pages">
+                        <ul class="pagination mb-0">
+                            <li class="page-item @(Model.Paging.HasPrevious ? "" : "disabled")">
+                                <a class="page-link" asp-action="Sessions" asp-route-page="@(Model.Paging.Page - 1)">Previous</a>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Page @Model.Paging.Page of @Model.Paging.TotalPages</span>
+                            </li>
+                            <li class="page-item @(Model.Paging.HasNext ? "" : "disabled")">
+                                <a class="page-link" asp-action="Sessions" asp-route-page="@(Model.Paging.Page + 1)">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>

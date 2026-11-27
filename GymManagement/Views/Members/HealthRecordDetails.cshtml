@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Health Record Details";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var auditTrail = ViewBag.AuditTrail as IReadOnlyList<HealthRecordAuditViewModel>;
 }
 
 
@@ -64,6 +65,47 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="mt-4">
+                        <h5 class="text-primary-color mb-3">Audit trail</h5>
+                        @if (auditTrail is { Count: > 0 })
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>When</th>
+                                            <th>Action</th>
+                                            <th>Changed by</th>
+                                            <th>Height</th>
+                                            <th>Weight</th>
+                                            <th>Blood type</th>
+                                            <th>Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var entry in auditTrail)
+                                        {
+                                            <tr>
+                                                <td>@entry.CreatedAt.ToString("g")</td>
+                                                <td>@entry.Action</td>
+                                                <td>@entry.ActorEmail</td>
+                                                <td>@entry.Height</td>
+                                                <td>@entry.Weight</td>
+                                                <td>@entry.BloodType</td>
+                                                <td>@entry.Note</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">No changes recorded yet.</p>
+                        }
+                    </div>
+
                             <div class="card-footer bg-white border-0 p-4">
                                 <div class="d-flex justify-content-between gap-2">
                                     <a asp-controller="Members" asp-action="Index" class="btn btn-fill flex-fill">

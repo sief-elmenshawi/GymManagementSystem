@@ -155,6 +155,77 @@ public sealed class UserManagementFlowTests : IAsyncLifetime
         Assert.Equal("SuperAdmin", roleName);
     }
 
+    [SqlServerFact]
+    public async Task Edit_InvalidPassword_RollsBackProfileAndPasswordChanges()
+    {
+        var factory = RequireFactory();
+        var email = $"edit-rollback-{Guid.NewGuid():N}@example.com";
+        const string originalFirstName = "Before";
+        const string originalLastName = "Edit";
+        const string originalPhone = "01012345678";
+
+        using var browser = CreateBrowser(factory);
+        await LoginAsync(browser, SuperAdminEmail);
+
+        var createPage = await browser.GetStringAsync("/Users/Create");
+        using var createResponse = await browser.PostFormAsync(
+            "/Users/Create",
+            new Dictionary<string, string>
+            {
+                ["FirstName"] = originalFirstName,
+                ["LastName"] = originalLastName,
+                ["UserName"] = email,
+                ["Email"] = email,
+                ["PhoneNumber"] = originalPhone,
+                ["Role"] = "Admin",
+                ["Password"] = SeedPassword,
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(createPage),
+            });
+        AssertRedirect(createResponse, "/Users");
+
+        string userId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+            userId = await db.Users.AsNoTracking()
+                .Where(user => user.Email == email)
+                .Select(user => user.Id)
+                .SingleAsync();
+        }
+
+        var editPage = await browser.GetStringAsync($"/Users/Edit/{userId}");
+        using var response = await browser.PostFormAsync(
+            "/Users/Edit",
+            new Dictionary<string, string>
+            {
+                ["Id"] = userId,
+                ["FirstName"] = "After",
+                ["LastName"] = "Changed",
+                ["UserName"] = email,
+                ["Email"] = email,
+                ["PhoneNumber"] = "01099999999",
+                ["Role"] = "Admin",
+                ["NewPassword"] = "tiny",
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(
+            body.Contains("at least 6 characters", StringComparison.OrdinalIgnoreCase),
+            $"Edit response did not show a password error: {body[..Math.Min(1200, body.Length)]}");
+
+        using var verifyScope = factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<GymDbContext>();
+        var stored = await verifyDb.Users.AsNoTracking().SingleAsync(user => user.Id == userId);
+        Assert.Equal(originalFirstName, stored.FirstName);
+        Assert.Equal(originalLastName, stored.LastName);
+        Assert.Equal(originalPhone, stored.PhoneNumber);
+
+        using var loginBrowser = CreateBrowser(factory);
+        await LoginAsync(loginBrowser, email);
+    }
+
     private GymTestAppFactory RequireFactory() =>
         _factory ?? throw new InvalidOperationException(
             "Set GYM_TEST_CONNECTION_STRING to run SQL Server end-to-end tests.");

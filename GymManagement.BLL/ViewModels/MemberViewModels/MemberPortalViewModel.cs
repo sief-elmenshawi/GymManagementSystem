@@ -18,10 +18,12 @@ public sealed class MemberPortalViewModel
 
 public sealed class MemberPortalBookingViewModel
 {
+    public int SessionId { get; set; }
     public string Description { get; set; } = default!;
     public string Category { get; set; } = default!;
     public string Trainer { get; set; } = default!;
     public string StartDate { get; set; } = default!;
     public string EndDate { get; set; } = default!;
     public bool IsAttended { get; set; }
+    public bool CanCancel { get; set; }
 }

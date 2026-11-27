@@ -19,13 +19,18 @@ namespace GymManagement.BLL.Service.Interfaces
         Task<Result> SaveMemberHealthRecordAsync(
             int memberId,
             HealthRecordViewModel model,
+            AuditActor actor,
+            CancellationToken ct = default);
+
+        Task<IReadOnlyList<HealthRecordAuditViewModel>> GetHealthRecordAuditAsync(
+            int memberId,
             CancellationToken ct = default);
 
         Task<MemberToUpdateViewModel?> GetMemberToUpdatAsync(int memberId, CancellationToken ct = default); 
 
         Task<Result> UpdateMemberDetailsAsync(int id, MemberToUpdateViewModel model, CancellationToken ct = default);
 
-        Task<Result> RemoveMemberAsync(int memberId, CancellationToken ct = default);
+        Task<Result> RemoveMemberAsync(int memberId, AuditActor actor, CancellationToken ct = default);
 
     }
 }

@@ -1,5 +1,11 @@
 ﻿@{
     var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
+    var roles = User.Claims
+        .Where(claim => claim.Type == System.Security.Claims.ClaimTypes.Role)
+        .Select(claim => claim.Value)
+        .ToArray();
+    var isMemberOnly = roles.Length == 1 &&
+        string.Equals(roles[0], "Member", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -56,11 +62,19 @@
                                    asp-action="Index" asp-controller="Trainers">Trainers</a>
                             </li>
                         }
-                        @if (User.IsInRole("Member"))
+                        @if (isMemberOnly)
                         {
                             <li class="nav-item">
                                 <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "MemberPortal" ? "active" : "text-black-alternative")"
                                    asp-action="Index" asp-controller="MemberPortal">My Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 text-black-alternative"
+                                   asp-action="EditProfile" asp-controller="MemberPortal">Edit Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 text-black-alternative"
+                                   asp-action="Sessions" asp-controller="MemberPortal">Book a Session</a>
                             </li>
                         }
                         else

@@ -156,6 +156,23 @@ namespace GymManagement.Controllers
                 return View(model);
             }
 
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+
+            async Task<IActionResult> FailAsync(
+                IdentityResult? result = null,
+                string? errorMessage = null)
+            {
+                if (result is not null) AddIdentityErrors(result);
+                if (errorMessage is not null) ModelState.AddModelError(string.Empty, errorMessage);
+
+                await transaction.RollbackAsync(ct);
+                // Identity and the tracked user share this context; clear the rolled-back state
+                // before the view is rendered again.
+                _dbContext.ChangeTracker.Clear();
+                model.AvailableRoles = await GetRolesAsync(ct);
+                return View(model);
+            }
+
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.UserName = model.UserName;
@@ -164,41 +181,33 @@ namespace GymManagement.Controllers
             user.EmailConfirmed = true;
 
             var updated = await _userManager.UpdateAsync(user);
-            if (!updated.Succeeded)
-            {
-                AddIdentityErrors(updated);
-                model.AvailableRoles = await GetRolesAsync(ct);
-                return View(model);
-            }
+            if (!updated.Succeeded) return await FailAsync(updated);
 
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var reset = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
-                if (!reset.Succeeded)
-                {
-                    AddIdentityErrors(reset);
-                    model.AvailableRoles = await GetRolesAsync(ct);
-                    return View(model);
-                }
+                if (!reset.Succeeded) return await FailAsync(reset);
             }
 
             var currentRoles = await _userManager.GetRolesAsync(user);
             var removed = await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            if (!removed.Succeeded)
+            if (!removed.Succeeded) return await FailAsync(removed);
+
+            IdentityResult assigned;
+            try
             {
-                AddIdentityErrors(removed);
-                model.AvailableRoles = await GetRolesAsync(ct);
-                return View(model);
+                assigned = await _userManager.AddToRoleAsync(user, model.Role);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Role {Role} could not be assigned to user {UserId}.", model.Role, model.Id);
+                return await FailAsync(errorMessage: "User could not be updated. Please try again.");
             }
 
-            var assigned = await _userManager.AddToRoleAsync(user, model.Role);
-            if (!assigned.Succeeded)
-            {
-                AddIdentityErrors(assigned);
-                model.AvailableRoles = await GetRolesAsync(ct);
-                return View(model);
-            }
+            if (!assigned.Succeeded) return await FailAsync(assigned);
+
+            await transaction.CommitAsync(ct);
 
             _logger.LogInformation("SuperAdmin updated user {Email} with role {Role}.", user.Email, model.Role);
             TempData["SuccessMessage"] = "User updated successfully.";
@@ -223,6 +232,13 @@ namespace GymManagement.Controllers
                 TempData["ErrorMessage"] = "At least one SuperAdmin must remain.";
                 return RedirectToAction(nameof(Index));
             }
+
+            // Keep health-record audit snapshots but detach them from the deleted actor.
+            await _dbContext.HealthRecordAudits
+                .Where(audit => audit.ActorUserId == user.Id)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(audit => audit.ActorUserId, (string?)null),
+                    ct);
 
             var result = await _userManager.DeleteAsync(user);
             TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded

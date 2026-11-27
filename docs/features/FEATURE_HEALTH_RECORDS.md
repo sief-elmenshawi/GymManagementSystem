@@ -20,7 +20,7 @@ Let staff add or update a member's health record after registration, without col
 * `POST /Members/HealthRecordCreate/{memberId}` — create or update record
 * `GET /Members/HealthRecordEdit/{memberId}` — edit form
 * `POST /Members/HealthRecordEdit/{memberId}` — update record
-* `GET /Members/HealthRecordDetails/{memberId}` — existing details view, now with an Edit link
+* `GET /Members/HealthRecordDetails/{memberId}` — details view with an Edit link and audit trail
 * Link from `MemberDetails` to add/edit the record
 
 ## Business rules
@@ -30,14 +30,17 @@ Let staff add or update a member's health record after registration, without col
 * Saving validates height, weight, blood type, and decimal precision through `HealthRecordViewModel`.
 * New records set `CreatedAt`; edits set `UpdatedAt`.
 * The service returns `NotFound` when the member does not exist.
-* No EF migration was needed; the health-record table already existed.
+* Every create, update, and delete writes a `HealthRecordAudit` snapshot with the acting user and the values at that moment.
+* Audit rows keep the actor email even if the account is later deleted; member/actor FK links are cleared explicitly before deletion because SQL Server rejects extra cascade paths.
+* The health-record table already existed; migration `20261127201350_AddHealthRecordAudit` adds the audit table.
 
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `107 Passed / 0 Failed / 0 Skipped`
-* E2E coverage: create, details, edit, and invalid blood-type rejection
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
+* E2E coverage: create, details, edit, invalid blood-type rejection, audit entries for create/update/delete, audit preserved after member deletion
+* `dotnet ef migrations list` includes `20261127201350_AddHealthRecordAudit`; `has-pending-model-changes` reports none
 
 ## Risks and follow-ups
 
-* Health data is sensitive; a future hardening step should add an audit trail of who changed it.
+* **Resolved:** the details view now exposes a queryable audit trail of who changed each health record and what values were stored; snapshots survive member/user deletion.

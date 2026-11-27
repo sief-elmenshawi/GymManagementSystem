@@ -2,8 +2,11 @@
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
+using GymManagement.BLL.Common;
 using GymManagement.BLL.ViewModels.MemberViewModels;
+using GymManagement.DAL.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymManagement.PL.Controllers
@@ -13,11 +16,16 @@ namespace GymManagement.PL.Controllers
     {
         private readonly IMemberService memberService;
         private readonly IAttachementService attachementService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public MembersController(IMemberService memberService , IAttachementService attachementService)
+        public MembersController(
+            IMemberService memberService,
+            IAttachementService attachementService,
+            UserManager<ApplicationUser> userManager)
         {
             this.memberService = memberService;
             this.attachementService = attachementService;
+            _userManager = userManager;
         }
 
         // Get BaseUrl/Member/Index
@@ -72,6 +80,8 @@ namespace GymManagement.PL.Controllers
                 TempData["ErrorMessage"] = "Health record not found";
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.AuditTrail = await memberService.GetHealthRecordAuditAsync(id, ct);
             return View(result);
 
             //Check Is Health Record null => return Index With Error Message
@@ -99,7 +109,8 @@ namespace GymManagement.PL.Controllers
                 return View(model);
             }
 
-            var result = await memberService.SaveMemberHealthRecordAsync(id, model, ct);
+            var result = await memberService.SaveMemberHealthRecordAsync(
+                id, model, await GetAuditActorAsync(), ct);
             if (!result.succes)
             {
                 if (!await TrySetMemberNameAsync(id, ct))
@@ -141,7 +152,8 @@ namespace GymManagement.PL.Controllers
                 return View(model);
             }
 
-            var result = await memberService.SaveMemberHealthRecordAsync(id, model, ct);
+            var result = await memberService.SaveMemberHealthRecordAsync(
+                id, model, await GetAuditActorAsync(), ct);
             if (!result.succes)
             {
                 if (!await TrySetMemberNameAsync(id, ct))
@@ -153,6 +165,14 @@ namespace GymManagement.PL.Controllers
 
             TempData["SuccessMessage"] = "Health record updated successfully.";
             return RedirectToAction(nameof(HealthRecordDetails), new { id });
+        }
+
+        private async Task<AuditActor> GetAuditActorAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            return new AuditActor(
+                user?.Id,
+                user?.Email ?? User.Identity?.Name ?? "unknown");
         }
 
         private async Task<bool> TrySetMemberNameAsync(int memberId, CancellationToken ct)
@@ -252,7 +272,7 @@ namespace GymManagement.PL.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteConfirmed([FromRoute] int id, CancellationToken ct)
         {
-            var result = await memberService.RemoveMemberAsync(id, ct);
+            var result = await memberService.RemoveMemberAsync(id, await GetAuditActorAsync(), ct);
             TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
                 result.succes ? "Member deleted successfully." : result.error;
             return RedirectToAction(nameof(Index));

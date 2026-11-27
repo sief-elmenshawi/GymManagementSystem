@@ -1,5 +1,6 @@
 using System.Net;
 using GymManagement.DAL.Data.DbContexts;
+using GymManagement.Infrastructure.Email;
 using GymManagement.Tests.Support;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +118,71 @@ public sealed class AccountEmailFlowTests : IAsyncLifetime
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
         Assert.False(await db.Users.AnyAsync(user => user.Email == email));
+    }
+
+    [SqlServerFact]
+    public async Task ResendEmailConfirmation_UnconfirmedEmail_SendsFreshLinkThatConfirmsAccount()
+    {
+        var factory = RequireFactory();
+        var email = NewEmail();
+
+        using var browser = CreateBrowser(factory);
+        await AccountTestFlows.RegisterAsync(browser, email, NewPhone(), Password);
+
+        // Remove the original link so the one used below can only come from the resend POST.
+        factory.Services.GetRequiredService<DevelopmentMailbox>().Clear();
+
+        var resendPage = await browser.GetStringAsync("/Account/ResendEmailConfirmation");
+        using var response = await browser.PostFormAsync(
+            "/Account/ResendEmailConfirmation",
+            new Dictionary<string, string>
+            {
+                ["Email"] = email,
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(resendPage),
+            });
+        AccountTestFlows.AssertRedirect(response, "/Account/ResendEmailConfirmationConfirmation");
+
+        var confirmationPage = await browser.GetStringAsync("/Account/ResendEmailConfirmationConfirmation");
+        Assert.Contains("If an unconfirmed account exists", confirmationPage, StringComparison.OrdinalIgnoreCase);
+
+        await AccountTestFlows.ConfirmEmailAsync(browser, email);
+
+        using var loginBrowser = CreateBrowser(factory);
+        await AccountTestFlows.LoginAsync(loginBrowser, email, Password);
+    }
+
+    [SqlServerFact]
+    public async Task ResendEmailConfirmation_ConfirmedOrUnknownEmail_UsesSameResponseAndSendsNothing()
+    {
+        var factory = RequireFactory();
+        var email = NewEmail();
+        var unknownEmail = $"missing-{Guid.NewGuid():N}@example.com";
+
+        using var browser = CreateBrowser(factory);
+        await AccountTestFlows.RegisterAsync(browser, email, NewPhone(), Password);
+        await AccountTestFlows.ConfirmEmailAsync(browser, email);
+
+        var mailbox = factory.Services.GetRequiredService<DevelopmentMailbox>();
+        mailbox.Clear();
+
+        foreach (var address in new[] { email, unknownEmail })
+        {
+            var resendPage = await browser.GetStringAsync("/Account/ResendEmailConfirmation");
+            using var response = await browser.PostFormAsync(
+                "/Account/ResendEmailConfirmation",
+                new Dictionary<string, string>
+                {
+                    ["Email"] = address,
+                    ["__RequestVerificationToken"] = BrowserClient.ExtractToken(resendPage),
+                });
+
+            AccountTestFlows.AssertRedirect(response, "/Account/ResendEmailConfirmationConfirmation");
+        }
+
+        var confirmationPage = await browser.GetStringAsync("/Account/ResendEmailConfirmationConfirmation");
+        Assert.Contains("If an unconfirmed account exists", confirmationPage, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(mailbox.GetByEmail(email));
+        Assert.Empty(mailbox.GetByEmail(unknownEmail));
     }
 
     private static async Task AssertLoginFailsAsync(

@@ -1,4 +1,5 @@
-    using GymManagement.BLL.Services.Interfaces;
+    using System.Security.Claims;
+using GymManagement.BLL.Services.Interfaces;
 using GymManagement.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,12 +21,19 @@ namespace GymManagement.Controllers
 
         public async Task<IActionResult> Index(CancellationToken ct)
         {
-            if (User.IsInRole("SuperAdmin"))
+            var roles = User.Claims
+                .Where(claim => claim.Type == ClaimTypes.Role)
+                .Select(claim => claim.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (roles.Contains("SuperAdmin"))
             {
                 return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
             }
 
-            if (User.IsInRole("Member"))
+            // Only a pure Member is sent to the portal. A user who also holds a
+            // staff role stays on the staff analytics home page.
+            if (roles.Contains("Member") && roles.Count == 1)
             {
                 return Redirect("/Member");
             }

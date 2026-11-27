@@ -121,6 +121,7 @@ namespace GymManagement.BLL.Service.Classes
         public async Task<Result> SaveMemberHealthRecordAsync(
             int memberId,
             HealthRecordViewModel model,
+            AuditActor actor,
             CancellationToken ct = default)
         {
             var memberRepo = unitOfWork.GetRepository<Member>();
@@ -132,6 +133,7 @@ namespace GymManagement.BLL.Service.Classes
                 x => x.MemberId == memberId,
                 tracking: true,
                 ct: ct);
+            var isNew = record is null;
 
             if (record is null)
             {
@@ -148,8 +150,30 @@ namespace GymManagement.BLL.Service.Classes
                 repo.Update(record);
             }
 
+            var audit = CreateAudit(
+                isNew ? HealthRecordAudit.Created : HealthRecordAudit.Updated,
+                actor,
+                memberId,
+                record);
+            audit.HealthRecord = isNew ? record : null;
+            audit.HealthRecordId = isNew ? null : record.Id;
+            unitOfWork.GetRepository<HealthRecordAudit>().Add(audit);
+
             var saved = await unitOfWork.SaveChangesAsync(ct);
             return saved > 0 ? Result.Ok() : Result.Fail("Failed to save health record.");
+        }
+
+        public async Task<IReadOnlyList<HealthRecordAuditViewModel>> GetHealthRecordAuditAsync(
+            int memberId,
+            CancellationToken ct = default)
+        {
+            var audits = await unitOfWork.GetRepository<HealthRecordAudit>().GetAllAsync(
+                audit => audit.MemberId == memberId,
+                tracking: false,
+                ct: ct);
+
+            return mapper.Map<List<HealthRecordAuditViewModel>>(
+                audits.OrderByDescending(audit => audit.CreatedAt).ToList());
         }
 
         public async Task<MemberToUpdateViewModel?> GetMemberToUpdatAsync(int MemberId, CancellationToken ct = default)
@@ -159,7 +183,10 @@ namespace GymManagement.BLL.Service.Classes
 
         }
 
-        public async Task<Result> RemoveMemberAsync(int MemberId, CancellationToken ct = default)
+        public async Task<Result> RemoveMemberAsync(
+            int MemberId,
+            AuditActor actor,
+            CancellationToken ct = default)
         {
             var memberRepo = unitOfWork.GetRepository<Member>();
             var member = await memberRepo.GetByIdAsync(MemberId, ct);
@@ -169,6 +196,31 @@ namespace GymManagement.BLL.Service.Classes
 
             if (hasFutureBooking) 
                 return Result.Fail("Cannot delete a member with upcoming sessions");
+
+            var record = await unitOfWork.GetRepository<HealthRecord>().FirstOrDefaultAsync(
+                x => x.MemberId == MemberId,
+                tracking: false,
+                ct: ct);
+
+            var auditRepo = unitOfWork.GetRepository<HealthRecordAudit>();
+            if (record is not null)
+            {
+                // The HealthRecord FK is left null: the record is about to be cascade-deleted.
+                var audit = CreateAudit(HealthRecordAudit.Deleted, actor, MemberId, record);
+                auditRepo.Add(audit);
+            }
+
+            // SQL Server disallows a cascade path straight from Members to this table,
+            // so detach existing audit rows explicitly before deleting the member.
+            var memberAudits = await auditRepo.GetAllAsync(
+                audit => audit.MemberId == MemberId,
+                tracking: true,
+                ct: ct);
+            foreach (var audit in memberAudits)
+            {
+                audit.MemberId = null;
+                auditRepo.Update(audit);
+            }
 
             memberRepo.Delete(member);
             var result = await unitOfWork.SaveChangesAsync(ct);
@@ -203,5 +255,22 @@ namespace GymManagement.BLL.Service.Classes
             return result > 0 ? Result.Ok() : Result.Fail("Failed To update Membe");
 
         }
+
+        private static HealthRecordAudit CreateAudit(
+            string action,
+            AuditActor actor,
+            int memberId,
+            HealthRecord record) => new()
+            {
+                Action = action,
+                ActorUserId = actor.UserId,
+                ActorEmail = string.IsNullOrWhiteSpace(actor.Email) ? "unknown" : actor.Email,
+                MemberId = memberId,
+                CreatedAt = DateTime.UtcNow,
+                Height = record.Height,
+                Weight = record.Weight,
+                BloodType = record.BloodType,
+                Note = record.Note,
+            };
     }
 }    

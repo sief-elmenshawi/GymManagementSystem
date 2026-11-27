@@ -20,7 +20,7 @@ Let a `SuperAdmin` manage application accounts from `/Users` without editing the
 
 * `Index`: single-query list of users with roles from `AspNetUserRoles`/`AspNetRoles`
 * `Create`: create a confirmed account, assign one existing role, set initial password
-* `Edit`: update names, user name, email, phone, role, optionally reset password, and keep the email confirmed
+* `Edit`: update names, user name, email, phone, role, optionally reset password, and keep the email confirmed in one EF transaction
 * `Delete`: POST-only deletion with antiforgery protection
 * Explicit route `Users/{action=Index}/{id?}`
 * Dashboard card and layout nav link for `SuperAdmin`
@@ -33,11 +33,12 @@ Let a `SuperAdmin` manage application accounts from `/Users` without editing the
 * The last `SuperAdmin` cannot be demoted or deleted.
 * Password changes use Identity reset tokens, not direct hash edits.
 * Admin-created and admin-edited accounts are marked `EmailConfirmed` because sign-in requires confirmation globally.
+* A failed password or role step rolls back the profile and role changes; the change tracker is cleared before the form is redisplayed.
 
 ## Non-goals
 
 * Public registration lives at `/Account/Register` and always assigns `Member`
-* No self-service profile editing
+* No self-service profile editing here; members edit their own linked profile in `/Member/EditProfile`
 * No bulk user import/export
 * No new EF migration (uses existing ASP.NET Core Identity tables)
 * Self-service password recovery lives in `AccountController`, not here
@@ -52,10 +53,10 @@ Let a `SuperAdmin` manage application accounts from `/Users` without editing the
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `107 Passed / 0 Failed / 0 Skipped`
-* E2E coverage: seeded user list, create with role assignment and confirmed email, admin forbidden, last-SuperAdmin demotion guard
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
+* E2E coverage: seeded user list, create with role assignment and confirmed email, admin forbidden, last-SuperAdmin demotion guard, invalid-password edit rollback
 
 ## Risks and follow-ups
 
-* Editing a user updates profile fields before role/password changes; a later Identity failure can leave partial profile updates. This is acceptable for a small admin surface but should be reviewed if the feature grows.
-* Public registration is implemented separately at `/Account/Register` and requires email confirmation.
+* **Resolved:** `Edit` now wraps profile, password reset, and role assignment in one `GymDbContext` transaction; a later Identity failure rolls back the profile and role changes.
+* **Accepted by design:** public registration remains a separate anonymous flow in `AccountController` and still requires email confirmation.

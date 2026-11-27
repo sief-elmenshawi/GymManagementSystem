@@ -64,8 +64,12 @@ public sealed class HealthRecordManagementFlowTests : IAsyncLifetime
         var details = await browser.GetStringAsync($"/Members/HealthRecordDetails/{memberId}");
         Assert.Contains("Health Record", details, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("created after registration", details, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Audit trail", details, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Created", details, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(SuperAdminEmail, details, StringComparison.OrdinalIgnoreCase);
 
         AssertHealthRecord(factory, memberId, 175.5m, 70.5m, "O+", "created after registration");
+        AssertAuditCount(factory, memberId, 1);
 
         var editPage = await browser.GetStringAsync($"/Members/HealthRecordEdit/{memberId}");
         using var editResponse = await browser.PostFormAsync(
@@ -74,6 +78,48 @@ public sealed class HealthRecordManagementFlowTests : IAsyncLifetime
 
         AssertRedirect(editResponse, $"/Members/HealthRecordDetails/{memberId}");
         AssertHealthRecord(factory, memberId, 176.25m, 72.75m, "A+", "updated by staff");
+
+        var updatedDetails = await browser.GetStringAsync($"/Members/HealthRecordDetails/{memberId}");
+        Assert.Contains("Updated", updatedDetails, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("updated by staff", updatedDetails, StringComparison.OrdinalIgnoreCase);
+        AssertAuditCount(factory, memberId, 2);
+    }
+
+    [SqlServerFact]
+    public async Task DeleteMember_WithHealthRecord_KeepsDeleteAuditAfterMemberIsGone()
+    {
+        var factory = RequireFactory();
+        var email = $"health.delete-{Guid.NewGuid():N}@example.com";
+        var memberId = await RegisterMemberAsync(factory, email);
+
+        using var browser = CreateBrowser(factory);
+        await LoginAsync(browser, SuperAdminEmail);
+
+        var createPage = await browser.GetStringAsync($"/Members/HealthRecordCreate/{memberId}");
+        using var createResponse = await browser.PostFormAsync(
+            $"/Members/HealthRecordCreate/{memberId}",
+            HealthForm(createPage, "170", "65", "B+", "before member deletion"));
+        AssertRedirect(createResponse, $"/Members/HealthRecordDetails/{memberId}");
+
+        var deletePage = await browser.GetStringAsync($"/Members/Delete/{memberId}");
+        using var deleteResponse = await browser.PostFormAsync(
+            $"/Members/DeleteConfirmed/{memberId}",
+            new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(deletePage),
+            });
+        AssertRedirect(deleteResponse, "/Members");
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+        Assert.False(await db.Members.AnyAsync(member => member.Id == memberId));
+        Assert.False(await db.HealthRecords.AnyAsync(record => record.MemberId == memberId));
+
+        var deleteAudit = await db.HealthRecordAudits.AsNoTracking().SingleAsync(
+            audit => audit.Action == "Deleted" && audit.Note == "before member deletion");
+        Assert.Null(deleteAudit.MemberId);
+        Assert.Null(deleteAudit.HealthRecordId);
+        Assert.Equal(SuperAdminEmail, deleteAudit.ActorEmail, ignoreCase: true);
     }
 
     [SqlServerFact]
@@ -159,6 +205,19 @@ public sealed class HealthRecordManagementFlowTests : IAsyncLifetime
         Assert.Equal(weight, record.Weight);
         Assert.Equal(bloodType, record.BloodType);
         Assert.Equal(note, record.Note);
+    }
+
+    private static void AssertAuditCount(GymTestAppFactory factory, int memberId, int expected)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+        var audits = db.HealthRecordAudits.AsNoTracking()
+            .Where(audit => audit.MemberId == memberId)
+            .OrderBy(audit => audit.CreatedAt)
+            .ToList();
+        Assert.Equal(expected, audits.Count);
+        Assert.All(audits, audit =>
+            Assert.Equal(SuperAdminEmail, audit.ActorEmail, ignoreCase: true));
     }
 
     private static async Task LoginAsync(BrowserClient browser, string email)

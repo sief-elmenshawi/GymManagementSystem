@@ -104,80 +104,88 @@ namespace GymManagement.PL.Controllers
 
             if (!ModelState.IsValid) return View(model);
 
-            var user = new ApplicationUser
-            {
-                UserName = model.Email,
-                Email = model.Email,
-                FirstName = model.FirstName,
-                LastName = model.LastName,
-                PhoneNumber = model.Phone,
-            };
-
-            var created = await _userManager.CreateAsync(user, model.Password);
-            if (!created.Succeeded)
-            {
-                AddIdentityErrors(created);
-                return View(model);
-            }
-
-            var roleResult = await _userManager.AddToRoleAsync(user, MemberRole);
-            if (!roleResult.Succeeded)
-            {
-                AddIdentityErrors(roleResult);
-                await _userManager.DeleteAsync(user);
-                return View(model);
-            }
-
-            var member = new Member
-            {
-                ApplicationUserId = user.Id,
-                Name = $"{model.FirstName} {model.LastName}",
-                Email = model.Email,
-                Phone = model.Phone,
-                DateOfBirth = model.DateOfBirth!.Value,
-                Gender = model.Gender!.Value,
-                Photo = string.Empty,
-                Address = new Address
-                {
-                    Street = model.Street,
-                    City = model.City,
-                    BuildingNumber = model.BuildingNumber,
-                },
-            };
-
-            _dbContext.Members.Add(member);
-
             try
             {
+                // Identity and gym data share this scoped context, so one transaction
+                // keeps user, role, and member creation atomic.
+                await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+
+                var user = new ApplicationUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    PhoneNumber = model.Phone,
+                };
+
+                var created = await _userManager.CreateAsync(user, model.Password);
+                if (!created.Succeeded)
+                {
+                    AddIdentityErrors(created);
+                    await transaction.RollbackAsync(ct);
+                    return View(model);
+                }
+
+                IdentityResult roleResult;
+                try
+                {
+                    roleResult = await _userManager.AddToRoleAsync(user, MemberRole);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // UserStore throws when the seeded role is missing instead of returning a result.
+                    _logger.LogError(ex, "The {Role} role is missing; registration was rolled back.", MemberRole);
+                    ModelState.AddModelError(
+                        string.Empty,
+                        "Registration could not be completed. Please try again.");
+                    await transaction.RollbackAsync(ct);
+                    return View(model);
+                }
+
+                if (!roleResult.Succeeded)
+                {
+                    AddIdentityErrors(roleResult);
+                    await transaction.RollbackAsync(ct);
+                    return View(model);
+                }
+
+                var member = new Member
+                {
+                    ApplicationUserId = user.Id,
+                    Name = $"{model.FirstName} {model.LastName}",
+                    Email = model.Email,
+                    Phone = model.Phone,
+                    DateOfBirth = model.DateOfBirth!.Value,
+                    Gender = model.Gender!.Value,
+                    Photo = string.Empty,
+                    Address = new Address
+                    {
+                        Street = model.Street,
+                        City = model.City,
+                        BuildingNumber = model.BuildingNumber,
+                    },
+                };
+
+                _dbContext.Members.Add(member);
                 await _dbContext.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                // Email delivery is outside the database transaction by design.
+                await SendConfirmationEmailAsync(user, ct);
+
+                _logger.LogInformation("Registered member {Email}; confirmation email sent.", user.Email);
+                TempData["SuccessMessage"] =
+                    "Registration successful. Check your email to confirm your account before signing in.";
+                return Redirect("/Account/Login");
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(ex, "Failed to create member record for registered user {UserId}.", user.Id);
-                _dbContext.Entry(member).State = EntityState.Detached;
-                await _userManager.DeleteAsync(user);
+                _dbContext.ChangeTracker.Clear();
+                _logger.LogError(ex, "Failed to complete registration for {Email}.", model.Email);
                 ModelState.AddModelError(string.Empty, "Registration could not be completed. Please try again.");
                 return View(model);
             }
-
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var callbackUrl = Url.Action(
-                nameof(ConfirmEmail),
-                "Account",
-                new { userId = user.Id, token },
-                Request.Scheme) ?? "/Account/ConfirmEmail";
-
-            await _emailSender.SendAsync(
-                user.Email!,
-                "Confirm your gym account",
-                $"<p>Welcome to the gym, {WebUtility.HtmlEncode(user.FirstName)}.</p>" +
-                $"<p>Please confirm your email address before signing in:</p>" +
-                $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Confirm email address</a></p>");
-
-            _logger.LogInformation("Registered member {Email}; confirmation email sent.", user.Email);
-            TempData["SuccessMessage"] =
-                "Registration successful. Check your email to confirm your account before signing in.";
-            return Redirect("/Account/Login");
         }
 
         #region Email confirmation
@@ -221,9 +229,42 @@ namespace GymManagement.PL.Controllers
                 Message = result.Succeeded
                     ? "Your email address is confirmed. You can now sign in."
                     : "We could not confirm this email address. The link may have expired. " +
-                      "Try signing in to request a new confirmation link.",
+                      "Request a new link below.",
             });
         }
+
+        #endregion
+
+        #region Resend email confirmation
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResendEmailConfirmation() => View();
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendEmailConfirmation(
+            ResendEmailConfirmationViewModel model,
+            CancellationToken ct = default)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user is not null && !await _userManager.IsEmailConfirmedAsync(user))
+            {
+                await SendConfirmationEmailAsync(user, ct);
+                _logger.LogInformation("Confirmation link reissued for user {UserId}.", user.Id);
+            }
+
+            // Same non-disclosure response as ForgotPassword.
+            TempData["SuccessMessage"] =
+                "If an unconfirmed account exists for that email, a new confirmation link has been sent.";
+            return RedirectToAction(nameof(ResendEmailConfirmationConfirmation));
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResendEmailConfirmationConfirmation() => View();
 
         #endregion
 
@@ -257,7 +298,8 @@ namespace GymManagement.PL.Controllers
                     $"<p>Hello {WebUtility.HtmlEncode(user.FirstName)},</p>" +
                     $"<p>Use the link below to reset your password. " +
                     $"If you did not request this, you can ignore this email.</p>" +
-                    $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Reset password</a></p>");
+                    $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Reset password</a></p>",
+                    ct);
 
                 _logger.LogInformation("Password reset link issued for user {UserId}.", user.Id);
             }
@@ -323,6 +365,24 @@ namespace GymManagement.PL.Controllers
         public IActionResult ResetPasswordConfirmation() => View();
 
         #endregion
+
+        private async Task SendConfirmationEmailAsync(ApplicationUser user, CancellationToken ct)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var callbackUrl = Url.Action(
+                nameof(ConfirmEmail),
+                "Account",
+                new { userId = user.Id, token },
+                Request.Scheme) ?? "/Account/ConfirmEmail";
+
+            await _emailSender.SendAsync(
+                user.Email!,
+                "Confirm your gym account",
+                $"<p>Welcome to the gym, {WebUtility.HtmlEncode(user.FirstName)}.</p>" +
+                $"<p>Please confirm your email address before signing in:</p>" +
+                $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Confirm email address</a></p>",
+                ct);
+        }
 
         private void AddIdentityErrors(IdentityResult result)
         {

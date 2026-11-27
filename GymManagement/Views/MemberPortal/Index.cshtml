@@ -10,6 +10,15 @@
         <p class="mb-0 text-light opacity-75">Your membership details and your bookings only</p>
     </header>
 
+    @if (TempData["SuccessMessage"] is string success)
+    {
+        <div class="alert alert-success" role="alert">@success</div>
+    }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+
     @if (!string.IsNullOrEmpty(Model.Notice))
     {
         <div class="alert alert-warning" role="alert">@Model.Notice</div>
@@ -41,6 +50,18 @@
                             </dd>
                         }
                     </dl>
+
+                    @if (Model.HasLinkedMember)
+                    {
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <a asp-controller="MemberPortal" asp-action="EditProfile" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil-square me-1"></i> Edit profile
+                            </a>
+                            <a asp-controller="MemberPortal" asp-action="Sessions" class="btn btn-primary">
+                                <i class="bi bi-calendar-plus me-1"></i> Browse sessions
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -60,6 +81,7 @@
                                         <th>Coach</th>
                                         <th>Starts</th>
                                         <th>Attended</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -74,6 +96,21 @@
                                                 <span class="badge @(booking.IsAttended ? "bg-success" : "bg-secondary")">
                                                     @(booking.IsAttended ? "Yes" : "No")
                                                 </span>
+                                            </td>
+                                            <td>
+                                                @if (booking.CanCancel)
+                                                {
+                                                    <form asp-controller="MemberPortal" asp-action="Cancel" method="post">
+                                                        <input type="hidden" name="sessionId" value="@booking.SessionId" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            Cancel
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
                                             </td>
                                         </tr>
                                     }

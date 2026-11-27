@@ -59,6 +59,7 @@ namespace GymManagement.BLL.MappingProfile
              .ForMember(dest => dest.MembershipEndDate, opt => opt.Ignore());
 
             CreateMap<HealthRecord, HealthRecordViewModel>().ReverseMap();
+            CreateMap<HealthRecordAudit, HealthRecordAuditViewModel>();
 
             CreateMap<Member, MemberToUpdateViewModel>()
               .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src => src.Address.BuildingNumber))

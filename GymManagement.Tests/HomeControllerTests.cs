@@ -30,6 +30,50 @@ public class HomeControllerTests
     }
 
     [Fact]
+    public async Task Index_ForMemberOnly_RedirectsToPortal()
+    {
+        var controller = CreateController("Member");
+
+        var result = await controller.Index(CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal("/Member", redirect.Url);
+        _analytics.Verify(
+            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData("Member", "Admin")]
+    [InlineData("Member", "SuperAdmin")]
+    public async Task Index_ForMemberWithStaffRole_DoesNotUsePortal(string memberRole, string staffRole)
+    {
+        var expected = new AnalyticsViewModel { TotalMembers = 4 };
+        _analytics
+            .Setup(s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+        var controller = CreateController(memberRole, staffRole);
+
+        var result = await controller.Index(CancellationToken.None);
+
+        if (staffRole == "SuperAdmin")
+        {
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Dashboard", redirect.ControllerName);
+            _analytics.Verify(
+                s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+                Times.Never);
+            return;
+        }
+
+        var view = Assert.IsType<ViewResult>(result);
+        Assert.Same(expected, view.Model);
+        _analytics.Verify(
+            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Index_ForNonSuperAdmin_ReturnsAnalyticsView()
     {
         var expected = new AnalyticsViewModel { TotalMembers = 4 };
@@ -47,10 +91,10 @@ public class HomeControllerTests
             Times.Once);
     }
 
-    private HomeController CreateController(string role)
+    private HomeController CreateController(params string[] roles)
     {
         var identity = new ClaimsIdentity(
-            new[] { new Claim(ClaimTypes.Role, role) },
+            roles.Select(role => new Claim(ClaimTypes.Role, role)),
             authenticationType: "Test");
         var controller = new HomeController(NullLogger<HomeController>.Instance, _analytics.Object)
         {

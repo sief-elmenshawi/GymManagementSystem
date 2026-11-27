@@ -1,0 +1,70 @@
+@model MemberToUpdateViewModel
+@{
+    ViewData["Title"] = "Edit Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary-color text-white py-3">
+                    <h3 class="h5 mb-0">Edit my profile</h3>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted">
+                        Your contact details and address are shared with the gym. They also update your
+                        sign-in email and phone number.
+                    </p>
+
+                    <form asp-controller="MemberPortal" asp-action="EditProfile" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label text-muted">Name</label>
+                                <input asp-for="Name" class="form-control" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label">Email</label>
+                                <input asp-for="Email" class="form-control" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Phone" class="form-label">Phone</label>
+                                <input asp-for="Phone" class="form-control" />
+                                <span asp-validation-for="Phone" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="BuildingNumber" class="form-label">Building number</label>
+                                <input asp-for="BuildingNumber" class="form-control" />
+                                <span asp-validation-for="BuildingNumber" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="City" class="form-label">City</label>
+                                <input asp-for="City" class="form-control" />
+                                <span asp-validation-for="City" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Street" class="form-label">Street</label>
+                                <input asp-for="Street" class="form-control" />
+                                <span asp-validation-for="Street" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between gap-2 mt-4">
+                            <a asp-controller="MemberPortal" asp-action="Index" class="btn btn-outline-secondary">
+                                Back to profile
+                            </a>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
