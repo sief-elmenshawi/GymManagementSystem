@@ -8,6 +8,7 @@ using GymManagement.DAL.Models;
 using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
 using GymManagement.PL;
+using GymManagement.Infrastructure.Email;
 
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
@@ -34,6 +35,11 @@ namespace GymManagementPL
             // Add services to the container.
             builder.Services.AddControllersWithViews(options =>
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
+
+            builder.Services.Configure<EmailOptions>(
+                builder.Configuration.GetSection(EmailOptions.SectionName));
+            builder.Services.AddSingleton<DevelopmentMailbox>();
+            builder.Services.AddScoped<IAppEmailSender, AppEmailSender>();
 
             builder.Services.AddDbContext<GymDbContext>(options =>
             {
@@ -86,10 +92,14 @@ namespace GymManagementPL
                 //Config.Password.RequireLowercase = true;
                 //Config.Password.RequireUppercase = true;
                 Config.User.RequireUniqueEmail = true;
+                Config.SignIn.RequireConfirmedAccount = true;
+                Config.SignIn.RequireConfirmedEmail = true;
                 Config.Lockout.MaxFailedAccessAttempts = 5;
                 Config.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
 
-            }).AddEntityFrameworkStores<GymDbContext>();
+            })
+            .AddEntityFrameworkStores<GymDbContext>()
+            .AddDefaultTokenProviders();
 
             builder.Services.ConfigureApplicationCookie(options =>
             {
@@ -138,6 +148,18 @@ namespace GymManagementPL
             app.UseAuthorization();
 
             app.MapStaticAssets();
+
+            // Development-only mailbox for confirmation/reset links. Never mapped in production.
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapGet("/dev-mailbox/{email}", (string email, DevelopmentMailbox mailbox) =>
+                    Results.Ok(mailbox.GetByEmail(email)));
+                app.MapDelete("/dev-mailbox", (DevelopmentMailbox mailbox) =>
+                {
+                    mailbox.Clear();
+                    return Results.NoContent();
+                });
+            }
 
             // Explicit Home route replaces the old catch-all "{controller}/{id?}", which
             // silently sent URLs such as /Members/999 to MembersController.Index.

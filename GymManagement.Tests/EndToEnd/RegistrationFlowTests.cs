@@ -143,7 +143,42 @@ public sealed class RegistrationFlowTests : IAsyncLifetime
             RegistrationForm(email, NewPhone(), BrowserClient.ExtractToken(registerPage)));
         AssertRedirect(registerResponse, "/Account/Login");
 
+        await AccountTestFlows.ConfirmEmailAsync(registrationBrowser, email);
+
         using var loginBrowser = CreateBrowser(factory);
+        await LoginAsync(loginBrowser, email);
+    }
+
+    [SqlServerFact]
+    public async Task RegisteredUser_CannotSignInBeforeEmailConfirmation()
+    {
+        var factory = RequireFactory();
+        using var browser = CreateBrowser(factory);
+        var email = NewEmail();
+
+        var registerPage = await browser.GetStringAsync("/Account/Register");
+        using var registerResponse = await browser.PostFormAsync(
+            "/Account/Register",
+            RegistrationForm(email, NewPhone(), BrowserClient.ExtractToken(registerPage)));
+        AssertRedirect(registerResponse, "/Account/Login");
+
+        using var loginBrowser = CreateBrowser(factory);
+        var loginPage = await loginBrowser.GetStringAsync("/Account/Login");
+        using var blockedResponse = await loginBrowser.PostFormAsync(
+            "/Account/Login",
+            new Dictionary<string, string>
+            {
+                ["Email"] = email,
+                ["Password"] = Password,
+                ["RememberMe"] = "false",
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(loginPage),
+            });
+
+        Assert.Equal(HttpStatusCode.OK, blockedResponse.StatusCode);
+        var body = await blockedResponse.Content.ReadAsStringAsync();
+        Assert.Contains("Please confirm your email address", body, StringComparison.OrdinalIgnoreCase);
+
+        await AccountTestFlows.ConfirmEmailAsync(browser, email);
         await LoginAsync(loginBrowser, email);
     }
 
@@ -159,6 +194,8 @@ public sealed class RegistrationFlowTests : IAsyncLifetime
             "/Account/Register",
             RegistrationForm(email, NewPhone(), BrowserClient.ExtractToken(registerPage)));
         AssertRedirect(registerResponse, "/Account/Login");
+
+        await AccountTestFlows.ConfirmEmailAsync(registrationBrowser, email);
 
         using var browser = CreateBrowser(factory);
         await LoginAsync(browser, email);

@@ -134,6 +134,7 @@ public sealed class HealthRecordManagementFlowTests : IAsyncLifetime
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(registerPage),
             });
         AssertRedirect(response, "/Account/Login");
+        await AccountTestFlows.ConfirmEmailAsync(browser, email);
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();

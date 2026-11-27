@@ -1,4 +1,6 @@
-﻿using GymManagement.BLL.ViewModels.ApplicationViewModels;
+﻿using System.Net;
+using GymManagement.BLL.Services.Interfaces;
+using GymManagement.BLL.ViewModels.ApplicationViewModels;
 using GymManagement.Controllers;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
@@ -16,17 +18,20 @@ namespace GymManagement.PL.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly GymDbContext _dbContext;
+        private readonly IAppEmailSender _emailSender;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
             GymDbContext dbContext,
+            IAppEmailSender emailSender,
             ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _dbContext = dbContext;
+            _emailSender = emailSender;
             _logger = logger;
         }
         #region Login
@@ -61,7 +66,10 @@ namespace GymManagement.PL.Controllers
             }
             else if (result.IsNotAllowed)
             {
-                ModelState.AddModelError("InvalidLogin", "Sign-in is not allowed for this account.");
+                ModelState.AddModelError(
+                    "InvalidLogin",
+                    "Please confirm your email address before signing in. " +
+                    "Check your inbox for the confirmation link.");
             }
             else
             {
@@ -152,10 +160,169 @@ namespace GymManagement.PL.Controllers
                 return View(model);
             }
 
-            _logger.LogInformation("Registered member {Email}.", user.Email);
-            TempData["SuccessMessage"] = "Registration successful. Please sign in.";
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var callbackUrl = Url.Action(
+                nameof(ConfirmEmail),
+                "Account",
+                new { userId = user.Id, token },
+                Request.Scheme) ?? "/Account/ConfirmEmail";
+
+            await _emailSender.SendAsync(
+                user.Email!,
+                "Confirm your gym account",
+                $"<p>Welcome to the gym, {WebUtility.HtmlEncode(user.FirstName)}.</p>" +
+                $"<p>Please confirm your email address before signing in:</p>" +
+                $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Confirm email address</a></p>");
+
+            _logger.LogInformation("Registered member {Email}; confirmation email sent.", user.Email);
+            TempData["SuccessMessage"] =
+                "Registration successful. Check your email to confirm your account before signing in.";
             return Redirect("/Account/Login");
         }
+
+        #region Email confirmation
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string? userId, string? token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            {
+                return View(new ConfirmEmailViewModel
+                {
+                    Succeeded = false,
+                    Message = "This confirmation link is invalid or incomplete.",
+                });
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                return View(new ConfirmEmailViewModel
+                {
+                    Succeeded = false,
+                    Message = "We could not find the account for this confirmation link.",
+                });
+            }
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Email confirmed for user {UserId}.", user.Id);
+            }
+            else
+            {
+                AddIdentityErrors(result);
+            }
+
+            return View(new ConfirmEmailViewModel
+            {
+                Succeeded = result.Succeeded,
+                Message = result.Succeeded
+                    ? "Your email address is confirmed. You can now sign in."
+                    : "We could not confirm this email address. The link may have expired. " +
+                      "Try signing in to request a new confirmation link.",
+            });
+        }
+
+        #endregion
+
+        #region Forgot password
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPassword() => View();
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword(
+            ForgotPasswordViewModel model,
+            CancellationToken ct = default)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user is not null)
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackUrl = Url.Action(
+                    nameof(ResetPassword),
+                    "Account",
+                    new { email = user.Email, token },
+                    Request.Scheme) ?? "/Account/ResetPassword";
+
+                await _emailSender.SendAsync(
+                    user.Email!,
+                    "Reset your gym account password",
+                    $"<p>Hello {WebUtility.HtmlEncode(user.FirstName)},</p>" +
+                    $"<p>Use the link below to reset your password. " +
+                    $"If you did not request this, you can ignore this email.</p>" +
+                    $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Reset password</a></p>");
+
+                _logger.LogInformation("Password reset link issued for user {UserId}.", user.Id);
+            }
+
+            TempData["SuccessMessage"] =
+                "If an account exists for that email, a password reset link has been sent.";
+            return RedirectToAction(nameof(ForgotPasswordConfirmation));
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPasswordConfirmation() => View();
+
+        #endregion
+
+        #region Reset password
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPassword(string? email, string? token)
+        {
+            var model = new ResetPasswordViewModel
+            {
+                Email = email ?? string.Empty,
+                Token = token ?? string.Empty,
+            };
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+            {
+                ModelState.AddModelError(string.Empty, "This password reset link is invalid or incomplete.");
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(
+            ResetPasswordViewModel model,
+            CancellationToken ct = default)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user is null)
+            {
+                return RedirectToAction(nameof(ResetPasswordConfirmation));
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+            if (!result.Succeeded)
+            {
+                AddIdentityErrors(result);
+                return View(model);
+            }
+
+            _logger.LogInformation("Password reset completed for user {UserId}.", user.Id);
+            return RedirectToAction(nameof(ResetPasswordConfirmation));
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPasswordConfirmation() => View();
+
+        #endregion
 
         private void AddIdentityErrors(IdentityResult result)
         {

@@ -91,6 +91,9 @@ namespace GymManagement.Controllers
                 UserName = model.UserName,
                 Email = model.Email,
                 PhoneNumber = model.PhoneNumber,
+                // Accounts created by a SuperAdmin are trusted and must satisfy
+                // the global RequireConfirmedAccount sign-in rule.
+                EmailConfirmed = true,
             };
 
             var created = await _userManager.CreateAsync(user, model.Password);
@@ -158,6 +161,7 @@ namespace GymManagement.Controllers
             user.UserName = model.UserName;
             user.Email = model.Email;
             user.PhoneNumber = model.PhoneNumber;
+            user.EmailConfirmed = true;
 
             var updated = await _userManager.UpdateAsync(user);
             if (!updated.Succeeded)

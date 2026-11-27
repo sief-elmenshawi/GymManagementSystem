@@ -91,6 +91,10 @@ public sealed class UserManagementFlowTests : IAsyncLifetime
                               where user.Email == "power.user@example.com"
                               select role.Name).SingleAsync();
         Assert.Equal("Admin", roleName);
+
+        var createdUser = await db.Users.AsNoTracking()
+            .SingleAsync(u => u.Email == "power.user@example.com");
+        Assert.True(createdUser.EmailConfirmed);
     }
 
     [SqlServerFact]

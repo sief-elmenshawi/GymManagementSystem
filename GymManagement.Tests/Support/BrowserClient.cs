@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
@@ -66,19 +67,22 @@ internal sealed class BrowserClient : IDisposable
         return await PostAsync(url, content);
     }
 
-    public static string ExtractToken(string html)
+    public static string ExtractToken(string html) =>
+        ExtractInputValue(html, "__RequestVerificationToken");
+
+    public static string ExtractInputValue(string html, string name)
     {
         var match = Regex.Match(
             html,
-            "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"",
+            $"name=\"{Regex.Escape(name)}\"[^>]*value=\"([^\"]+)\"",
             RegexOptions.IgnoreCase);
 
         if (!match.Success)
         {
-            throw new InvalidOperationException("Antiforgery token was not found in the response.");
+            throw new InvalidOperationException($"Input '{name}' was not found in the response.");
         }
 
-        return match.Groups[1].Value;
+        return WebUtility.HtmlDecode(match.Groups[1].Value);
     }
 
     private async Task<HttpResponseMessage> PostAsync(string url, HttpContent content)

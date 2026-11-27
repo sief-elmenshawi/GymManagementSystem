@@ -9,7 +9,10 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 ## 👤 Authentication and account security
 
 * ASP.NET Core Identity with unique emails and account lockout
+* Email confirmation is required before any account can sign in
+* `/Account/ForgotPassword` and `/Account/ResetPassword` send single-use reset links
 * Seeded `SuperAdmin`, `Admin`, and `Member` roles (user accounts only when a seed password is configured)
+* Seeded and SuperAdmin-created accounts are auto-confirmed
 * Global antiforgery validation for unsafe requests
 * HTTPS redirection only when an HTTPS URL/port is configured
 * Existing seeded user passwords are **not** reset on later startups
@@ -19,6 +22,7 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 * `/Account/Register` is public and linked from the login page
 * Creates an Identity account with **only** the `Member` role; role fields from the request are ignored
 * Creates a linked `Member` record with contact and address details
+* Sends a confirmation email; the account cannot sign in until the link is opened
 * Health records are not collected during registration; staff can add/edit them from the member page
 * Duplicate Identity/Member emails and member phone numbers are rejected
 
@@ -34,7 +38,7 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 
 * `/Users` is restricted to `SuperAdmin`
 * List accounts with their assigned roles
-* Create users with a chosen role and password
+* Create users with a chosen role and password; admin-created accounts are confirmed automatically
 * Edit account details, role, and optionally reset the password
 * Delete users, with guards against self-deletion and demoting/deleting the last `SuperAdmin`
 
@@ -177,6 +181,14 @@ Environment variables:
 | `AUTOMAPPER_LICENSE_KEY` | AutoMapper key required outside Development |
 | `LUCKYPENNY_LICENSE_KEY` | Shared fallback for the AutoMapper key |
 | `GYM_TEST_CONNECTION_STRING` | Enables SQL Server integration/E2E/performance tests |
+| `Email__From` | Sender address for account emails (default `no-reply@gymmanagement.local`) |
+| `Email__Smtp__Host` | SMTP host; when empty, Development uses the local mailbox |
+| `Email__Smtp__Port` | SMTP port (default `587`) |
+| `Email__Smtp__UseSsl` | Enable SSL/STARTTLS (default `true`) |
+| `Email__Smtp__User` | SMTP username |
+| `Email__Smtp__Password` | SMTP password/secret |
+
+In Development, confirmation and reset messages are captured in memory and can be read from `GET /dev-mailbox/{email}` (`DELETE /dev-mailbox` clears them). These endpoints are never mapped outside Development. In other environments, configure SMTP; otherwise email delivery is skipped and logged as an error.
 
 > Never commit real connection strings, passwords, or license keys.
 
@@ -193,6 +205,8 @@ dotnet ef database update --project GymManagement.DAL --startup-project GymManag
 In Package Manager Console, set **Default project** to `GymManagement.DAL` and run `Update-Database`.
 
 Seeding creates missing roles/users only. If no password is configured, identity seeding is skipped with a warning. Changing the configured password later does not reset existing users.
+
+The development database was verified with `20261127102651_AddMemberUserLink` applied (no pending migrations).
 
 ## 5. Run
 
@@ -220,7 +234,7 @@ EF tooling can also be checked without starting the web app:
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full verification: build `0 Warning(s), 0 Error(s)`, tests `103 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
+Last full verification: build `0 Warning(s), 0 Error(s)`, tests `107 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
 
 ---
 
@@ -248,7 +262,7 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 | `Trainer` | No | Not seeded by `IdentityDataSeeding` |
 | `Member` | No | Not seeded by `IdentityDataSeeding` |
 
-`HomeController` requires authentication only and redirects by role. `MemberPortalController` requires `Member`. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public registration and login are anonymous.
+`HomeController` requires authentication only and redirects by role. `MemberPortalController` requires `Member`. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public registration, login, email confirmation, forgot password, and reset password are anonymous. The development mailbox endpoints are mapped only in Development.
 
 ---
 

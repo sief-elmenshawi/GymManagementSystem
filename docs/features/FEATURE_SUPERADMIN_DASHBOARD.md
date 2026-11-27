@@ -47,7 +47,7 @@ No new API/data contract. The view uses the existing `AnalyticsViewModel` from `
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `103 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `107 Passed / 0 Failed / 0 Skipped`
 * Unit tests: `DashboardControllerTests`, `HomeControllerTests`
 * E2E tests: `HomeRoute_RedirectsSuperAdminToDashboard`, `Dashboard_IsForbiddenForAdmin`
 

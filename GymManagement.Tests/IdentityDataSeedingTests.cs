@@ -89,6 +89,50 @@ public sealed class IdentityDataSeedingTests
             Times.Once);
     }
 
+    [Fact]
+    public async Task SeedAsync_ExistingUnconfirmedUser_IsConfirmed()
+    {
+        var roleManager = CreateRoleManager();
+        roleManager.Setup(manager => manager.RoleExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
+
+        var existing = new ApplicationUser
+        {
+            Email = "Serag@gmail.com",
+            EmailConfirmed = false,
+        };
+
+        var confirmedOtherUser = new ApplicationUser
+        {
+            Email = "Nader@gmail.com",
+            EmailConfirmed = true,
+        };
+
+        var userManager = CreateUserManager();
+        userManager.Setup(manager => manager.FindByEmailAsync(It.IsAny<string>()))
+            .ReturnsAsync((string? email) =>
+                string.Equals(email, existing.Email, StringComparison.OrdinalIgnoreCase)
+                    ? existing
+                    : confirmedOtherUser);
+        userManager.Setup(manager => manager.UpdateAsync(It.IsAny<ApplicationUser>()))
+            .ReturnsAsync(IdentityResult.Success);
+        userManager.Setup(manager => manager.IsInRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        await IdentityDataSeeding.SeedAsync(
+            roleManager.Object,
+            userManager.Object,
+            Mock.Of<ILogger>(),
+            "P@ssw0rd");
+
+        Assert.True(existing.EmailConfirmed);
+        userManager.Verify(
+            manager => manager.UpdateAsync(It.Is<ApplicationUser>(user => user.EmailConfirmed)),
+            Times.Once);
+        userManager.Verify(
+            manager => manager.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
     private static Mock<UserManager<ApplicationUser>> CreateUserManager() => new(
         Mock.Of<IUserStore<ApplicationUser>>(),
         null!, null!, null!, null!, null!, null!, null!, null!);

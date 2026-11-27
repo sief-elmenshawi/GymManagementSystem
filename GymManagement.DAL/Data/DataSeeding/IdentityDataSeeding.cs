@@ -36,6 +36,7 @@ namespace GymManagement.DAL.Data.DataSeeding
                         UserName = "Sergio",
                         Email = "Serag@gmail.com",
                         PhoneNumber = "01123456789",
+                        EmailConfirmed = true,
                     },
                     adminPassword,
                     "SuperAdmin");
@@ -50,6 +51,7 @@ namespace GymManagement.DAL.Data.DataSeeding
                         UserName = "Nader",
                         Email = "Nader@gmail.com",
                         PhoneNumber = "01123457789",
+                        EmailConfirmed = true,
                     },
                     adminPassword,
                     "Admin");
@@ -102,6 +104,21 @@ namespace GymManagement.DAL.Data.DataSeeding
 
                 existing = user;
                 logger.LogInformation("User {Email} seeded.", user.Email);
+            }
+
+            // Confirmation is mandatory at sign-in. Seed and admin-created accounts are
+            // trusted, and accounts created by earlier runs are confirmed on upgrade.
+            if (!existing.EmailConfirmed)
+            {
+                existing.EmailConfirmed = true;
+                var confirmed = await userManager.UpdateAsync(existing);
+                if (!confirmed.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to confirm email for '{user.Email}': {FormatErrors(confirmed)}");
+                }
+
+                logger.LogInformation("Email confirmed for seeded user {Email}.", user.Email);
             }
 
             if (await userManager.IsInRoleAsync(existing, roleName))

@@ -127,6 +127,7 @@ public sealed class MemberPortalFlowTests : IAsyncLifetime
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(registerPage),
             });
         AssertRedirect(response, "/Account/Login");
+        await AccountTestFlows.ConfirmEmailAsync(browser, email);
     }
 
     private static async Task SeedBookingsAsync(GymTestAppFactory factory, string memberEmail)
