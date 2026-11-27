@@ -12,27 +12,52 @@ using Xunit;
 namespace GymManagement.Tests.EndToEnd;
 
 /// <summary>
-/// Real HTTP requests against a disposable SQL Server database: login, member CRUD and booking flow.
+/// Real HTTP requests against a disposable SQL Server database: login, routing, member CRUD and booking flow.
 /// Requires GYM_TEST_CONNECTION_STRING; otherwise these tests are reported as skipped.
+/// Each test gets a uniquely named database that is dropped again afterwards.
 /// </summary>
-public sealed class MemberAndBookingFlowTests
+public sealed class MemberAndBookingFlowTests : IAsyncLifetime
 {
-    private const string DatabaseName = "GymManagement_E2ETests";
     private const string SeedPassword = "Test@12345";
     private const string AdminEmail = "Serag@gmail.com";
 
     private readonly string? _connectionString =
         Environment.GetEnvironmentVariable("GYM_TEST_CONNECTION_STRING");
+    private readonly string _databaseName = $"GymManagement_E2E_{Guid.NewGuid():N}";
+
+    private GymTestAppFactory? _factory;
+
+    public async Task InitializeAsync()
+    {
+        if (_connectionString is null)
+        {
+            return;
+        }
+
+        await TestDatabase.DropAsync(_connectionString, _databaseName);
+        _factory = new GymTestAppFactory(_connectionString, _databaseName, SeedPassword);
+        using var startupClient = _factory.CreateClient(); // Force startup: migrations + seeding.
+    }
+
+    public async Task DisposeAsync()
+    {
+        _factory?.Dispose();
+
+        if (_connectionString is not null)
+        {
+            await TestDatabase.DropAsync(_connectionString, _databaseName);
+        }
+    }
 
     [SqlServerFact]
     public async Task MemberLifecycle_CreateEditDelete_ViaHttp()
     {
-        using var factory = await CreateFactoryAsync();
-        var browser = CreateBrowser(factory);
+        var factory = RequireFactory();
+        using var browser = CreateBrowser(factory);
         await LoginAsync(browser);
 
         var createPage = await browser.GetStringAsync("/Members/Create");
-        var createResponse = await browser.PostMultipartAsync(
+        using var createResponse = await browser.PostMultipartAsync(
             "/Members/CreateMember",
             new Dictionary<string, string>
             {
@@ -54,7 +79,7 @@ public sealed class MemberAndBookingFlowTests
             "member.png",
             TinyPng);
 
-        Assert.Equal(HttpStatusCode.Redirect, createResponse.StatusCode);
+        AssertRedirect(createResponse, "/Members");
 
         var index = await browser.GetStringAsync("/Members/Index");
         Assert.Contains("Integration Test Member", index, StringComparison.OrdinalIgnoreCase);
@@ -64,7 +89,7 @@ public sealed class MemberAndBookingFlowTests
         var memberId = int.Parse(idMatch.Groups[1].Value);
 
         var editPage = await browser.GetStringAsync($"/Members/EditMember/{memberId}");
-        var editResponse = await browser.PostFormAsync(
+        using var editResponse = await browser.PostFormAsync(
             $"/Members/EditMember/{memberId}",
             new Dictionary<string, string>
             {
@@ -76,7 +101,7 @@ public sealed class MemberAndBookingFlowTests
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
             });
 
-        Assert.Equal(HttpStatusCode.Redirect, editResponse.StatusCode);
+        AssertRedirect(editResponse, "/Members");
         var afterEdit = await browser.GetStringAsync("/Members/Index");
         Assert.Contains("Integration Test Member", afterEdit, StringComparison.OrdinalIgnoreCase);
 
@@ -86,16 +111,17 @@ public sealed class MemberAndBookingFlowTests
             var updatedMember = await db.Members.AsNoTracking().SingleAsync(m => m.Id == memberId);
             Assert.Equal("Alexandria", updatedMember.Address.City);
             Assert.Equal("Updated Street", updatedMember.Address.Street);
+            Assert.Equal("Integration Test Member", updatedMember.Name);
         }
 
-        var deleteResponse = await browser.PostFormAsync(
+        using var deleteResponse = await browser.PostFormAsync(
             $"/Members/DeleteConfirmed/{memberId}",
             new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
             });
 
-        Assert.Equal(HttpStatusCode.Redirect, deleteResponse.StatusCode);
+        AssertRedirect(deleteResponse, "/Members");
         var afterDelete = await browser.GetStringAsync("/Members/Index");
         Assert.DoesNotContain("Integration Test Member", afterDelete, StringComparison.OrdinalIgnoreCase);
     }
@@ -103,8 +129,8 @@ public sealed class MemberAndBookingFlowTests
     [SqlServerFact]
     public async Task BookingFlow_CreateAndCancel_ViaHttp()
     {
-        using var factory = await CreateFactoryAsync();
-        var browser = CreateBrowser(factory);
+        var factory = RequireFactory();
+        using var browser = CreateBrowser(factory);
         await LoginAsync(browser);
 
         int sessionId;
@@ -171,7 +197,7 @@ public sealed class MemberAndBookingFlowTests
         }
 
         var createPage = await browser.GetStringAsync($"/Booking/Create/{sessionId}");
-        var createResponse = await browser.PostFormAsync(
+        using var createResponse = await browser.PostFormAsync(
             "/Booking/Create",
             new Dictionary<string, string>
             {
@@ -180,11 +206,11 @@ public sealed class MemberAndBookingFlowTests
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(createPage),
             });
 
-        Assert.Equal(HttpStatusCode.Redirect, createResponse.StatusCode);
+        AssertRedirect(createResponse, $"/Booking/GetMembersForUpcomingSession/{sessionId}");
         var bookedMembers = await browser.GetStringAsync($"/Booking/GetMembersForUpcomingSession/{sessionId}");
         Assert.Contains("Integration Booking Member", bookedMembers, StringComparison.OrdinalIgnoreCase);
 
-        var cancelResponse = await browser.PostFormAsync(
+        using var cancelResponse = await browser.PostFormAsync(
             "/Booking/Cancel",
             new Dictionary<string, string>
             {
@@ -193,7 +219,7 @@ public sealed class MemberAndBookingFlowTests
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(createPage),
             });
 
-        Assert.Equal(HttpStatusCode.Redirect, cancelResponse.StatusCode);
+        AssertRedirect(cancelResponse, $"/Booking/GetMembersForUpcomingSession/{sessionId}");
         var afterCancel = await browser.GetStringAsync($"/Booking/GetMembersForUpcomingSession/{sessionId}");
         Assert.DoesNotContain("Integration Booking Member", afterCancel, StringComparison.OrdinalIgnoreCase);
     }
@@ -201,16 +227,40 @@ public sealed class MemberAndBookingFlowTests
     [SqlServerFact]
     public async Task PostWithoutAntiforgeryToken_IsRejected()
     {
-        using var factory = await CreateFactoryAsync();
-        var browser = CreateBrowser(factory);
+        using var browser = CreateBrowser(RequireFactory());
         await LoginAsync(browser);
 
-        var response = await browser.PostFormAsync(
+        using var response = await browser.PostFormAsync(
             "/Members/CreateMember",
             new Dictionary<string, string>());
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [SqlServerFact]
+    public async Task HomeRoute_ResolvesToHomeController()
+    {
+        using var browser = CreateBrowser(RequireFactory());
+        await LoginAsync(browser);
+
+        var html = await browser.GetStringAsync("/Home");
+
+        Assert.Contains("Total Members", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [SqlServerFact]
+    public async Task ControllerOnlyUrl_DoesNotSilentlyFallBackToIndex()
+    {
+        using var browser = CreateBrowser(RequireFactory());
+        await LoginAsync(browser);
+
+        using var response = await browser.GetAsync("/Members/999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private GymTestAppFactory RequireFactory() =>
+        _factory ?? throw new InvalidOperationException("Test application was not initialized.");
 
     private static BrowserClient CreateBrowser(GymTestAppFactory factory) =>
         new(factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -218,18 +268,10 @@ public sealed class MemberAndBookingFlowTests
             AllowAutoRedirect = false,
         }));
 
-    private async Task<GymTestAppFactory> CreateFactoryAsync()
-    {
-        await TestDatabase.DropAsync(_connectionString!, DatabaseName);
-        var factory = new GymTestAppFactory(_connectionString!, DatabaseName, SeedPassword);
-        _ = factory.CreateClient(); // Force startup: migrations + seeding.
-        return factory;
-    }
-
-    private async Task LoginAsync(BrowserClient browser)
+    private static async Task LoginAsync(BrowserClient browser)
     {
         var loginPage = await browser.GetStringAsync("/Account/Login");
-        var response = await browser.PostFormAsync(
+        using var response = await browser.PostFormAsync(
             "/Account/Login",
             new Dictionary<string, string>
             {
@@ -239,7 +281,15 @@ public sealed class MemberAndBookingFlowTests
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(loginPage),
             });
 
+        AssertRedirect(response, "/Home");
+    }
+
+    private static void AssertRedirect(HttpResponseMessage response, string expectedPath)
+    {
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var location = response.Headers.Location?.OriginalString;
+        Assert.False(string.IsNullOrEmpty(location), "Redirect response has no Location header.");
+        Assert.Contains(expectedPath, location, StringComparison.OrdinalIgnoreCase);
     }
 
     private static byte[] TinyPng => Convert.FromBase64String(

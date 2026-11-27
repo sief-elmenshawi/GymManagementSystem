@@ -217,9 +217,9 @@ In Package Manager Console, set **Default project** to `GymManagement.DAL` and r
 Update-Database
 ```
 
-Default seed users are created only when a seed password is configured:
+Default seed users are created only when a seed password is configured. An explicitly set environment variable takes precedence over configuration:
 
-* Development: `GymManagement/appsettings.Development.json` (`SeedUsers:Password`)
+* Development: `dotnet user-secrets set "SeedUsers:Password" "your-local-password" --project GymManagement`
 * Any environment: `GYM_SEED_PASSWORD` environment variable or `SeedUsers:Password` in configuration
 
 No seed password is stored in source code. If no password is found in a non-development environment, the host logs a warning and skips identity seeding.
@@ -242,10 +242,10 @@ dotnet test GymManagementSolution.slnx
 
 The `GymManagement.Tests` project contains unit tests for mapping, services, seed-password resolution, and AutoMapper license resolution.
 
-SQL Server end-to-end tests (login, member create/edit/delete, booking create/cancel) are skipped unless a test connection string is supplied. They create and drop a disposable `GymManagement_E2ETests` database:
+SQL Server end-to-end tests (login, routing, member create/edit/delete, booking create/cancel) are skipped unless a test connection string is supplied. Each test uses a uniquely named disposable database (`GymManagement_E2E_*`) that is dropped again after the test:
 
 ```powershell
-$env:GYM_TEST_CONNECTION_STRING = 'Server=.;Database=GymManagement_E2ETests;Trusted_Connection=True;TrustServerCertificate=True;'
+$env:GYM_TEST_CONNECTION_STRING = 'Server=.;Database=AnyDatabase;Trusted_Connection=True;TrustServerCertificate=True;'
 dotnet test GymManagementSolution.slnx
 ```
 

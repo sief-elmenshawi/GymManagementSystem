@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using GymManagement.BLL.Validation;
 
 namespace GymManagement.BLL.ViewModels.MemberViewModels
 {
@@ -6,9 +7,11 @@ namespace GymManagement.BLL.ViewModels.MemberViewModels
     {
 
         [Range(0.1, 300, ErrorMessage = "Height must be greater than 0")]
+        [MaxDecimalPlaces(4)]
         public decimal Height { get; set; }
 
         [Range(0.1, 500, ErrorMessage = "Weight must be greater than 0")]
+        [MaxDecimalPlaces(4)]
         public decimal Weight { get; set; }
 
         [Required(ErrorMessage = "Blood Type Is Required")]

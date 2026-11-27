@@ -68,4 +68,26 @@ public class MappingProfileTests
         Assert.Equal("Gold", roundTrip.PlanName);
         Assert.Equal(30, roundTrip.DurationDays);
     }
+
+    [Fact]
+    public void MapsMemberUpdate_DoesNotOverwriteDisplayOnlyNameOrPhoto()
+    {
+        var member = TestData.Member();
+        member.Photo = "existing.png";
+        var model = new MemberToUpdateViewModel
+        {
+            Name = "Changed By Request",
+            Email = "updated@example.com",
+            Phone = "01012345678",
+            BuildingNumber = 20,
+            Street = "Updated Street",
+            City = "Alexandria",
+        };
+
+        _mapper.Map(model, member);
+
+        Assert.Equal("Member One", member.Name);
+        Assert.Equal("existing.png", member.Photo);
+        Assert.Equal("Alexandria", member.Address.City);
+    }
 }

@@ -6,22 +6,30 @@ namespace GymManagement.Tests.Support;
 /// <summary>
 /// Minimal browser-like client: keeps antiforgery/identity cookies and posts real HTML forms.
 /// </summary>
-internal sealed class BrowserClient
+internal sealed class BrowserClient : IDisposable
 {
     private readonly HttpClient _client;
     private readonly Dictionary<string, string> _cookies = new();
 
     public BrowserClient(HttpClient client) => _client = client;
 
+    public void Dispose() => _client.Dispose();
+
     public async Task<string> GetStringAsync(string url)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        ApplyCookies(request);
-        using var response = await _client.SendAsync(request);
-        CaptureCookies(response);
+        using var response = await GetAsync(url);
         var body = await response.Content.ReadAsStringAsync();
         AssertSuccess(response, body, url);
         return body;
+    }
+
+    public async Task<HttpResponseMessage> GetAsync(string url)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        ApplyCookies(request);
+        var response = await _client.SendAsync(request);
+        CaptureCookies(response);
+        return response;
     }
 
     public async Task<HttpResponseMessage> PostFormAsync(

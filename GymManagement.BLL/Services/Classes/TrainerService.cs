@@ -31,6 +31,7 @@ namespace GymManagement.BLL.Services.Classes
                 return Result.Validation("Phone Is Exist"); // Phone number already exists
 
             var trainer = mapper.Map<Trainer>(model);
+            trainer.HiringDate = DateTime.Now;
             unitOfWork.GetRepository<Trainer>().Add(trainer);
             var result = await unitOfWork.SaveChangesAsync(ct);
             return result > 0 ? Result.Ok() : Result.Fail("Can Not Create This Trainer");

@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace GymManagement.BLL.ViewModels.MemberViewModels
 {
     public class MemberToUpdateViewModel
     {
+        // Display-only: shown in the edit view but never bound from a POST or mapped back.
+        [BindNever]
         public string? Name { get; set; }
-        public string? Photo { get; set; }
 
         [Required(ErrorMessage = "Email Is Required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]

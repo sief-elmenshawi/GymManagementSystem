@@ -15,13 +15,14 @@ public static class SeedCredentials
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var configured = configuration[ConfigurationKey]?.Trim();
-        if (!string.IsNullOrEmpty(configured))
+        // An explicitly supplied environment value must be able to override local config.
+        var fromEnvironment = Environment.GetEnvironmentVariable(EnvironmentVariable)?.Trim();
+        if (!string.IsNullOrEmpty(fromEnvironment))
         {
-            return configured;
+            return fromEnvironment;
         }
 
-        var fromEnvironment = Environment.GetEnvironmentVariable(EnvironmentVariable)?.Trim();
-        return string.IsNullOrEmpty(fromEnvironment) ? null : fromEnvironment;
+        var configured = configuration[ConfigurationKey]?.Trim();
+        return string.IsNullOrEmpty(configured) ? null : configured;
     }
 }

@@ -28,7 +28,7 @@ namespace GymManagementPL
             // Production reads the key from configuration or the AUTOMAPPER_LICENSE_KEY env var.
             if (builder.Environment.IsDevelopment())
             {
-                builder.Logging.AddFilter("LuckyPennySoftware.AutoMapper.License", LogLevel.None);
+                builder.Logging.AddFilter("LuckyPennySoftware.AutoMapper.License", LogLevel.Error);
             }
 
             // Add services to the container.
@@ -138,13 +138,15 @@ namespace GymManagementPL
 
             app.MapStaticAssets();
 
+            // Explicit Home route replaces the old catch-all "{controller}/{id?}", which
+            // silently sent URLs such as /Members/999 to MembersController.Index.
+            app.MapControllerRoute(
+                name: "home",
+                pattern: "Home/{action=Index}/{id?}",
+                defaults: new { controller = "Home" });
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Account}/{action=Login}/{id?}");
-            app.MapControllerRoute(
-                name: "controllerDefault",
-                pattern: "{controller}/{id?}",
-                defaults: new { action = "Index" });
 
             await app.RunAsync();
         }

@@ -6,18 +6,27 @@ using Xunit;
 namespace GymManagement.Tests;
 
 [Collection(EnvironmentVariableCollection.Name)]
-public sealed class AutoMapperLicenseTests
+public sealed class AutoMapperLicenseTests : IDisposable
 {
+    private const string WellFormedKey = "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0.c2lnbmF0dXJl";
+
+    private readonly EnvironmentVariableScope _environment = new(
+        AutoMapperLicense.AutoMapperEnvironmentVariable,
+        AutoMapperLicense.LuckyPennyEnvironmentVariable);
+
     public AutoMapperLicenseTests()
     {
-        ClearEnvironmentVariables();
+        _environment.Clear(AutoMapperLicense.AutoMapperEnvironmentVariable);
+        _environment.Clear(AutoMapperLicense.LuckyPennyEnvironmentVariable);
     }
+
+    public void Dispose() => _environment.Dispose();
 
     [Fact]
     public void ResolveKey_ConfigurationValueWinsOverEnvironmentVariables()
     {
-        Environment.SetEnvironmentVariable(AutoMapperLicense.AutoMapperEnvironmentVariable, "env-key");
-        Environment.SetEnvironmentVariable(AutoMapperLicense.LuckyPennyEnvironmentVariable, "shared-key");
+        _environment.Set(AutoMapperLicense.AutoMapperEnvironmentVariable, "env-key");
+        _environment.Set(AutoMapperLicense.LuckyPennyEnvironmentVariable, "shared-key");
 
         var configuration = CreateConfiguration(("AutoMapper:LicenseKey", "config-key"));
 
@@ -28,22 +37,18 @@ public sealed class AutoMapperLicenseTests
     [Fact]
     public void ResolveKey_FallsBackToAutoMapperEnvironmentVariable()
     {
-        Environment.SetEnvironmentVariable(AutoMapperLicense.AutoMapperEnvironmentVariable, "env-key");
-        Environment.SetEnvironmentVariable(AutoMapperLicense.LuckyPennyEnvironmentVariable, "shared-key");
+        _environment.Set(AutoMapperLicense.AutoMapperEnvironmentVariable, "env-key");
+        _environment.Set(AutoMapperLicense.LuckyPennyEnvironmentVariable, "shared-key");
 
-        var configuration = CreateConfiguration();
-
-        Assert.Equal("env-key", AutoMapperLicense.ResolveKey(configuration));
+        Assert.Equal("env-key", AutoMapperLicense.ResolveKey(CreateConfiguration()));
     }
 
     [Fact]
     public void ResolveKey_FallsBackToSharedLuckyPennyEnvironmentVariable()
     {
-        Environment.SetEnvironmentVariable(AutoMapperLicense.LuckyPennyEnvironmentVariable, "shared-key");
+        _environment.Set(AutoMapperLicense.LuckyPennyEnvironmentVariable, "shared-key");
 
-        var configuration = CreateConfiguration();
-
-        Assert.Equal("shared-key", AutoMapperLicense.ResolveKey(configuration));
+        Assert.Equal("shared-key", AutoMapperLicense.ResolveKey(CreateConfiguration()));
     }
 
     [Fact]
@@ -56,34 +61,37 @@ public sealed class AutoMapperLicenseTests
     }
 
     [Fact]
-    public void RequireKey_ReturnsConfiguredKey()
+    public void RequireKey_ReturnsWellFormedKey()
     {
-        var configuration = CreateConfiguration(("AutoMapper:LicenseKey", "config-key"));
+        var configuration = CreateConfiguration(("AutoMapper:LicenseKey", WellFormedKey));
 
-        Assert.Equal("config-key", AutoMapperLicense.RequireKey(configuration, "Production"));
+        Assert.Equal(WellFormedKey, AutoMapperLicense.RequireKey(configuration, "Production"));
     }
 
     [Fact]
     public void RequireKey_Throws_WhenNoKeyIsConfigured()
     {
-        var configuration = CreateConfiguration();
-
         var exception = Assert.Throws<InvalidOperationException>(
-            () => AutoMapperLicense.RequireKey(configuration, "Staging"));
+            () => AutoMapperLicense.RequireKey(CreateConfiguration(), "Staging"));
 
         Assert.Contains("Staging", exception.Message, StringComparison.Ordinal);
         Assert.Contains(AutoMapperLicense.ConfigurationKey, exception.Message, StringComparison.Ordinal);
         Assert.Contains(AutoMapperLicense.AutoMapperEnvironmentVariable, exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void RequireKey_Throws_WhenKeyIsMalformed()
+    {
+        var configuration = CreateConfiguration(("AutoMapper:LicenseKey", "config-key"));
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => AutoMapperLicense.RequireKey(configuration, "Production"));
+
+        Assert.Contains("well-formed", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static IConfiguration CreateConfiguration(params (string Key, string? Value)[] values) =>
         new ConfigurationBuilder()
             .AddInMemoryCollection(values.ToDictionary(v => v.Key, v => v.Value))
             .Build();
-
-    private static void ClearEnvironmentVariables()
-    {
-        Environment.SetEnvironmentVariable(AutoMapperLicense.AutoMapperEnvironmentVariable, null);
-        Environment.SetEnvironmentVariable(AutoMapperLicense.LuckyPennyEnvironmentVariable, null);
-    }
 }
