@@ -253,7 +253,7 @@ dotnet test GymManagementSolution.slnx
 
 ## 7. Production Configuration
 
-* **AutoMapper license:** set `AUTOMAPPER_LICENSE_KEY` (or the shared `LUCKYPENNY_LICENSE_KEY`) as an environment variable, or `AutoMapper:LicenseKey` in configuration (for example via User Secrets). No key is required in Development. Non-development environments fail fast at startup with a clear error when no key is found.
+* **AutoMapper license:** set `AUTOMAPPER_LICENSE_KEY` (or the shared `LUCKYPENNY_LICENSE_KEY`) in the hosting environment, or `AutoMapper:LicenseKey` through a configuration provider. ASP.NET Core loads User Secrets only in Development, so use them for local development only. No key is required in Development. Non-development environments fail fast at startup with a clear error when no key is found.
 * **Seed admin password:** set `GYM_SEED_PASSWORD` or `SeedUsers:Password` in configuration before first startup in Production. Seeding is skipped (with a warning) when no password is configured.
 * **Connection string:** provide `ConnectionStrings__DefaultConnection` through the hosting environment or a secrets manager. Do not commit environment-specific files.
 
