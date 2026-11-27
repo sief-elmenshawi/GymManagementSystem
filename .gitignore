@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Local tool manifests and environment secrets
+GymManagement/dotnet-tools.json
+.env
+*.env
+*.env.*
+!*.env.example
+!docs/deployment/*.env.example
+appsettings.*.local.json

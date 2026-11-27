@@ -192,6 +192,8 @@ In Development, confirmation and reset messages are captured in memory and can b
 
 > Never commit real connection strings, passwords, or license keys.
 
+For Production, use the [deployment configuration checklist](docs/deployment/PRODUCTION_CONFIGURATION.md), copy [production.env.example](docs/deployment/production.env.example) to a secure local file, and validate it with `pwsh ./scripts/check-production-config.ps1` (or `powershell` on Windows PowerShell 5.1) before starting the app. The checker reports only missing names and never prints values.
+
 ## 4. Database and seeding
 
 Pending migrations are applied automatically at startup, followed by data and identity seeding.
@@ -224,7 +226,10 @@ In Development, no AutoMapper license key is needed. In non-development environm
 dotnet build GymManagementSolution.slnx --nologo
 dotnet test GymManagementSolution.slnx --nologo
 dotnet list package --vulnerable --include-transitive
+pwsh ./scripts/check-production-config.ps1 -EnvFile ./production.env
 ```
+
+The production checker is optional for local runs; it validates names for a deployed environment and never prints values. See [Production configuration](docs/deployment/PRODUCTION_CONFIGURATION.md).
 
 SQL-dependent tests are skipped unless `GYM_TEST_CONNECTION_STRING` is set. With it, tests create and drop disposable databases named `GymManagement_E2E_*` and `GymManagement_PerfTest_*`.
 
