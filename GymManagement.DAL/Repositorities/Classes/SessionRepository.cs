@@ -31,14 +31,39 @@ namespace GymManagement.DAL.Repositorities.Classes
             return await query.ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<SessionListInfo>> GetSessionsWithAvailableSlotsAsync(
+            Expression<Func<Session, bool>>? predicate = null,
+            CancellationToken ct = default)
+        {
+            var sessions = dbContext.Sessions.AsNoTracking();
+            if (predicate is not null)
+            {
+                sessions = sessions.Where(predicate);
+            }
+
+            return await sessions
+                .Select(s => new SessionListInfo
+                {
+                    Id = s.Id,
+                    Description = s.Description,
+                    Capacity = s.Capacity,
+                    StartDate = s.StartDate,
+                    EndDate = s.EndDate,
+                    TrainerName = s.Trainer.Name,
+                    CategoryName = s.Category.CategoryName,
+                    AvailableSlots = s.Capacity - s.Bookings.Count(),
+                })
+                .ToListAsync(ct);
+        }
+
         public async Task<int> GetCountOfBookedSlotsAsync(int sessionId, CancellationToken ct = default)
         {
-            return await dbContext.Bookings.AsNoTracking().CountAsync(b => b.SessionId == sessionId);
+            return await dbContext.Bookings.AsNoTracking().CountAsync(b => b.SessionId == sessionId, ct);
         }
 
         public async Task<Session?> GetSessionByIdWithTrainerAndCategoryAsync(int sesstionId, CancellationToken ct)
         {
-            return await dbContext.Sessions.AsNoTracking().Include(x=>x.Trainer).Include(x=>x.Category).FirstOrDefaultAsync(x=>x.Id == sesstionId);
+            return await dbContext.Sessions.AsNoTracking().Include(x=>x.Trainer).Include(x=>x.Category).FirstOrDefaultAsync(x=>x.Id == sesstionId, ct);
         }
     }
 }

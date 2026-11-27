@@ -23,6 +23,23 @@ internal static class TestData
         CategoryName = name,
     };
 
+    public static SessionListInfo SessionListInfo(
+        DateTime? start = null,
+        DateTime? end = null,
+        int capacity = 10,
+        int availableSlots = 10,
+        int id = 30) => new()
+    {
+        Id = id,
+        Description = "A valid training session",
+        Capacity = capacity,
+        StartDate = start ?? DateTime.Now.AddDays(1),
+        EndDate = end ?? DateTime.Now.AddDays(1).AddHours(1),
+        TrainerName = "Trainer One",
+        CategoryName = "Cardio",
+        AvailableSlots = availableSlots,
+    };
+
     public static Session FutureSession(
         DateTime? start = null,
         DateTime? end = null,

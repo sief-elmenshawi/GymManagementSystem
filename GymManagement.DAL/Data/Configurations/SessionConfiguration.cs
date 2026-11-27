@@ -18,6 +18,10 @@ namespace GymManagement.DAL.Data.Configurations
                 tb.HasCheckConstraint("SessionCapacityCheck", "Capacity Between 1and 25 ");
                 tb.HasCheckConstraint("SessionEndDateCheck", "EndDate > StartDate ");
             });
+
+            // Dashboard and booking lists filter on these ranges.
+            builder.HasIndex(s => new { s.StartDate, s.EndDate });
+            builder.HasIndex(s => s.EndDate);
         }
     }
 }

@@ -16,6 +16,11 @@ namespace GymManagement.DAL.Data.Configurations
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.CreatedAt).HasColumnName("StartDate").HasDefaultValueSql("GetDate()");
+
+            // Active-membership lookups always combine an id with EndDate.
+            builder.HasIndex(m => new { m.MemberId, m.EndDate });
+            builder.HasIndex(m => new { m.PlanId, m.EndDate });
+            builder.HasIndex(m => m.EndDate);
         }
     }
 }

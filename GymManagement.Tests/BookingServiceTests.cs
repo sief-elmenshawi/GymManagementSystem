@@ -206,6 +206,62 @@ public class BookingServiceTests
         Assert.False(result[1].IsAttended);
     }
 
+    [Fact]
+    public async Task GetAllSessions_UsesSingleProjection_AndDoesNotCountPerSession()
+    {
+        var session = TestData.SessionListInfo(capacity: 10, availableSlots: 4);
+        _uow.SessionRepository
+            .Setup(r => r.GetSessionsWithAvailableSlotsAsync(
+                It.IsAny<Expression<Func<Session, bool>>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { session });
+
+        var result = (await _service.GetAllSessionsAsync(CancellationToken.None))!.ToList();
+
+        Assert.Single(result);
+        Assert.Equal(4, result[0].AvailableSlots);
+        Assert.Equal("Trainer One", result[0].TrainerName);
+        _uow.SessionRepository.Verify(
+            r => r.GetSessionsWithAvailableSlotsAsync(
+                It.IsAny<Expression<Func<Session, bool>>?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        _uow.SessionRepository.Verify(
+            r => r.GetCountOfBookedSlotsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMembersForDropDown_UsesAntiJoin_InsteadOfLoadingAllBookings()
+    {
+        _uow.BookingRepository
+            .Setup(r => r.GetAvailableMembersAsync(30, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Member>
+            {
+                new() { Id = 5, Name = "Available One" },
+                new() { Id = 6, Name = "Available Two" },
+            });
+
+        var result = (await _service.GetMembersForDropDownAsync(30, CancellationToken.None)).ToList();
+
+        Assert.Equal(new[] { "Available One", "Available Two" }, result.Select(m => m.Name));
+        _uow.BookingRepository.Verify(
+            r => r.GetAvailableMembersAsync(30, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _uow.BookingRepository.Verify(
+            r => r.GetAllAsync(
+                It.IsAny<Expression<Func<Booking, bool>>?>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        _uow.MemberRepository.Verify(
+            r => r.GetAllAsync(
+                It.IsAny<Expression<Func<Member, bool>>?>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     private void SetupSession(Session session) =>
         _uow.SessionRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))

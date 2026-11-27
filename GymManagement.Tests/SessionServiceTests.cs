@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.DAL.Models;
@@ -309,6 +310,43 @@ public class SessionServiceTests
         Assert.NotNull(result.value);
         Assert.Equal(7, result.value.AvailableSlots);
         Assert.Equal("Trainer One", result.value.TrainerName);
+    }
+
+    [Fact]
+    public async Task GetAllSessions_UsesSingleProjection_AndDoesNotCountPerSession()
+    {
+        var older = TestData.SessionListInfo(
+            id: 30,
+            start: DateTime.Now.AddDays(1),
+            end: DateTime.Now.AddDays(1).AddHours(1),
+            capacity: 10,
+            availableSlots: 7);
+        var newer = TestData.SessionListInfo(
+            id: 31,
+            start: DateTime.Now.AddDays(2),
+            end: DateTime.Now.AddDays(2).AddHours(1),
+            capacity: 20,
+            availableSlots: 15);
+        _uow.SessionRepository
+            .Setup(r => r.GetSessionsWithAvailableSlotsAsync(
+                It.IsAny<Expression<Func<Session, bool>>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { older, newer });
+
+        var result = (await _service.GetAllSessionsAync(CancellationToken.None))!.ToList();
+
+        Assert.Equal(new[] { 31, 30 }, result.Select(s => s.Id));
+        Assert.Equal(new[] { 15, 7 }, result.Select(s => s.AvailableSlots));
+        Assert.Equal("Trainer One", result[0].TrainerName);
+        Assert.Equal("Cardio", result[0].CategoryName);
+        _uow.SessionRepository.Verify(
+            r => r.GetSessionsWithAvailableSlotsAsync(
+                It.IsAny<Expression<Func<Session, bool>>?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        _uow.SessionRepository.Verify(
+            r => r.GetCountOfBookedSlotsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private void SetupTrainerAndCategory(

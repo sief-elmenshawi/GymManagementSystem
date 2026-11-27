@@ -39,6 +39,23 @@ public class MappingProfileTests
     }
 
     [Fact]
+    public void MapsSessionListInfo_ToSessionViewModel()
+    {
+        var info = TestData.SessionListInfo(capacity: 12, availableSlots: 5);
+
+        var viewModel = _mapper.Map<SessionViewModel>(info);
+
+        Assert.Equal(info.Id, viewModel.Id);
+        Assert.Equal(info.Description, viewModel.Description);
+        Assert.Equal(info.StartDate, viewModel.StartDate);
+        Assert.Equal(info.EndDate, viewModel.EndDate);
+        Assert.Equal(info.Capacity, viewModel.Capacity);
+        Assert.Equal(5, viewModel.AvailableSlots);
+        Assert.Equal("Trainer One", viewModel.TrainerName);
+        Assert.Equal("Cardio", viewModel.CategoryName);
+    }
+
+    [Fact]
     public void MapsMember_FormatsAddressAndDateOfBirth()
     {
         var member = TestData.Member();

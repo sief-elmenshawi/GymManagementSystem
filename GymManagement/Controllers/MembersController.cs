@@ -31,14 +31,14 @@ namespace GymManagement.PL.Controllers
 
         #region Show Member Data 
         [HttpGet]
-        public async Task<IActionResult> Picture(int id)
+        public async Task<IActionResult> Picture(int id, CancellationToken ct)
         {
-            var member = await memberService.GetMemberDetailsByIdAsync(id);
-            if (member is null || string.IsNullOrEmpty(member.Photo))
+            var photo = await memberService.GetMemberPhotoAsync(id, ct);
+            if (string.IsNullOrEmpty(photo))
                 return NotFound();
 
 
-            var result = attachementService.GetFile(member.Photo, "MembersPictures");
+            var result = attachementService.GetFile(photo, "MembersPictures");
             if (result is null) return NotFound();
 
             return File(result.Value.Stream, result.Value.ContentType);

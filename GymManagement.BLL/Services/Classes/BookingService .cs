@@ -90,14 +90,11 @@ namespace GymManagement.BLL.Services.Classes
         public async Task<IEnumerable<SessionViewModel>> GetAllSessionsAsync(CancellationToken ct = default)
         {
 
-            var bookings = await unitOfWork.SessionRepository.GetAllSessionsWithTrainerAndCategoryAsync(x => x.EndDate >= DateTime.Now);
-            if (!bookings.Any()) return null!;
-            var MappedSession = mapper.Map<IEnumerable<SessionViewModel>>(bookings);
-            foreach (var item in MappedSession)
-            {
-                item.AvailableSlots = item.Capacity - await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(item.Id);
-            }
-            return MappedSession;
+            var sessions = await unitOfWork.SessionRepository
+                .GetSessionsWithAvailableSlotsAsync(s => s.EndDate >= DateTime.Now, ct);
+            if (sessions is null || !sessions.Any()) return null!;
+
+            return mapper.Map<IEnumerable<SessionViewModel>>(sessions);
         }
         public async Task<IEnumerable<MemberForSessionViewModel>> GetMembersForUpcomingBySessionIdAsync(
          int sessionId, CancellationToken ct = default)
@@ -126,13 +123,8 @@ namespace GymManagement.BLL.Services.Classes
         }
         public async Task<IEnumerable<MemberSelectListViewModel>> GetMembersForDropDownAsync(int sessionId, CancellationToken ct = default)
         {
-            var booking = await unitOfWork.BookingRepository
-                                             .GetAllAsync(x => x.SessionId == sessionId);
-
-            var bookedMemberIds = booking.Select(x => x.MemberId);
-
-            var availableMembers = await unitOfWork.GetRepository<Member>()
-                                              .GetAllAsync(x => !bookedMemberIds.Contains(x.Id));
+            var availableMembers = await unitOfWork.BookingRepository
+                .GetAvailableMembersAsync(sessionId, ct);
 
             return mapper.Map<IEnumerable<MemberSelectListViewModel>>(availableMembers);
         }

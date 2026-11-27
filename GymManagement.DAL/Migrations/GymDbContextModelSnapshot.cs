@@ -310,9 +310,11 @@ namespace GymManagement.DAL.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MemberId");
+                    b.HasIndex("EndDate");
 
-                    b.HasIndex("PlanId");
+                    b.HasIndex("MemberId", "EndDate");
+
+                    b.HasIndex("PlanId", "EndDate");
 
                     b.ToTable("Memberships");
                 });
@@ -398,7 +400,11 @@ namespace GymManagement.DAL.Data.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("EndDate");
+
                     b.HasIndex("TrainerId");
+
+                    b.HasIndex("StartDate", "EndDate");
 
                     b.ToTable("Sessions", t =>
                         {

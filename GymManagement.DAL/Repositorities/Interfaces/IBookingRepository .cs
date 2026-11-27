@@ -11,5 +11,7 @@ namespace GymManagement.DAL.Repositorities.Interfaces
     {
         public Task<List<Booking>> GetBySessionIdAsync(int sessionId, CancellationToken ct = default);
 
+        Task<IEnumerable<Member>> GetAvailableMembersAsync(int sessionId, CancellationToken ct = default);
+
     }
 }

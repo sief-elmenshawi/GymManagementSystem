@@ -85,6 +85,13 @@ namespace GymManagement.BLL.Service.Classes
             #endregion
         }
 
+        public async Task<string?> GetMemberPhotoAsync(int memberId, CancellationToken ct = default)
+        {
+            var member = await unitOfWork.GetRepository<Member>().FirstOrDefaultAsync(
+                m => m.Id == memberId, tracking: false, ct: ct);
+            return member?.Photo;
+        }
+
         public async Task<MemberViewModel?> GetMemberDetailsByIdAsync(int MemberId, CancellationToken ct = default)
         {
             var member = await unitOfWork.GetRepository<Member>().GetByIdAsync(MemberId, ct);
@@ -92,7 +99,8 @@ namespace GymManagement.BLL.Service.Classes
 
             var model = mapper.Map<Member , MemberViewModel>(member);
 
-            var activeMembership = await unitOfWork.GetRepository<Membership>().FirstOrDefaultAsync(x => x.MemberId == MemberId && x.EndDate>=DateTime.Now);
+            var activeMembership = await unitOfWork.GetRepository<Membership>()
+                .FirstOrDefaultAsync(x => x.MemberId == MemberId && x.EndDate >= DateTime.Now, ct: ct);
 
             if (activeMembership is not null)
             {
