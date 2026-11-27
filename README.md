@@ -20,6 +20,15 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 * Shows analytics summary cards and quick links to every management page
 * `Home` redirects `SuperAdmin` users to the dashboard; other authenticated users keep the analytics home page
 * Users without `SuperAdmin` are redirected to `AccessDenied`
+* Includes a shortcut to `/Users` for account management
+
+## 👤 User management
+
+* `/Users` is restricted to `SuperAdmin`
+* List accounts with their assigned roles
+* Create users with a chosen role and password
+* Edit account details, role, and optionally reset the password
+* Delete users, with guards against self-deletion and demoting/deleting the last `SuperAdmin`
 
 ---
 
@@ -196,7 +205,7 @@ EF tooling can also be checked without starting the web app:
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full verification: build `0 Warning(s), 0 Error(s)`, tests `89 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
+Last full verification: build `0 Warning(s), 0 Error(s)`, tests `93 Passed / 0 Failed / 0 Skipped`, no vulnerable packages, EF tooling OK.
 
 ---
 
@@ -224,7 +233,7 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 | `Trainer` | No | Not seeded by `IdentityDataSeeding` |
 | `Member` | No | Not seeded by `IdentityDataSeeding` |
 
-Most controllers require authentication only; `DashboardController` and `MembersController` additionally require `SuperAdmin`.
+Most controllers require authentication only; `DashboardController`, `UsersController`, and `MembersController` additionally require `SuperAdmin`.
 
 ---
 

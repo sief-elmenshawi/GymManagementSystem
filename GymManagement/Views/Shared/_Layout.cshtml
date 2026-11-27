@@ -44,6 +44,10 @@
                                    asp-action="Index" asp-controller="Dashboard">Dashboard</a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Users" ? "active" : "text-black-alternative")"
+                                   asp-action="Index" asp-controller="Users">Users</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Members" ? "active" : "text-black-alternative")"
                                    asp-action="Index" asp-controller="Members">Members</a>
                             </li>
