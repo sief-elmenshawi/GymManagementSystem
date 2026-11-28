@@ -3,7 +3,7 @@ using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.TrainerViewModels;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +16,16 @@ namespace GymManagement.BLL.Services.Classes
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
+        private readonly TimeProvider _timeProvider;
 
-        public TrainerService(IUnitOfWork unitOfWork,IMapper mapper)
+        public TrainerService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            TimeProvider? timeProvider = null)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         public async Task<Result> CreateTrainerAsync(CreateTrainerViewModel model, CancellationToken ct = default)
@@ -31,7 +36,7 @@ namespace GymManagement.BLL.Services.Classes
                 return Result.Validation("Phone Is Exist"); // Phone number already exists
 
             var trainer = mapper.Map<Trainer>(model);
-            trainer.HiringDate = DateTime.Now;
+            trainer.HiringDate = _timeProvider.GetUtcNow().UtcDateTime;
             unitOfWork.GetRepository<Trainer>().Add(trainer);
             var result = await unitOfWork.SaveChangesAsync(ct);
             return result > 0 ? Result.Ok() : Result.Fail("Can Not Create This Trainer");
@@ -76,7 +81,10 @@ namespace GymManagement.BLL.Services.Classes
             var trainer = await unitOfWork.GetRepository<Trainer>().GetByIdAsync(TrainerId, ct);
             if (trainer is null) return Result.NotFound("Trainer Not Found");
 
-            var hasFutureSessions = await unitOfWork.GetRepository<Session>().AnyAsync(s => s.TrainerId == TrainerId && s.StartDate > DateTime.Now, ct);
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var hasFutureSessions = await unitOfWork.GetRepository<Session>().AnyAsync(
+                s => s.TrainerId == TrainerId && s.StartDate > now,
+                ct);
             if (hasFutureSessions) return Result.Validation("Session Not Allow");
 
             unitOfWork.GetRepository<Trainer>().Delete(trainer);
@@ -98,7 +106,7 @@ namespace GymManagement.BLL.Services.Classes
             mapper.Map(model, trainer);
 
 
-            trainer.UpdatedAt = DateTime.Now;
+            trainer.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
 
             unitOfWork.GetRepository<Trainer>().Update(trainer);

@@ -8,7 +8,10 @@ namespace GymManagement.BLL.Service.Interfaces
         Task<PagedResult<MemberViewModel>> GetAllMembersAsync(
             CancellationToken ct = default, int page = 1, int pageSize = 20);
 
-        Task<Result> CreateMemberAsync(CreateMemberViewModel model, CancellationToken ct = default);
+        Task<Result> CreateMemberAsync(
+            CreateMemberViewModel model,
+            AuditActor actor,
+            CancellationToken ct = default);
 
         Task<MemberViewModel?> GetMemberDetailsByIdAsync(int memberId, CancellationToken ct = default);
 
@@ -26,7 +29,7 @@ namespace GymManagement.BLL.Service.Interfaces
             int memberId,
             CancellationToken ct = default);
 
-        Task<MemberToUpdateViewModel?> GetMemberToUpdatAsync(int memberId, CancellationToken ct = default); 
+        Task<MemberToUpdateViewModel?> GetMemberToUpdateAsync(int memberId, CancellationToken ct = default);
 
         Task<Result> UpdateMemberDetailsAsync(int id, MemberToUpdateViewModel model, CancellationToken ct = default);
 

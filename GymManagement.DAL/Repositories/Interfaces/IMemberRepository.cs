@@ -1,6 +1,6 @@
-using GymManagement.DAL.Models;
+﻿using GymManagement.DAL.Models;
 
-namespace GymManagement.DAL.Repositorities.Interfaces;
+namespace GymManagement.DAL.Repositories.Interfaces;
 
 public interface IMemberRepository : IGenericRepository<Member>
 {

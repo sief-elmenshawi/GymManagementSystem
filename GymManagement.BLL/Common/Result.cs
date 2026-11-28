@@ -15,7 +15,7 @@ namespace GymManagement.BLL.Common
 
     }
 
-    public sealed record Result<T>(bool success , T? value ,string? error = null , ResultKind hind = ResultKind.Ok)
+    public sealed record Result<T>(bool success , T? value ,string? error = null , ResultKind kind = ResultKind.Ok)
     {
 
         public static Result<T> Ok(T value) => new Result<T>(true, value);

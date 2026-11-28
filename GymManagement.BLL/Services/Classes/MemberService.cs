@@ -5,8 +5,8 @@ using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.MemberViewModels;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Classes;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Classes;
+using GymManagement.DAL.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,16 +19,25 @@ namespace GymManagement.BLL.Service.Classes
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
-        private readonly IAttachementService attachement;
+        private readonly IAttachmentService attachment;
+        private readonly TimeProvider _timeProvider;
 
-        public MemberService(IUnitOfWork unitOfWork , IMapper mapper , IAttachementService attachement)
+        public MemberService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IAttachmentService attachment,
+            TimeProvider? timeProvider = null)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
-            this.attachement = attachement;
+            this.attachment = attachment;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
-        public async Task<Result> CreateMemberAsync(CreateMemberViewModel model, CancellationToken ct)
+        public async Task<Result> CreateMemberAsync(
+            CreateMemberViewModel model,
+            AuditActor actor,
+            CancellationToken ct = default)
         {
             var repo = unitOfWork.GetRepository<Member>();
 
@@ -38,13 +47,27 @@ namespace GymManagement.BLL.Service.Classes
             if (await repo.AnyAsync(m => m.Phone == model.Phone, ct))
                 return Result.Fail("A member with this phone number already exists.");
 
-            var photo = await attachement.UploadAsync(model.PhotoFile.OpenReadStream(), model.PhotoFile.FileName, "MembersPictures", ct);
+            var photo = await attachment.UploadAsync(model.PhotoFile.OpenReadStream(), model.PhotoFile.FileName, "MembersPictures", ct);
             if (string.IsNullOrEmpty(photo))
                 return Result.Validation("Profile photo upload failed (check file type and size).");
 
             var member = mapper.Map<Member>(model);
-            member.Photo=photo;
+            member.Photo = photo;
 
+            // The starting health record is part of the same aggregate and must use
+            // the same audit path as every later create/update/delete.
+            if (member.HealthRecord is not null)
+            {
+                var audit = CreateAudit(
+                    HealthRecordAudit.Created,
+                    actor,
+                    member.Id,
+                    member.HealthRecord);
+                audit.MemberId = null;
+                audit.Member = member;
+                audit.HealthRecord = member.HealthRecord;
+                unitOfWork.GetRepository<HealthRecordAudit>().Add(audit);
+            }
 
             repo.Add(member);
             var result = await unitOfWork.SaveChangesAsync(ct);
@@ -52,7 +75,7 @@ namespace GymManagement.BLL.Service.Classes
             if (result == 0)
             {
                 if (!string.IsNullOrEmpty(member.Photo))        
-                    attachement.Delete(member.Photo, "MembersPictures");
+                    attachment.Delete(member.Photo, "MembersPictures");
 
                 return Result.Fail("Failed To Create Member");
             }
@@ -91,8 +114,9 @@ namespace GymManagement.BLL.Service.Classes
 
             var model = mapper.Map<Member , MemberViewModel>(member);
 
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
             var activeMembership = await unitOfWork.GetRepository<Membership>()
-                .FirstOrDefaultAsync(x => x.MemberId == MemberId && x.EndDate >= DateTime.Now, ct: ct);
+                .FirstOrDefaultAsync(x => x.MemberId == MemberId && x.EndDate >= now, ct: ct);
 
             if (activeMembership is not null)
             {
@@ -104,7 +128,7 @@ namespace GymManagement.BLL.Service.Classes
             }
             return model;
 
-            #region Load All MemberShip in Memory to get One Its Not Performance
+            #region Load All Membership in Memory to get One Its Not Performance
 
             //var memberships = await membershipRepository.GetAllAsync();
             //var activeMembership = memberships.FirstOrDefault(m => m.MemberId == MemberId && m.IsActive); 
@@ -139,14 +163,14 @@ namespace GymManagement.BLL.Service.Classes
             {
                 record = mapper.Map<HealthRecord>(model);
                 record.MemberId = memberId;
-                record.CreatedAt = DateTime.UtcNow;
+                record.CreatedAt = _timeProvider.GetUtcNow().UtcDateTime;
                 repo.Add(record);
             }
             else
             {
                 mapper.Map(model, record);
                 record.MemberId = memberId;
-                record.UpdatedAt = DateTime.UtcNow;
+                record.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
                 repo.Update(record);
             }
 
@@ -167,16 +191,16 @@ namespace GymManagement.BLL.Service.Classes
             int memberId,
             CancellationToken ct = default)
         {
-            var audits = await unitOfWork.GetRepository<HealthRecordAudit>().GetAllAsync(
+            var audits = await unitOfWork.GetRepository<HealthRecordAudit>().GetLatestAsync(
                 audit => audit.MemberId == memberId,
-                tracking: false,
+                take: 200,
                 ct: ct);
 
             return mapper.Map<List<HealthRecordAuditViewModel>>(
                 audits.OrderByDescending(audit => audit.CreatedAt).ToList());
         }
 
-        public async Task<MemberToUpdateViewModel?> GetMemberToUpdatAsync(int MemberId, CancellationToken ct = default)
+        public async Task<MemberToUpdateViewModel?> GetMemberToUpdateAsync(int MemberId, CancellationToken ct = default)
         {
             var member = await unitOfWork.GetRepository<Member>().GetByIdAsync(MemberId, ct);
             return member is null ? null :  mapper.Map<MemberToUpdateViewModel>(member);
@@ -192,7 +216,9 @@ namespace GymManagement.BLL.Service.Classes
             var member = await memberRepo.GetByIdAsync(MemberId, ct);
             if (member == null) return Result.NotFound("Member Not Found ");
 
-            var hasFutureBooking = await unitOfWork.BookingRepository.AnyAsync(b=>b.MemberId == MemberId && b.Session.StartDate > DateTime.Now);
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var hasFutureBooking = await unitOfWork.BookingRepository.AnyAsync(
+                b => b.MemberId == MemberId && b.Session.StartDate > now, ct);
 
             if (hasFutureBooking) 
                 return Result.Fail("Cannot delete a member with upcoming sessions");
@@ -228,7 +254,7 @@ namespace GymManagement.BLL.Service.Classes
             if (result > 0)
             {
                 if (!string.IsNullOrEmpty(member.Photo))
-                    attachement.Delete(member.Photo, "MembersPictures");
+                    attachment.Delete(member.Photo, "MembersPictures");
 
                 return Result.Ok();
             }
@@ -248,7 +274,7 @@ namespace GymManagement.BLL.Service.Classes
                 return Result.Fail("Another member is already using this phone number.");
 
             mapper.Map(model, member);
-            member.UpdatedAt = DateTime.Now;
+            member.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
             repo.Update(member);
             var result = await unitOfWork.SaveChangesAsync(ct);
 
@@ -256,7 +282,7 @@ namespace GymManagement.BLL.Service.Classes
 
         }
 
-        private static HealthRecordAudit CreateAudit(
+        private HealthRecordAudit CreateAudit(
             string action,
             AuditActor actor,
             int memberId,
@@ -266,7 +292,7 @@ namespace GymManagement.BLL.Service.Classes
                 ActorUserId = actor.UserId,
                 ActorEmail = string.IsNullOrWhiteSpace(actor.Email) ? "unknown" : actor.Email,
                 MemberId = memberId,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = _timeProvider.GetUtcNow().UtcDateTime,
                 Height = record.Height,
                 Weight = record.Weight,
                 BloodType = record.BloodType,

@@ -1,7 +1,7 @@
 ﻿using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.PlanViewModels;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

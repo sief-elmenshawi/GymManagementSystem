@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.DAL.Models;
 using GymManagement.Tests.Support;
@@ -13,8 +13,8 @@ public class AnalyticsServiceTests
     public async Task GetAnalyticsData_ClassifiesSessionsAndReturnsAllCounts()
     {
         var uow = new UnitOfWorkMock();
-        var service = new AnalyticsService(uow.UnitOfWork.Object);
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
+        var service = new AnalyticsService(uow.UnitOfWork.Object, new FixedTimeProvider(now));
 
         var sessions = new[]
         {
@@ -43,7 +43,7 @@ public class AnalyticsServiceTests
             .Setup(r => r.CountAsync(It.IsAny<Expression<Func<Trainer, bool>>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(4);
 
-        var result = await service.GetAnalyticsDataAysnc(CancellationToken.None);
+        var result = await service.GetAnalyticsDataAsync(CancellationToken.None);
 
         Assert.Equal(12, result.TotalMembers);
         Assert.Equal(4, result.TotalTrainers);
@@ -64,7 +64,7 @@ public class AnalyticsServiceTests
             .Setup(r => r.CountAsync(It.IsAny<Expression<Func<Member, bool>>?>(), cts.Token))
             .ReturnsAsync(7);
 
-        var result = await service.GetAnalyticsDataAysnc(cts.Token);
+        var result = await service.GetAnalyticsDataAsync(cts.Token);
 
         Assert.Equal(7, result.TotalMembers);
         uow.MemberRepository.Verify(

@@ -83,6 +83,7 @@
                     const button = document.getElementById('loginBtn');
                     button.classList.add('disabled');
                     button.disabled = true;
+                    button.setAttribute('aria-busy', 'true');
                 }
             });
         });

@@ -1,3 +1,6 @@
+using System.Net;
+using GymManagement;
+using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.ApplicationViewModels;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
@@ -16,37 +19,48 @@ namespace GymManagement.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly GymDbContext _dbContext;
+        private readonly IAppEmailSender _emailSender;
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             GymDbContext dbContext,
+            IAppEmailSender emailSender,
             ILogger<UsersController> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _dbContext = dbContext;
+            _emailSender = emailSender;
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(CancellationToken ct = default)
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
         {
-            var users = await (from user in _dbContext.Users.AsNoTracking()
-                               orderby user.UserName
-                               select new UserListViewModel
-                               {
-                                   Id = user.Id,
-                                   UserName = user.UserName ?? string.Empty,
-                                   Email = user.Email ?? string.Empty,
-                                   FirstName = user.FirstName,
-                                   LastName = user.LastName,
-                                   PhoneNumber = user.PhoneNumber,
-                                   Roles = (from userRole in _dbContext.UserRoles
-                                            join role in _dbContext.Roles on userRole.RoleId equals role.Id
-                                            where userRole.UserId == user.Id
-                                            select role.Name!).ToList(),
-                               }).ToListAsync(ct);
+            page = Math.Max(page, 1);
+            const int pageSize = 20;
+
+            var query = from user in _dbContext.Users.AsNoTracking()
+                        orderby user.UserName
+                        select new UserListViewModel
+                        {
+                            Id = user.Id,
+                            UserName = user.UserName ?? string.Empty,
+                            Email = user.Email ?? string.Empty,
+                            FirstName = user.FirstName,
+                            LastName = user.LastName,
+                            PhoneNumber = user.PhoneNumber,
+                            Roles = (from userRole in _dbContext.UserRoles
+                                     join role in _dbContext.Roles on userRole.RoleId equals role.Id
+                                     where userRole.UserId == user.Id
+                                     select role.Name!).ToList(),
+                        };
+
+            var users = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+            ViewBag.Page = page;
+            ViewBag.TotalPages = Math.Max(1, (int)Math.Ceiling(
+                await _dbContext.Users.CountAsync(ct) / (double)pageSize));
 
             return View(users);
         }
@@ -84,6 +98,17 @@ namespace GymManagement.Controllers
                 return View(model);
             }
 
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+
+            async Task<IActionResult> FailAsync(IdentityResult result)
+            {
+                ModelState.AddIdentityErrors(result);
+                await transaction.RollbackAsync(ct);
+                _dbContext.ChangeTracker.Clear();
+                model.AvailableRoles = await GetRolesAsync(ct);
+                return View(model);
+            }
+
             var user = new ApplicationUser
             {
                 FirstName = model.FirstName,
@@ -97,22 +122,12 @@ namespace GymManagement.Controllers
             };
 
             var created = await _userManager.CreateAsync(user, model.Password);
-            if (!created.Succeeded)
-            {
-                AddIdentityErrors(created);
-                model.AvailableRoles = await GetRolesAsync(ct);
-                return View(model);
-            }
+            if (!created.Succeeded) return await FailAsync(created);
 
             var assigned = await _userManager.AddToRoleAsync(user, model.Role);
-            if (!assigned.Succeeded)
-            {
-                AddIdentityErrors(assigned);
-                await _userManager.DeleteAsync(user);
-                model.AvailableRoles = await GetRolesAsync(ct);
-                return View(model);
-            }
+            if (!assigned.Succeeded) return await FailAsync(assigned);
 
+            await transaction.CommitAsync(ct);
             _logger.LogInformation("SuperAdmin created user {Email} with role {Role}.", user.Email, model.Role);
             TempData["SuccessMessage"] = "User created successfully.";
             return RedirectToAction(nameof(Index));
@@ -162,7 +177,7 @@ namespace GymManagement.Controllers
                 IdentityResult? result = null,
                 string? errorMessage = null)
             {
-                if (result is not null) AddIdentityErrors(result);
+                if (result is not null) ModelState.AddIdentityErrors(result);
                 if (errorMessage is not null) ModelState.AddModelError(string.Empty, errorMessage);
 
                 await transaction.RollbackAsync(ct);
@@ -173,12 +188,16 @@ namespace GymManagement.Controllers
                 return View(model);
             }
 
+            var emailChanged = !string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase);
+
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.UserName = model.UserName;
             user.Email = model.Email;
             user.PhoneNumber = model.PhoneNumber;
-            user.EmailConfirmed = true;
+            // Changing a sign-in address must be re-verified; leaving it unchanged
+            // preserves the existing confirmation state.
+            user.EmailConfirmed = !emailChanged && user.EmailConfirmed;
 
             var updated = await _userManager.UpdateAsync(user);
             if (!updated.Succeeded) return await FailAsync(updated);
@@ -208,6 +227,31 @@ namespace GymManagement.Controllers
             if (!assigned.Succeeded) return await FailAsync(assigned);
 
             await transaction.CommitAsync(ct);
+
+            if (emailChanged)
+            {
+                // Delivery stays outside the transaction; a SMTP failure never rolls
+                // back the administrative edit.
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var callbackUrl = Url.Action(
+                    "ConfirmEmail",
+                    "Account",
+                    new { userId = user.Id, token },
+                    Request.Scheme) ?? "/Account/ConfirmEmail";
+
+                var delivered = await _emailSender.SendAsync(
+                    user.Email!,
+                    "Confirm your updated gym email address",
+                    $"<p>Hello {WebUtility.HtmlEncode(user.FirstName)},</p>" +
+                    $"<p>An administrator changed your sign-in email. Confirm the new address before signing in again:</p>" +
+                    $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Confirm email address</a></p>",
+                    ct);
+
+                _logger.LogInformation(
+                    "Email change confirmation issued for user {UserId} by SuperAdmin; delivery succeeded: {Delivered}.",
+                    user.Id,
+                    delivered);
+            }
 
             _logger.LogInformation("SuperAdmin updated user {Email} with role {Role}.", user.Email, model.Role);
             TempData["SuccessMessage"] = "User updated successfully.";
@@ -275,13 +319,5 @@ namespace GymManagement.Controllers
 
         private async Task<int> CountSuperAdminsAsync() =>
             (await _userManager.GetUsersInRoleAsync(SuperAdminRole)).Count;
-
-        private void AddIdentityErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
     }
 }

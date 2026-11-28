@@ -9,7 +9,7 @@ namespace GymManagement.BLL.Services.Interfaces
 {
     public interface IAnalyticsService
     {
-        Task<AnalyticsViewModel> GetAnalyticsDataAysnc(CancellationToken ct);
+        Task<AnalyticsViewModel> GetAnalyticsDataAsync(CancellationToken ct);
 
 
     }

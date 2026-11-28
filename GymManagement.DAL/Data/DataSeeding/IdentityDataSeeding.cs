@@ -13,7 +13,8 @@ namespace GymManagement.DAL.Data.DataSeeding
             UserManager<ApplicationUser> userManager,
             ILogger logger,
             string? adminPassword,
-            CancellationToken ct = default)
+            CancellationToken ct = default,
+            bool warnOnPredictableAccounts = false)
         {
             try
             {
@@ -24,6 +25,13 @@ namespace GymManagement.DAL.Data.DataSeeding
                     logger.LogWarning(
                         "Default user password is not configured. Skipping user seeding. Set SeedUsers:Password or GYM_SEED_PASSWORD.");
                     return;
+                }
+
+                if (warnOnPredictableAccounts)
+                {
+                    logger.LogWarning(
+                        "Seeding default users with predictable identities in a non-Development " +
+                        "environment. Rotate their passwords immediately after bootstrap.");
                 }
 
                 await EnsureUserAsync(

@@ -1,14 +1,14 @@
 ﻿using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
 using Microsoft.EntityFrameworkCore.Storage;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Repositorities.Classes
+namespace GymManagement.DAL.Repositories.Classes
 {
     public class UnitOfWork : IUnitOfWork
     {

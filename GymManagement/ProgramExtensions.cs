@@ -33,8 +33,27 @@ namespace GymManagement.PL
             var seedFolderPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "Files");
             await GymDataSeeding.SeedAsync(dbContext, seedFolderPath, logger);
 
-            var seedPassword = SeedCredentials.ResolvePassword(Configuration);
-            await IdentityDataSeeding.SeedAsync(roleManager, userManager, logger, seedPassword);
+            var isDevelopment = app.Environment.IsDevelopment();
+            var userSeedingEnabled = SeedCredentials.ResolveUserSeedingEnabled(Configuration, isDevelopment);
+            var seedPassword = userSeedingEnabled
+                ? SeedCredentials.ResolvePassword(Configuration)
+                : null;
+
+            if (!isDevelopment && !userSeedingEnabled)
+            {
+                logger.LogWarning(
+                    "Default user seeding is disabled. Set {Variable}=true or {ConfigKey}=true only for " +
+                    "a deliberate bootstrap; the seeded accounts use predictable identities.",
+                    SeedCredentials.EnabledEnvironmentVariable,
+                    SeedCredentials.EnabledConfigurationKey);
+            }
+
+            await IdentityDataSeeding.SeedAsync(
+                roleManager,
+                userManager,
+                logger,
+                seedPassword,
+                warnOnPredictableAccounts: !isDevelopment && userSeedingEnabled);
         }
     }
 }

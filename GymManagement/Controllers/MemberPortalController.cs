@@ -1,4 +1,6 @@
-using System.Net;
+﻿using System.Net;
+using GymManagement;
+using GymManagement.BLL.Common;
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.BookingViewModels;
@@ -6,8 +8,10 @@ using GymManagement.BLL.ViewModels.MemberViewModels;
 using GymManagement.BLL.ViewModels.SessionViewModels;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
+using GymManagement.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -128,7 +132,7 @@ namespace GymManagement.Controllers
             var current = await GetCurrentMemberAsync(ct);
             if (current is null) return Forbid();
 
-            var model = await _memberService.GetMemberToUpdatAsync(current.MemberId, ct);
+            var model = await _memberService.GetMemberToUpdateAsync(current.MemberId, ct);
             if (model is null) return Forbid();
 
             model.Name = FullName(current.User);
@@ -137,6 +141,7 @@ namespace GymManagement.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting(AuthenticationRateLimiting.AuthenticatedPolicyName)]
         public async Task<IActionResult> EditProfile(
             MemberToUpdateViewModel model,
             CancellationToken ct = default)
@@ -212,7 +217,7 @@ namespace GymManagement.Controllers
                 var identityResult = await _userManager.UpdateAsync(current.User);
                 if (!identityResult.Succeeded)
                 {
-                    AddIdentityErrors(identityResult);
+                    ModelState.AddIdentityErrors(identityResult);
                     await transaction.RollbackAsync(ct);
                     _dbContext.ChangeTracker.Clear();
                     return View(model);
@@ -220,10 +225,16 @@ namespace GymManagement.Controllers
 
                 await transaction.CommitAsync(ct);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
                 await transaction.RollbackAsync(ct);
                 _dbContext.ChangeTracker.Clear();
+
+                if (!DatabaseErrors.IsUniqueConstraintViolation(ex))
+                {
+                    _logger.LogError(ex, "Failed to update profile for member {MemberId}.", current.MemberId);
+                }
+
                 ModelState.AddModelError(
                     string.Empty,
                     "Profile could not be updated. Check that the email and phone number are unique.");
@@ -337,14 +348,6 @@ namespace GymManagement.Controllers
                 user.Id,
                 delivered);
             return delivered;
-        }
-
-        private void AddIdentityErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
         }
     }
 }

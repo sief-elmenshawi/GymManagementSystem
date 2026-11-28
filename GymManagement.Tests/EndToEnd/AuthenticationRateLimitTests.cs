@@ -6,7 +6,7 @@ using Xunit;
 namespace GymManagement.Tests.EndToEnd;
 
 /// <summary>
-/// Verifies that account POST endpoints enforce the configured per-IP, per-endpoint limit.
+/// Verifies that anonymous and authenticated POST endpoints enforce their configured limits.
 /// Requires GYM_TEST_CONNECTION_STRING; otherwise these tests are reported as skipped.
 /// </summary>
 public sealed class AuthenticationRateLimitTests : IAsyncLifetime
@@ -32,6 +32,8 @@ public sealed class AuthenticationRateLimitTests : IAsyncLifetime
             {
                 ["AuthenticationRateLimit:PermitLimit"] = "2",
                 ["AuthenticationRateLimit:WindowSeconds"] = "60",
+                ["AuthenticationRateLimit:AuthenticatedPermitLimit"] = "1",
+                ["AuthenticationRateLimit:AuthenticatedWindowSeconds"] = "60",
             });
 
         using var startupClient = _factory.CreateClient();
@@ -67,6 +69,26 @@ public sealed class AuthenticationRateLimitTests : IAsyncLifetime
     }
 
     [SqlServerFact]
+    public async Task Register_ExceededLimit_Returns429WithRetryAfter()
+    {
+        var factory = RequireFactory();
+        using var browser = CreateBrowser(factory);
+
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            var email = $"rate.register.{attempt}-{Guid.NewGuid():N}@example.com";
+            using var response = await PostRegisterAsync(browser, email);
+            Assert.NotEqual(HttpStatusCode.TooManyRequests, response.StatusCode);
+        }
+
+        using var rejected = await PostRegisterAsync(
+            browser, $"rate.register.rejected-{Guid.NewGuid():N}@example.com");
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
+        Assert.True(rejected.Headers.TryGetValues("Retry-After", out var retryAfter));
+        Assert.NotEmpty(retryAfter!);
+    }
+
+    [SqlServerFact]
     public async Task RateLimit_IsPartitionedPerEndpoint()
     {
         var factory = RequireFactory();
@@ -91,6 +113,27 @@ public sealed class AuthenticationRateLimitTests : IAsyncLifetime
         AccountTestFlows.AssertRedirect(forgotResponse, "/Account/ForgotPasswordConfirmation");
     }
 
+    [SqlServerFact]
+    public async Task EditProfile_ExceededAuthenticatedLimit_Returns429()
+    {
+        var factory = RequireFactory();
+        using var browser = CreateBrowser(factory);
+        var email = $"rate.profile-{Guid.NewGuid():N}@example.com";
+
+        await AccountTestFlows.RegisterAsync(browser, email, "01012345678", Password);
+        await AccountTestFlows.ConfirmEmailAsync(browser, email);
+        await AccountTestFlows.LoginAsync(browser, email, Password);
+
+        using (var accepted = await PostProfileEditAsync(browser, email))
+        {
+            AccountTestFlows.AssertRedirect(accepted, "/Member");
+        }
+
+        // The authenticated policy is per user and is independent of the anonymous IP budget.
+        using var rejected = await PostProfileEditAsync(browser, email);
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
+    }
+
     private static async Task<HttpResponseMessage> PostLoginAsync(BrowserClient browser, string email)
     {
         var loginPage = await browser.GetStringAsync("/Account/Login");
@@ -102,6 +145,47 @@ public sealed class AuthenticationRateLimitTests : IAsyncLifetime
                 ["Password"] = "Wrong@12345",
                 ["RememberMe"] = "false",
                 ["__RequestVerificationToken"] = BrowserClient.ExtractToken(loginPage),
+            });
+    }
+
+    private static async Task<HttpResponseMessage> PostRegisterAsync(BrowserClient browser, string email)
+    {
+        var registerPage = await browser.GetStringAsync("/Account/Register");
+        return await browser.PostFormAsync(
+            "/Account/Register",
+            new Dictionary<string, string>
+            {
+                ["FirstName"] = "Rate",
+                ["LastName"] = "Limit",
+                ["Email"] = email,
+                ["Phone"] = "01012345678",
+                ["DateOfBirth"] = "1993-06-12",
+                ["Gender"] = "1",
+                ["Street"] = "Recovery Street",
+                ["City"] = "Cairo",
+                ["BuildingNumber"] = "7",
+                ["Password"] = Password,
+                ["ConfirmPassword"] = Password,
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(registerPage),
+            });
+    }
+
+    private static async Task<HttpResponseMessage> PostProfileEditAsync(
+        BrowserClient browser,
+        string email)
+    {
+        var editPage = await browser.GetStringAsync("/Member/EditProfile");
+        return await browser.PostFormAsync(
+            "/Member/EditProfile",
+            new Dictionary<string, string>
+            {
+                ["Email"] = email,
+                ["Phone"] = "01098765432",
+                ["BuildingNumber"] = "5",
+                ["City"] = "Cairo",
+                ["Street"] = "Rate Limit Street",
+                ["CurrentPassword"] = Password,
+                ["__RequestVerificationToken"] = BrowserClient.ExtractToken(editPage),
             });
     }
 

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -17,11 +18,19 @@ public sealed class AuthenticationRateLimitOptions
     public int PermitLimit { get; set; } = 8;
 
     public int WindowSeconds { get; set; } = 60;
+
+    // Authenticated self-service endpoints (for example repeated email changes)
+    // get a separate, more generous budget so anonymous abuse cannot consume it.
+    public int AuthenticatedPermitLimit { get; set; } = 20;
+
+    public int AuthenticatedWindowSeconds { get; set; } = 60;
 }
 
 public static class AuthenticationRateLimiting
 {
     public const string PolicyName = "AuthenticationEndpoints";
+
+    public const string AuthenticatedPolicyName = "AuthenticatedEndpoints";
     private const string LogCategory = "GymManagement.RateLimiting";
 
     public static IServiceCollection AddAuthenticationRateLimiting(
@@ -37,6 +46,9 @@ public static class AuthenticationRateLimiting
 
             var permitLimit = Math.Clamp(configured.PermitLimit, 1, 1000);
             var window = TimeSpan.FromSeconds(Math.Clamp(configured.WindowSeconds, 1, 3600));
+            var authenticatedPermitLimit = Math.Clamp(configured.AuthenticatedPermitLimit, 1, 1000);
+            var authenticatedWindow = TimeSpan.FromSeconds(
+                Math.Clamp(configured.AuthenticatedWindowSeconds, 1, 3600));
 
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
@@ -53,6 +65,25 @@ public static class AuthenticationRateLimiting
                     {
                         PermitLimit = permitLimit,
                         Window = window,
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    });
+            });
+
+            options.AddPolicy<string>(AuthenticatedPolicyName, context =>
+            {
+                // Use the stable user id rather than the email address so no PII is
+                // kept in the limiter partition key. Anonymous callers fall back to IP.
+                var userKey = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var partitionKey =
+                    $"{userKey ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}:{context.Request.Path.Value}";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey,
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = authenticatedPermitLimit,
+                        Window = authenticatedWindow,
                         QueueLimit = 0,
                         AutoReplenishment = true,
                     });

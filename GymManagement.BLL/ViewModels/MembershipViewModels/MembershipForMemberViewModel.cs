@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GymManagement.BLL.ViewModels.MembershipViewModels
 {
-    public class MemberShipForMemberViewModel
+    public class MembershipForMemberViewModel
     {
         public string MemberName { get; set; } = default!;
         public string PlanName { get; set; } = default!;
@@ -17,7 +17,7 @@ namespace GymManagement.BLL.ViewModels.MembershipViewModels
         {
             get
             {
-                return (EndDate - DateTime.Now).Days;
+                return (EndDate - DateTime.UtcNow).Days;
             }
         }
     }

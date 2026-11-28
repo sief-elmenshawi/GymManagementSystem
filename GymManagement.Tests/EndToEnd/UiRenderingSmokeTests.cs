@@ -112,7 +112,7 @@ public sealed class UiRenderingSmokeTests
     [
         "/Account/Logout", "/Account/ConfirmEmail", "/dev-mailbox",
         "/Activate", "/Cancel", "/Attended", "/Book", "/Picture",
-        "/ResetPassword?", "javascript:", "mailto:", "tel:",
+        "/ResetPassword", "javascript:", "mailto:", "tel:",
     ];
 
     [BrowserFact]

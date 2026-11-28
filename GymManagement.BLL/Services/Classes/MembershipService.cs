@@ -3,7 +3,7 @@ using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.MembershipViewModels;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,15 +17,27 @@ namespace GymManagement.BLL.Services.Classes
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
+        private readonly TimeProvider _timeProvider;
 
-        public MembershipService(IUnitOfWork unitOfWork , IMapper mapper)
+        public MembershipService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            TimeProvider? timeProvider = null)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
-        public async Task<Result> CreateMembershipAsync(CreateMemberShipViewModel model, CancellationToken ct = default)
+        public async Task<Result> CreateMembershipAsync(CreateMembershipViewModel model, CancellationToken ct = default)
         {
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+            if (model.StartDate.HasValue && model.StartDate.Value.Date < now.Date)
+            {
+                return Result.Validation("Start date cannot be in the past.");
+            }
+
             var memberExists = await unitOfWork.GetRepository<Member>().AnyAsync(m => m.Id == model.MemberId, ct);
             if (!memberExists) return Result.NotFound("Member not found.");
 
@@ -35,15 +47,15 @@ namespace GymManagement.BLL.Services.Classes
 
 
             var hasActive = await unitOfWork.MembershipRepository
-                .AnyAsync(m => m.MemberId == model.MemberId && m.EndDate > DateTime.Now, ct);
+                .AnyAsync(m => m.MemberId == model.MemberId && m.EndDate > now, ct);
             if (hasActive) return Result.Fail("Member already has an active membership.");
 
             var entity = new Membership
             {
                 MemberId = model.MemberId,
                 PlanId = plan.Id,
-                CreatedAt = DateTime.Now,
-                EndDate = (model.StartDate ?? DateTime.Now).AddDays(plan.DurationDays),
+                CreatedAt = now,
+                EndDate = (model.StartDate ?? now).AddDays(plan.DurationDays),
             };
 
             unitOfWork.MembershipRepository.Add(entity);
@@ -54,7 +66,10 @@ namespace GymManagement.BLL.Services.Classes
         public async Task<Result> DeleteActiveMembershipAsync(int memberId, CancellationToken ct = default)
         {
             var active = await unitOfWork.MembershipRepository.FirstOrDefaultAsync(
-                m => m.MemberId == memberId && m.EndDate > DateTime.Now, tracking: true, ct: ct);
+                m => m.MemberId == memberId
+                    && m.EndDate > _timeProvider.GetUtcNow().UtcDateTime,
+                tracking: true,
+                ct: ct);
 
             if (active is null) return Result.NotFound("No active membership for this member.");
 
@@ -63,33 +78,41 @@ namespace GymManagement.BLL.Services.Classes
             return result > 0 ? Result.Ok() : Result.Fail("Failed To Delete Membership");
         }
 
-        public async Task<PagedResult<MemberShipViewModel>> GetAllMembershipsAsync(
+        public async Task<PagedResult<MembershipViewModel>> GetAllMembershipsAsync(
             CancellationToken ct = default, int page = 1, int pageSize = 20)
         {
             page = Math.Max(page, 1);
             pageSize = Math.Clamp(pageSize, 1, 100);
-            Expression<Func<Membership, bool>> predicate = m => m.EndDate > DateTime.Now;
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            Expression<Func<Membership, bool>> predicate = m => m.EndDate > now;
 
             var memberships = await unitOfWork.MembershipRepository.GetMembershipsForListAsync(
                 predicate, page, pageSize, ct);
             var totalCount = await unitOfWork.MembershipRepository.CountAsync(predicate, ct);
 
-            return new PagedResult<MemberShipViewModel>
+            return new PagedResult<MembershipViewModel>
             {
-                Items = mapper.Map<List<MemberShipViewModel>>(memberships),
+                Items = mapper.Map<List<MembershipViewModel>>(memberships),
                 Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
             };
         }
 
         public async Task<IEnumerable<PlanSelectListViewModel>> GetPlansForDropDownAsync(CancellationToken ct = default)
         {
-            var plans = await unitOfWork.GetRepository<Plan>().GetAllAsync(p => p.IsActive, ct: ct);
+            var plans = await unitOfWork.GetRepository<Plan>().GetLatestAsync(
+                p => p.IsActive,
+                take: 100,
+                ct: ct);
             return mapper.Map<IEnumerable<PlanSelectListViewModel>>(plans);
         }
 
         public async Task<IEnumerable<MemberSelectListViewModel>> GetMembersForDropDownAsync(CancellationToken ct = default)
         {
-            var members = await unitOfWork.GetRepository<Member>().GetAllAsync(ct: ct);
+            // Dropdowns are bounded so a large member table cannot be pulled into
+            // memory on every form render. Add server-side search before raising this cap.
+            var members = await unitOfWork.GetRepository<Member>().GetLatestAsync(
+                take: 500,
+                ct: ct);
             return mapper.Map<IEnumerable<MemberSelectListViewModel>>(members);
         }
     }

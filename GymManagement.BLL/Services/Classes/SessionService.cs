@@ -4,8 +4,8 @@ using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.SessionViewModels;
 using GymManagement.DAL.Models;
 using GymManagement.DAL.Models.Enums;
-using GymManagement.DAL.Repositorities.Classes;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Classes;
+using GymManagement.DAL.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,18 +18,25 @@ namespace GymManagement.BLL.Services.Classes
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
+        private readonly TimeProvider _timeProvider;
 
-        public SessionService(IUnitOfWork unitOfWork,IMapper mapper)
+        public SessionService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            TimeProvider? timeProvider = null)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
-        public async Task<Result> CreateSessionAync(CreateSessionViewModel model, CancellationToken ct = default)
+        public async Task<Result> CreateSessionAsync(CreateSessionViewModel model, CancellationToken ct = default)
         {
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
             if (model.EndDate <= model.StartDate) return Result.Validation("End Date Must be After StaetDate");
 
-            if (model.StartDate <= DateTime.Now) return Result.Validation("Start Date Must Be In The Future");
+            if (model.StartDate <= now) return Result.Validation("Start Date Must Be In The Future");
 
             if (model.Capacity < 1 || model.Capacity > 25) return Result.Validation("Capacity Must be Between 1 And 25");
 
@@ -45,7 +52,7 @@ namespace GymManagement.BLL.Services.Classes
             var session = mapper.Map<CreateSessionViewModel, Session>(model);
 
             unitOfWork.GetRepository<Session>().Add(session);
-            var result = await unitOfWork.SaveChangesAsync();
+            var result = await unitOfWork.SaveChangesAsync(ct);
             return result > 0 ? Result.Ok() : Result.Fail("Failed To Creat Seesion");
 
         }
@@ -93,7 +100,7 @@ namespace GymManagement.BLL.Services.Classes
             var session = await unitOfWork.SessionRepository.GetByIdAsync(sessionId, ct);
             if (session is null) return Result<UpdateSessionViewModel>.NotFound("Session Not Found");
 
-            if (session.StartDate <= DateTime.Now)
+            if (session.StartDate <= _timeProvider.GetUtcNow().UtcDateTime)
                 return Result<UpdateSessionViewModel>.Fail("Can not Update Session that has Started");
 
             var bookingCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(sessionId, ct);
@@ -110,11 +117,11 @@ namespace GymManagement.BLL.Services.Classes
             return mapper.Map<IEnumerable<Trainer> , IEnumerable<TrainerSelectViewModel>>(result);
         }
 
-        public async Task<Result> RemoveSessionAysnc(int sessionId, CancellationToken ct = default)
+        public async Task<Result> RemoveSessionAsync(int sessionId, CancellationToken ct = default)
         {
             var session = await unitOfWork.SessionRepository.GetByIdAsync(sessionId, ct);
             if (session is null) return Result.NotFound("Session Not Found");
-            if (session.EndDate >= DateTime.Now)
+            if (session.EndDate >= _timeProvider.GetUtcNow().UtcDateTime)
                 return Result.Fail("Can Not Delete Session That Not Ended Yet");
 
             var BookingCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(sessionId, ct);
@@ -128,20 +135,21 @@ namespace GymManagement.BLL.Services.Classes
         public async Task<Result> UpdateSessionAsync(int id, UpdateSessionViewModel model, CancellationToken ct = default)
         {
             var session = await unitOfWork.SessionRepository.GetByIdAsync(id, ct);
-            if(session == null)
-                 if (session is null) return Result.NotFound("Session Not Found");
+            if (session is null) return Result.NotFound("Session Not Found");
 
-            if (session.StartDate <= DateTime.Now)
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+            if (session.StartDate <= now)
                 return Result.Fail("Can Not Edit Session Thas Started");
 
             if (model.EndDate <= model.StartDate)
                 return Result.Validation("End Date Must Be After StartDate");
 
-            var BookedCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(id);
+            var BookedCount = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(id, ct);
             if (BookedCount > 0)
                 return Result.Fail("Can Not Update Session That Has Booking");
 
-            if (model.StartDate <= DateTime.Now)
+            if (model.StartDate <= now)
                 return Result.Fail("Start Date Must Be in Future");
 
             var trainer = await unitOfWork.GetRepository<Trainer>().GetByIdAsync(model.TrainerId, ct);
@@ -153,7 +161,7 @@ namespace GymManagement.BLL.Services.Classes
             if (!isValid || trainer.Specialty != CategorySpecialty) return Result.Validation("Can Not Create This Session To This Trainer");
 
             mapper.Map(model, session);
-            session.UpdatedAt = DateTime.Now;
+            session.UpdatedAt = now;
             unitOfWork.SessionRepository.Update(session);
 
             var result = await unitOfWork.SaveChangesAsync(ct);

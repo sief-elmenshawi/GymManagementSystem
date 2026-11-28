@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using GymManagement.BLL.ViewModels.MemberViewModels;
 using GymManagement.BLL.ViewModels.PlanViewModels;
 using GymManagement.BLL.ViewModels.SessionViewModels;
@@ -108,7 +108,7 @@ public class MappingProfileTests
             EndDate = end,
         };
 
-        var viewModel = _mapper.Map<GymManagement.BLL.ViewModels.MembershipViewModels.MemberShipViewModel>(info);
+        var viewModel = _mapper.Map<GymManagement.BLL.ViewModels.MembershipViewModels.MembershipViewModel>(info);
 
         Assert.Equal(5, viewModel.MemberId);
         Assert.Equal(9, viewModel.PlanId);

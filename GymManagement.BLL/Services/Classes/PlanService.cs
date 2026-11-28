@@ -3,8 +3,8 @@ using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.PlanViewModels;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Classes;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Classes;
+using GymManagement.DAL.Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,11 +17,16 @@ namespace GymManagement.BLL.Services.Classes
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
+        private readonly TimeProvider _timeProvider;
 
-        public PlanService(IUnitOfWork unitOfWork ,IMapper mapper)
+        public PlanService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            TimeProvider? timeProvider = null)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            _timeProvider = timeProvider ?? TimeProvider.System;
         }
 
 
@@ -69,7 +74,7 @@ namespace GymManagement.BLL.Services.Classes
                 return Result.Validation("Cannot deactivate a plan that has active memberships.");
 
             plan.IsActive = !plan.IsActive;
-            plan.UpdatedAt = DateTime.Now;
+            plan.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
             repo.Update(plan);
             var result = await unitOfWork.SaveChangesAsync(ct);
             return result > 0 ? Result.Ok() : Result.Fail("Failed to Toggle Plan Status");
@@ -84,7 +89,7 @@ namespace GymManagement.BLL.Services.Classes
                 return Result.Validation("Cannot edit a plan that has active memberships.");
 
             mapper.Map(model, plan);
-            plan.UpdatedAt = DateTime.Now;
+            plan.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
             repo.Update(plan);
             await unitOfWork.SaveChangesAsync(ct);
             return Result.Ok();
@@ -96,7 +101,10 @@ namespace GymManagement.BLL.Services.Classes
 
         private async Task<bool> HasActiveMembershipsAsync(int planId, CancellationToken ct)
         {
-            return await unitOfWork.MembershipRepository.AnyAsync(m => m.PlanId == planId && m.EndDate > DateTime.Now, ct);
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            return await unitOfWork.MembershipRepository.AnyAsync(
+                m => m.PlanId == planId && m.EndDate > now,
+                ct);
         } 
         #endregion
     }

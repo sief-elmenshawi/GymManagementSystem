@@ -1,4 +1,4 @@
-    using System.Security.Claims;
+﻿    using System.Security.Claims;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -38,7 +38,7 @@ namespace GymManagement.Controllers
                 return Redirect("/Member");
             }
 
-            var data = await analyticsService.GetAnalyticsDataAysnc(ct);
+            var data = await analyticsService.GetAnalyticsDataAsync(ct);
             return View(data);
         }
 

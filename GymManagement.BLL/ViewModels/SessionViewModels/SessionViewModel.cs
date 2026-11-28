@@ -27,9 +27,9 @@ namespace GymManagement.BLL.ViewModels.SessionViewModels
         {
             get
             {
-                if (StartDate > DateTime.Now)
+                if (StartDate > DateTime.UtcNow)
                     return "Upcoming";
-                else if (StartDate <= DateTime.Now && EndDate >= DateTime.Now)
+                else if (StartDate <= DateTime.UtcNow && EndDate >= DateTime.UtcNow)
                     return "Ongoing";
                 else
                     return "Completed";

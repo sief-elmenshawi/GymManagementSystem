@@ -42,7 +42,7 @@ namespace GymManagement.PL.Controllers
                 return View(model);
             }
 
-            var result = await sessionService.CreateSessionAync(model , ct);
+            var result = await sessionService.CreateSessionAsync(model , ct);
             if (result.succes)
             {
                 TempData["SuccessMessage"] = "Session Created";
@@ -128,7 +128,7 @@ namespace GymManagement.PL.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken ct)
         {
-            var result = await sessionService.RemoveSessionAysnc(id, ct);
+            var result = await sessionService.RemoveSessionAsync(id, ct);
             TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
                 result.succes ? "Session deleted successfully." : result.error;
             return RedirectToAction(nameof(Index));

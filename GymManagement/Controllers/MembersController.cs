@@ -15,16 +15,16 @@ namespace GymManagement.PL.Controllers
     public class MembersController : Controller
     {
         private readonly IMemberService memberService;
-        private readonly IAttachementService attachementService;
+        private readonly IAttachmentService attachmentService;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public MembersController(
             IMemberService memberService,
-            IAttachementService attachementService,
+            IAttachmentService attachmentService,
             UserManager<ApplicationUser> userManager)
         {
             this.memberService = memberService;
-            this.attachementService = attachementService;
+            this.attachmentService = attachmentService;
             _userManager = userManager;
         }
 
@@ -46,7 +46,7 @@ namespace GymManagement.PL.Controllers
                 return NotFound();
 
 
-            var result = attachementService.GetFile(photo, "MembersPictures");
+            var result = attachmentService.GetFile(photo, "MembersPictures");
             if (result is null) return NotFound();
 
             return File(result.Value.Stream, result.Value.ContentType);
@@ -203,7 +203,8 @@ namespace GymManagement.PL.Controllers
         {
             if (!ModelState.IsValid) return View(nameof(Create), model);
 
-            var result = await memberService.CreateMemberAsync(model, ct);
+            var result = await memberService.CreateMemberAsync(
+                model, await GetAuditActorAsync(), ct);
             if (result.succes)
                 TempData["SuccessMessage"] = "Member Created Successfully";
             else
@@ -221,7 +222,7 @@ namespace GymManagement.PL.Controllers
         public async Task<IActionResult> EditMember(int id, CancellationToken ct)
         {
             // Get Member To Update By Id
-            var member =await memberService.GetMemberToUpdatAsync(id, ct);
+            var member =await memberService.GetMemberToUpdateAsync(id, ct);
             if (member is null)
             {
                 TempData["ErrorMessage"] = "Member Not Found";

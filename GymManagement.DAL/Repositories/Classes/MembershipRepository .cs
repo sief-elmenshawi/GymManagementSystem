@@ -1,6 +1,6 @@
 ﻿using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Repositorities.Classes
+namespace GymManagement.DAL.Repositories.Classes
 {
     public class MembershipRepository :GenericRepository<Membership> , IMembershipRepository
     {

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Repositorities.Interfaces
+namespace GymManagement.DAL.Repositories.Interfaces
 {
     public interface IUnitOfWork
     {

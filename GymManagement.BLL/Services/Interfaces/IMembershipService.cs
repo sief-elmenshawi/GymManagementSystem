@@ -10,12 +10,12 @@ namespace GymManagement.BLL.Services.Interfaces
 {
     public interface IMembershipService
     {
-        Task<PagedResult<MemberShipViewModel>> GetAllMembershipsAsync(
+        Task<PagedResult<MembershipViewModel>> GetAllMembershipsAsync(
             CancellationToken ct = default, int page = 1, int pageSize = 20);
         Task<IEnumerable<PlanSelectListViewModel>> GetPlansForDropDownAsync(CancellationToken ct);
         Task<IEnumerable<MemberSelectListViewModel>> GetMembersForDropDownAsync(CancellationToken ct);
 
-        Task<Result> CreateMembershipAsync(CreateMemberShipViewModel model,CancellationToken ct);
+        Task<Result> CreateMembershipAsync(CreateMembershipViewModel model,CancellationToken ct);
         Task<Result> DeleteActiveMembershipAsync(int id,CancellationToken ct);
 
     }

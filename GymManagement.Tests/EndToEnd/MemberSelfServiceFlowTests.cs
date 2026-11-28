@@ -203,7 +203,7 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
         var email = NewEmail("self.book");
         await RegisterAndConfirmAsync(factory, email);
         var (sessionId, memberId) = await SeedSessionAsync(
-            factory, email, "Self Yoga", DateTime.Now.AddDays(2), activeMembership: true);
+            factory, email, "Self Yoga", DateTime.UtcNow.AddDays(2), activeMembership: true);
 
         using var browser = CreateBrowser(factory);
         await LoginAsync(browser, email);
@@ -256,9 +256,9 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
         var email = NewEmail("self.rules");
         await RegisterAndConfirmAsync(factory, email);
         var (startedSessionId, _) = await SeedSessionAsync(
-            factory, email, "Started Yoga", DateTime.Now.AddMinutes(-30), activeMembership: true);
+            factory, email, "Started Yoga", DateTime.UtcNow.AddMinutes(-30), activeMembership: true);
         var (futureSessionId, memberId) = await SeedSessionAsync(
-            factory, email, "Future Yoga", DateTime.Now.AddDays(3), activeMembership: false);
+            factory, email, "Future Yoga", DateTime.UtcNow.AddDays(3), activeMembership: false);
 
         using var browser = CreateBrowser(factory);
         await LoginAsync(browser, email);
@@ -352,7 +352,7 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
                 DurationDays = 30,
                 Price = 100m,
                 IsActive = true,
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
             };
             db.Plans.Add(plan);
             await db.SaveChangesAsync();
@@ -364,15 +364,15 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
             {
                 MemberId = memberId,
                 PlanId = plan.Id,
-                EndDate = DateTime.Now.AddDays(30),
-                CreatedAt = DateTime.Now,
+                EndDate = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow,
             });
         }
 
         var category = new Category
         {
             CategoryName = "SelfYoga",
-            CreatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
         };
         var trainer = new Trainer
         {
@@ -380,8 +380,8 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
             Email = NewEmail("coach"),
             Phone = NewPhone(),
             Specialty = Specialty.Yoga,
-            HiringDate = DateTime.Now.AddYears(-1),
-            CreatedAt = DateTime.Now,
+            HiringDate = DateTime.UtcNow.AddYears(-1),
+            CreatedAt = DateTime.UtcNow,
             Address = new Address { Street = "Coach Street", City = "Cairo", BuildingNumber = 4 },
         };
 
@@ -397,7 +397,7 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
             EndDate = startDate.AddHours(1),
             CategoryId = category.Id,
             TrainerId = trainer.Id,
-            CreatedAt = DateTime.Now,
+            CreatedAt = DateTime.UtcNow,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -415,7 +415,7 @@ public sealed class MemberSelfServiceFlowTests : IAsyncLifetime
 
         foreach (var membership in memberships)
         {
-            membership.EndDate = DateTime.Now.AddDays(-1);
+            membership.EndDate = DateTime.UtcNow.AddDays(-1);
         }
 
         await db.SaveChangesAsync();

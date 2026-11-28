@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.MemberViewModels;
@@ -29,7 +29,7 @@ public class MemberPhotoTests
         var service = new GymManagement.BLL.Service.Classes.MemberService(
             uow.UnitOfWork.Object,
             TestMapper.Create(),
-            Mock.Of<IAttachementService>());
+            Mock.Of<IAttachmentService>());
 
         var photo = await service.GetMemberPhotoAsync(member.Id, CancellationToken.None);
 
@@ -46,7 +46,7 @@ public class MemberPhotoTests
     public async Task Picture_UsesPhotoOnlyLookup_InsteadOfFullMemberDetails()
     {
         var memberService = new Mock<IMemberService>();
-        var attachmentService = new Mock<IAttachementService>();
+        var attachmentService = new Mock<IAttachmentService>();
         var stream = new MemoryStream(new byte[] { 1, 2, 3 });
         memberService
             .Setup(s => s.GetMemberPhotoAsync(5, It.IsAny<CancellationToken>()))

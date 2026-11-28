@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using GymManagement;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.ApplicationViewModels;
 using GymManagement.Controllers;
@@ -92,6 +93,7 @@ namespace GymManagement.PL.Controllers
 
         [HttpPost]
         [AllowAnonymous]
+        [EnableRateLimiting(AuthenticationRateLimiting.PolicyName)]
         public async Task<IActionResult> Register(RegisterViewModel model, CancellationToken ct = default)
         {
             if (!ModelState.IsValid) return View(model);
@@ -127,7 +129,7 @@ namespace GymManagement.PL.Controllers
                 var created = await _userManager.CreateAsync(user, model.Password);
                 if (!created.Succeeded)
                 {
-                    AddIdentityErrors(created);
+                    ModelState.AddIdentityErrors(created);
                     await transaction.RollbackAsync(ct);
                     return View(model);
                 }
@@ -150,7 +152,7 @@ namespace GymManagement.PL.Controllers
 
                 if (!roleResult.Succeeded)
                 {
-                    AddIdentityErrors(roleResult);
+                    ModelState.AddIdentityErrors(roleResult);
                     await transaction.RollbackAsync(ct);
                     return View(model);
                 }
@@ -230,7 +232,7 @@ namespace GymManagement.PL.Controllers
             }
             else
             {
-                AddIdentityErrors(result);
+                ModelState.AddIdentityErrors(result);
             }
 
             return View(new ConfirmEmailViewModel
@@ -374,7 +376,7 @@ namespace GymManagement.PL.Controllers
             var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
             if (!result.Succeeded)
             {
-                AddIdentityErrors(result);
+                ModelState.AddIdentityErrors(result);
                 return View(model);
             }
 
@@ -404,14 +406,6 @@ namespace GymManagement.PL.Controllers
                 $"<p>Please confirm your email address before signing in:</p>" +
                 $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Confirm email address</a></p>",
                 ct);
-        }
-
-        private void AddIdentityErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
         }
 
         #endregion

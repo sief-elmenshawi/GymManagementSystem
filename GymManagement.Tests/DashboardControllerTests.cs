@@ -1,4 +1,4 @@
-using GymManagement.BLL.Services.Interfaces;
+﻿using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.AnalyticsViewModels;
 using GymManagement.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ public class DashboardControllerTests
             TotalTrainers = 3,
         };
         _analytics
-            .Setup(s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var controller = new DashboardController(_analytics.Object);
@@ -30,7 +30,7 @@ public class DashboardControllerTests
         var view = Assert.IsType<ViewResult>(result);
         Assert.Same(expected, view.Model);
         _analytics.Verify(
-            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

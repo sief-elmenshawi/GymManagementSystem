@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GymManagement.DAL.Data.Configurations
 {
-    internal class BookingConfeguration : IEntityTypeConfiguration<Booking>
+    internal class BookingConfiguration : IEntityTypeConfiguration<Booking>
     {
         public void Configure(EntityTypeBuilder<Booking> builder)
         {

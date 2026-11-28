@@ -182,19 +182,19 @@ namespace GymManagement.BLL.MappingProfile
 
         private void MembershipAutoMapper() 
         {
-            CreateMap<Membership, MemberShipForMemberViewModel>()
+            CreateMap<Membership, MembershipForMemberViewModel>()
                      .ForMember(dist => dist.MemberName, Option => Option.MapFrom(Src => Src.Member.Name))
                      .ForMember(dist => dist.PlanName, Option => Option.MapFrom(Src => Src.Plan.Name))
                      .ForMember(dist => dist.StartDate, Option => Option.MapFrom(X => X.CreatedAt));
 
-            CreateMap<Membership, MemberShipViewModel>()
+            CreateMap<Membership, MembershipViewModel>()
                      .ForMember(dist => dist.MemberName, Option => Option.MapFrom(Src => Src.Member.Name))
                      .ForMember(dist => dist.PlanName, Option => Option.MapFrom(Src => Src.Plan.Name))
                                           .ForMember(dist => dist.StartDate, Option => Option.MapFrom(X => X.CreatedAt));
 
-            CreateMap<MembershipListInfo, MemberShipViewModel>();
+            CreateMap<MembershipListInfo, MembershipViewModel>();
 
-            CreateMap<CreateMemberShipViewModel, Membership>()
+            CreateMap<CreateMembershipViewModel, Membership>()
                 .ForMember(dest => dest.Member, opt => opt.Ignore())
                 .ForMember(dest => dest.Plan, opt => opt.Ignore())
                 .ForMember(dest => dest.EndDate, opt => opt.Ignore())

@@ -172,6 +172,17 @@ else {
     Write-Pass "Environment is Production (via $($environmentSource.Name))"
 }
 
+$allowedHostsSource = Find-ConfigSource -Names @('AllowedHosts')
+if ($null -eq $allowedHostsSource) {
+    Write-Fail 'AllowedHosts is missing. Set it to an explicit host list (for example: gym.example.com;www.gym.example.com).'
+}
+elseif ($allowedHostsSource.Value.Trim() -eq '*') {
+    Write-Fail 'AllowedHosts is set to "*". Replace the wildcard with an explicit host list before going live.'
+}
+else {
+    Write-Pass "AllowedHosts is explicit (via $($allowedHostsSource.Name))"
+}
+
 Assert-AnyPresent -Names @(
     'ConnectionStrings__DefaultConnection',
     'ConnectionStrings:DefaultConnection'
@@ -198,11 +209,32 @@ Assert-AnyPresent -Names @(
     'Email:Smtp:Host'
 ) -Label 'SMTP host' -AllowMissing:$AllowNoSmtpHost
 
-Assert-AnyPresent -Names @(
+$seedPasswordSource = Find-ConfigSource -Names @(
     'GYM_SEED_PASSWORD',
     'SeedUsers__Password',
     'SeedUsers:Password'
-) -Label 'Seed password' -AllowMissing:(-not $RequireSeedPassword)
+)
+if ($null -ne $seedPasswordSource) {
+    Write-Pass "Seed password (via $($seedPasswordSource.Name))"
+
+    $seedEnabled = Find-ConfigSource -Names @(
+        'GYM_SEED_USERS_ENABLED',
+        'SeedUsers__Enabled',
+        'SeedUsers:Enabled'
+    )
+    if ($null -eq $seedEnabled -or $seedEnabled.Value -inotmatch '^(true|1)$') {
+        Write-Fail 'A seed password is set but user seeding is not enabled. Set GYM_SEED_USERS_ENABLED=true for a deliberate bootstrap, or remove the password.'
+    }
+    else {
+        Write-Pass "Seeded users explicitly enabled (via $($seedEnabled.Name))"
+    }
+}
+elseif ($RequireSeedPassword) {
+    Write-Fail 'Seed password is missing. Set GYM_SEED_PASSWORD or SeedUsers__Password.'
+}
+else {
+    Write-Warning 'WARN: Seed password is not set; default users will not be created.'
+}
 
 $smtpUser = Find-ConfigSource -Names @('Email__Smtp__User', 'Email:Smtp:User')
 $smtpPassword = Find-ConfigSource -Names @('Email__Smtp__Password', 'Email:Smtp:Password')

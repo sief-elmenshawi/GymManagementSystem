@@ -1,12 +1,12 @@
-using GymManagement.BLL.MappingProfile;
+﻿using GymManagement.BLL.MappingProfile;
 using GymManagement.BLL.Service.Classes;
 using GymManagement.BLL.Service.Interfaces;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Classes;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Classes;
+using GymManagement.DAL.Repositories.Interfaces;
 using GymManagement.PL;
 using GymManagement.Infrastructure.Email;
 using GymManagement.Infrastructure.RateLimiting;
@@ -38,9 +38,12 @@ namespace GymManagementPL
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 
             builder.Services.AddAuthenticationRateLimiting(builder.Configuration);
+            builder.Services.AddSingleton(TimeProvider.System);
 
             builder.Services.Configure<EmailOptions>(
                 builder.Configuration.GetSection(EmailOptions.SectionName));
+            builder.Services.Configure<AttachmentOptions>(
+                builder.Configuration.GetSection(AttachmentOptions.SectionName));
             builder.Services.AddSingleton<DevelopmentMailbox>();
             builder.Services.AddSingleton<IEmailDeliveryMonitor, EmailDeliveryMonitor>();
             builder.Services.AddScoped<IAppEmailSender, AppEmailSender>();
@@ -70,7 +73,7 @@ namespace GymManagementPL
             builder.Services.AddScoped<IMembershipService, MembershipService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
             builder.Services.AddScoped<IBookingService, BookingService>();
-            builder.Services.AddScoped<IAttachementService, AttachementService>();
+            builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 
 
             #endregion
@@ -121,6 +124,11 @@ namespace GymManagementPL
 
             var app = builder.Build();
 
+            if (!app.Environment.IsDevelopment())
+            {
+                HostingConfiguration.RequireExplicitAllowedHosts(builder.Configuration);
+            }
+
             if (!app.Environment.IsDevelopment()
                 && SeedCredentials.ResolvePassword(builder.Configuration) is null)
             {
@@ -140,6 +148,10 @@ namespace GymManagementPL
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
+
+            // Trust only configured proxies so X-Forwarded-For cannot spoof the
+            // rate-limit partition key or the scheme used in confirmation links.
+            app.UseForwardedHeaders(HostingConfiguration.GetForwardedHeadersOptions(builder.Configuration));
 
             // Only redirect when an HTTPS endpoint/port is actually configured.
             if (HostingConfiguration.ShouldUseHttpsRedirection(builder.Configuration))

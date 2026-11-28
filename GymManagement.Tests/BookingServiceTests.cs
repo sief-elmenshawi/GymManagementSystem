@@ -4,6 +4,7 @@ using GymManagement.BLL.Services.Classes;
 using GymManagement.DAL.Models;
 using GymManagement.Tests.Support;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -16,7 +17,10 @@ public class BookingServiceTests
 
     public BookingServiceTests()
     {
-        _service = new BookingService(_uow.UnitOfWork.Object, TestMapper.Create());
+        _service = new BookingService(
+            _uow.UnitOfWork.Object,
+            TestMapper.Create(),
+            NullLogger<BookingService>.Instance);
     }
 
     [Fact]
@@ -32,7 +36,7 @@ public class BookingServiceTests
     [Fact]
     public async Task CreateBooking_WhenSessionAlreadyStarted_ReturnsConflict()
     {
-        SetupSession(TestData.FutureSession(start: DateTime.Now.AddMinutes(-10), end: DateTime.Now.AddHours(1)));
+        SetupSession(TestData.FutureSession(start: DateTime.UtcNow.AddMinutes(-10), end: DateTime.UtcNow.AddHours(1)));
 
         var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
 
@@ -141,6 +145,27 @@ public class BookingServiceTests
     }
 
     [Fact]
+    public async Task CreateBooking_WhenDatabaseFails_ReturnsGenericError()
+    {
+        var session = TestData.FutureSession(capacity: 10);
+        var model = TestData.CreateBooking();
+        SetupSession(session);
+        SetupMembership(active: true);
+        SetupAlreadyBooked(false);
+        _uow.SessionRepository
+            .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(4);
+        _uow.UnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateException("Connection reset by peer", new Exception()));
+
+        var result = await _service.CreateNewBookingAsync(model);
+
+        Assert.False(result.succes);
+        Assert.Equal("Booking could not be created. Please try again.", result.error);
+    }
+
+    [Fact]
     public async Task CancelBooking_WhenSessionDoesNotExist_ReturnsNotFound()
     {
         var result = await _service.CancelBookingAsync(5, 30);
@@ -153,7 +178,7 @@ public class BookingServiceTests
     [Fact]
     public async Task CancelBooking_WhenSessionAlreadyStarted_ReturnsConflict()
     {
-        SetupSession(TestData.FutureSession(start: DateTime.Now.AddMinutes(-10), end: DateTime.Now.AddHours(1)));
+        SetupSession(TestData.FutureSession(start: DateTime.UtcNow.AddMinutes(-10), end: DateTime.UtcNow.AddHours(1)));
 
         var result = await _service.CancelBookingAsync(5, 30);
 

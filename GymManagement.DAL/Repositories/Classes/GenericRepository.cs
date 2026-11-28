@@ -1,6 +1,6 @@
 ﻿using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Repositorities.Classes
+namespace GymManagement.DAL.Repositories.Classes
 {
     public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : BaseEntity, new()
     {
@@ -66,6 +66,24 @@ namespace GymManagement.DAL.Repositorities.Classes
                 .Take(pageSize)
                 .ToListAsync(ct);
         }
+        public async Task<IEnumerable<TEntity>> GetLatestAsync(
+            Expression<Func<TEntity, bool>>? predicate = null,
+            int take = 100,
+            CancellationToken ct = default)
+        {
+            take = Math.Clamp(take, 1, 500);
+
+            IQueryable<TEntity> query = _set.AsNoTracking();
+            if (predicate is not null) query = query.Where(predicate);
+
+            // BaseEntity.Id increases with insertion order, so this is a bounded,
+            // index-friendly way to fetch recent rows without a new index.
+            return await query
+                .OrderByDescending(entity => entity.Id)
+                .Take(take)
+                .ToListAsync(ct);
+        }
+
         public async Task<TEntity?> GetByIdAsync(int id, CancellationToken ct = default) => await _set.FindAsync([id], ct);
 
     }

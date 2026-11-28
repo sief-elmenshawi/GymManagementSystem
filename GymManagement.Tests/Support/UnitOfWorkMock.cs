@@ -1,5 +1,5 @@
-using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Interfaces;
+﻿using GymManagement.DAL.Models;
+using GymManagement.DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 

@@ -22,9 +22,9 @@ public sealed class TrainerServiceTests
     [Fact]
     public async Task CreateTrainer_SetsHiringDateToToday()
     {
-        var before = DateTime.Now;
+        var before = DateTime.UtcNow;
         var result = await _service.CreateTrainerAsync(CreateModel());
-        var after = DateTime.Now;
+        var after = DateTime.UtcNow;
 
         Assert.True(result.succes);
         _uow.TrainerRepository.Verify(

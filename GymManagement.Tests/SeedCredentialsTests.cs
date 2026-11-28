@@ -8,42 +8,46 @@ namespace GymManagement.Tests;
 [Collection(EnvironmentVariableCollection.Name)]
 public sealed class SeedCredentialsTests : IDisposable
 {
-    private readonly EnvironmentVariableScope _environment =
-        new(SeedCredentials.EnvironmentVariable);
+    private readonly EnvironmentVariableScope _environment = new(
+        SeedCredentials.EnabledEnvironmentVariable,
+        SeedCredentials.EnvironmentVariable);
 
-    public SeedCredentialsTests() => _environment.Clear(SeedCredentials.EnvironmentVariable);
+    public SeedCredentialsTests()
+    {
+        _environment.Clear(SeedCredentials.EnabledEnvironmentVariable);
+        _environment.Clear(SeedCredentials.EnvironmentVariable);
+    }
 
     public void Dispose() => _environment.Dispose();
 
     [Fact]
-    public void ResolvePassword_EnvironmentValueWinsOverConfiguration()
+    public void ResolveUserSeedingEnabled_DefaultsToDevelopmentOnly()
     {
-        _environment.Set(SeedCredentials.EnvironmentVariable, "env-password");
-
-        var configuration = CreateConfiguration(("SeedUsers:Password", "config-password"));
-
-        Assert.Equal("env-password", SeedCredentials.ResolvePassword(configuration));
+        Assert.True(SeedCredentials.ResolveUserSeedingEnabled(
+            CreateConfiguration(), isDevelopment: true));
+        Assert.False(SeedCredentials.ResolveUserSeedingEnabled(
+            CreateConfiguration(), isDevelopment: false));
     }
 
     [Fact]
-    public void ResolvePassword_FallsBackToConfiguration()
+    public void ResolveUserSeedingEnabled_ConfigurationCanOptInOutsideDevelopment()
     {
-        var configuration = CreateConfiguration(("SeedUsers:Password", "config-password"));
+        var configuration = CreateConfiguration((SeedCredentials.EnabledConfigurationKey, "true"));
 
-        Assert.Equal("config-password", SeedCredentials.ResolvePassword(configuration));
+        Assert.True(SeedCredentials.ResolveUserSeedingEnabled(configuration, isDevelopment: false));
     }
 
     [Fact]
-    public void ResolvePassword_ReturnsNull_WhenNoUsablePasswordExists()
+    public void ResolveUserSeedingEnabled_EnvironmentOverridesConfiguration()
     {
-        _environment.Set(SeedCredentials.EnvironmentVariable, "   ");
-        var configuration = CreateConfiguration(("SeedUsers:Password", "  "));
+        _environment.Set(SeedCredentials.EnabledEnvironmentVariable, "false");
+        var configuration = CreateConfiguration((SeedCredentials.EnabledConfigurationKey, "true"));
 
-        Assert.Null(SeedCredentials.ResolvePassword(configuration));
+        Assert.False(SeedCredentials.ResolveUserSeedingEnabled(configuration, isDevelopment: false));
     }
 
     private static IConfiguration CreateConfiguration(params (string Key, string? Value)[] values) =>
         new ConfigurationBuilder()
-            .AddInMemoryCollection(values.ToDictionary(v => v.Key, v => v.Value))
+            .AddInMemoryCollection(values.ToDictionary(value => value.Key, value => value.Value))
             .Build();
 }

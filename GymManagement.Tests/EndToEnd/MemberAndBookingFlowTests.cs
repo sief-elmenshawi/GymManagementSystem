@@ -89,6 +89,20 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
         Assert.True(idMatch.Success, "Created member id was not found in the members list.");
         var memberId = int.Parse(idMatch.Groups[1].Value);
 
+        // The starting health record must use the same audit path as later edits.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+            var audit = await db.HealthRecordAudits.AsNoTracking()
+                .SingleAsync(item => item.MemberId == memberId
+                                     && item.Action == HealthRecordAudit.Created);
+            Assert.Equal(175.5m, audit.Height);
+            Assert.Equal(70.5m, audit.Weight);
+            Assert.Equal("O+", audit.BloodType);
+            Assert.Equal("created by end-to-end test", audit.Note);
+            Assert.Contains(SuperAdminEmail, audit.ActorEmail, StringComparison.OrdinalIgnoreCase);
+        }
+
         var editPage = await browser.GetStringAsync($"/Members/EditMember/{memberId}");
         using var editResponse = await browser.PostFormAsync(
             $"/Members/EditMember/{memberId}",
@@ -148,7 +162,7 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
                 Email = "e2e.trainer@example.com",
                 Phone = "01055555555",
                 Specialty = Specialty.Yoga,
-                HiringDate = DateTime.Now.AddYears(-1),
+                HiringDate = DateTime.UtcNow.AddYears(-1),
                 Address = new Address { BuildingNumber = 1, Street = "Gym Street", City = "Cairo" },
             };
             var member = new Member
@@ -178,15 +192,15 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
             {
                 MemberId = member.Id,
                 PlanId = plan.Id,
-                CreatedAt = DateTime.Now,
-                EndDate = DateTime.Now.AddDays(30),
+                CreatedAt = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(30),
             });
             var session = new Session
             {
                 Description = "E2E upcoming session",
                 Capacity = 5,
-                StartDate = DateTime.Now.AddDays(1),
-                EndDate = DateTime.Now.AddDays(1).AddHours(1),
+                StartDate = DateTime.UtcNow.AddDays(1),
+                EndDate = DateTime.UtcNow.AddDays(1).AddHours(1),
                 TrainerId = trainer.Id,
                 CategoryId = category.Id,
             };

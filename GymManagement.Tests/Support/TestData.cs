@@ -33,8 +33,8 @@ internal static class TestData
         Id = id,
         Description = "A valid training session",
         Capacity = capacity,
-        StartDate = start ?? DateTime.Now.AddDays(1),
-        EndDate = end ?? DateTime.Now.AddDays(1).AddHours(1),
+        StartDate = start ?? DateTime.UtcNow.AddDays(1),
+        EndDate = end ?? DateTime.UtcNow.AddDays(1).AddHours(1),
         TrainerName = "Trainer One",
         CategoryName = "Cardio",
         AvailableSlots = availableSlots,
@@ -49,8 +49,8 @@ internal static class TestData
         Id = id,
         Description = "A valid training session",
         Capacity = capacity,
-        StartDate = start ?? DateTime.Now.AddDays(1),
-        EndDate = end ?? DateTime.Now.AddDays(1).AddHours(1),
+        StartDate = start ?? DateTime.UtcNow.AddDays(1),
+        EndDate = end ?? DateTime.UtcNow.AddDays(1).AddHours(1),
         TrainerId = 10,
         CategoryId = 20,
         Trainer = Trainer(),
@@ -61,8 +61,8 @@ internal static class TestData
     {
         Description = "A valid training session",
         Capacity = 10,
-        StartDate = DateTime.Now.AddDays(1),
-        EndDate = DateTime.Now.AddDays(1).AddHours(1),
+        StartDate = DateTime.UtcNow.AddDays(1),
+        EndDate = DateTime.UtcNow.AddDays(1).AddHours(1),
         TrainerId = 10,
         CategoryId = 20,
     };
@@ -70,8 +70,8 @@ internal static class TestData
     public static UpdateSessionViewModel ValidUpdateSession() => new()
     {
         Description = "An updated training session",
-        StartDate = DateTime.Now.AddDays(2),
-        EndDate = DateTime.Now.AddDays(2).AddHours(1),
+        StartDate = DateTime.UtcNow.AddDays(2),
+        EndDate = DateTime.UtcNow.AddDays(2).AddHours(1),
         TrainerId = 10,
     };
 

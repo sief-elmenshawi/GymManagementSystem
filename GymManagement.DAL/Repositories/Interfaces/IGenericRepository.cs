@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagement.DAL.Repositorities.Interfaces
+namespace GymManagement.DAL.Repositories.Interfaces
 {
     public interface IGenericRepository<TEntity> where TEntity : BaseEntity, new()
     {
@@ -17,6 +17,10 @@ namespace GymManagement.DAL.Repositorities.Interfaces
             int page = 1,
             int pageSize = 20,
             bool tracking = false,
+            CancellationToken ct = default);
+        Task<IEnumerable<TEntity>> GetLatestAsync(
+            Expression<Func<TEntity, bool>>? predicate = null,
+            int take = 100,
             CancellationToken ct = default);
         Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, bool tracking = false, CancellationToken ct = default);
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken ct = default);

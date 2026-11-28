@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using GymManagement.BLL.Services.Interfaces;
 using GymManagement.BLL.ViewModels.AnalyticsViewModels;
 using GymManagement.Controllers;
@@ -25,7 +25,7 @@ public class HomeControllerTests
         Assert.Equal("Dashboard", redirect.ControllerName);
         Assert.Equal("Index", redirect.ActionName);
         _analytics.Verify(
-            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -39,7 +39,7 @@ public class HomeControllerTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/Member", redirect.Url);
         _analytics.Verify(
-            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -50,7 +50,7 @@ public class HomeControllerTests
     {
         var expected = new AnalyticsViewModel { TotalMembers = 4 };
         _analytics
-            .Setup(s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
         var controller = CreateController(memberRole, staffRole);
 
@@ -61,7 +61,7 @@ public class HomeControllerTests
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Dashboard", redirect.ControllerName);
             _analytics.Verify(
-                s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+                s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()),
                 Times.Never);
             return;
         }
@@ -69,7 +69,7 @@ public class HomeControllerTests
         var view = Assert.IsType<ViewResult>(result);
         Assert.Same(expected, view.Model);
         _analytics.Verify(
-            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -78,7 +78,7 @@ public class HomeControllerTests
     {
         var expected = new AnalyticsViewModel { TotalMembers = 4 };
         _analytics
-            .Setup(s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
         var controller = CreateController("Admin");
 
@@ -87,7 +87,7 @@ public class HomeControllerTests
         var view = Assert.IsType<ViewResult>(result);
         Assert.Same(expected, view.Model);
         _analytics.Verify(
-            s => s.GetAnalyticsDataAysnc(It.IsAny<CancellationToken>()),
+            s => s.GetAnalyticsDataAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

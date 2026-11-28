@@ -1,4 +1,4 @@
-name: CI
+name: verify
 
 # Requires a repository secret named GYM_CI_SA_PASSWORD.
 # It is used only by the disposable SQL Server container below; no value is stored here.
@@ -53,6 +53,12 @@ jobs:
 
       - name: Build
         run: dotnet build GymManagementSolution.slnx --no-restore --nologo
+
+      - name: Install EF tool
+        run: dotnet tool install --global dotnet-ef --version 9.*
+
+      - name: Check for pending model changes
+        run: dotnet ef migrations has-pending-model-changes --project GymManagement.DAL/GymManagement.DAL.csproj --startup-project GymManagement/GymManagement.PL.csproj
 
       - name: Install Playwright system dependencies
         run: sudo pwsh GymManagement.Tests/bin/Debug/net9.0/playwright.ps1 install-deps chromium

@@ -1,8 +1,8 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
 using GymManagement.DAL.Models.Enums;
-using GymManagement.DAL.Repositorities.Classes;
+using GymManagement.DAL.Repositories.Classes;
 using GymManagement.Tests.Support;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -102,14 +102,14 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
         var repository = new MembershipRepository(db);
         _counter.Reset();
 
-        var memberships = (await repository.GetMembershipsForListAsync(m => m.EndDate > DateTime.Now))
+        var memberships = (await repository.GetMembershipsForListAsync(m => m.EndDate > DateTime.UtcNow))
             .ToList();
 
         var membership = Assert.Single(memberships);
         Assert.Equal("Booked Member", membership.MemberName);
         Assert.Equal("Gold", membership.PlanName);
         Assert.Equal(new DateTime(2026, 1, 1), membership.StartDate);
-        Assert.True(membership.EndDate > DateTime.Now);
+        Assert.True(membership.EndDate > DateTime.UtcNow);
         Assert.Equal(1, _counter.Count);
     }
 
@@ -140,7 +140,7 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
             Phone = "01012345678",
             DateOfBirth = new DateOnly(1990, 1, 1),
             Gender = Gender.Male,
-            HiringDate = DateTime.Now.AddYears(-1),
+            HiringDate = DateTime.UtcNow.AddYears(-1),
             Specialty = Specialty.Cardio,
             Address = new Address { BuildingNumber = 1, Street = "Gym Street", City = "Cairo" },
         };
@@ -167,7 +167,7 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
             MemberId = bookedMember.Id,
             PlanId = plan.Id,
             CreatedAt = new DateTime(2026, 1, 1),
-            EndDate = DateTime.Now.AddDays(30),
+            EndDate = DateTime.UtcNow.AddDays(30),
         });
         await db.SaveChangesAsync();
     }
@@ -187,8 +187,8 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
     {
         Description = description,
         Capacity = 10,
-        StartDate = DateTime.Now.AddDays(1),
-        EndDate = DateTime.Now.AddDays(1).AddHours(1),
+        StartDate = DateTime.UtcNow.AddDays(1),
+        EndDate = DateTime.UtcNow.AddDays(1).AddHours(1),
         Trainer = trainer,
         Category = category,
     };

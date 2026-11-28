@@ -24,20 +24,28 @@ Environment-variable names use `__` for configuration sections (for example, `Em
 | Variable | Required? | Purpose |
 | --- | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | Yes | Must be `Production`. `DOTNET_ENVIRONMENT` is also accepted by the checker. |
+| `AllowedHosts` | Yes in Production | Explicit semicolon-separated host list. The committed wildcard `*` fails startup and the config checker. |
 | `ConnectionStrings__DefaultConnection` | Yes | SQL Server connection string used by the app and startup migrations. |
 | `AUTOMAPPER_LICENSE_KEY` | One source required | AutoMapper key required outside Development. |
 | `LUCKYPENNY_LICENSE_KEY` | One source required | Documented AutoMapper fallback key. |
 | `AutoMapper__LicenseKey` | One source required | Configuration equivalent of `AutoMapper:LicenseKey`. |
 | `GYM_SEED_PASSWORD` | Bootstrap only | Password for seeded `SuperAdmin`/`Admin`/`Member` accounts. Takes precedence over `SeedUsers:Password`. |
 | `SeedUsers__Password` | Bootstrap only | Alternative seed-password source. Existing passwords are never reset. |
+| `GYM_SEED_USERS_ENABLED` | Bootstrap only | Must be `true` in Production to create the predictable default users. Development defaults to enabled. |
+| `SeedUsers__Enabled` | Bootstrap only | Configuration equivalent of `GYM_SEED_USERS_ENABLED`. |
 | `Email__Smtp__Host` | Deployment checklist | Enables confirmation/reset emails. Without it, Production logs an error and skips delivery. |
 | `Email__From` | Optional | Sender address. Runtime default: `no-reply@gymmanagement.local`. |
 | `Email__Smtp__Port` | Optional | SMTP port. Runtime default: `587`. |
 | `Email__Smtp__UseSsl` | Optional | SSL/STARTTLS. Runtime default: `true`. |
 | `Email__Smtp__User` | Conditional | SMTP username when the relay requires authentication. |
 | `Email__Smtp__Password` | Conditional | SMTP secret when the relay requires authentication. |
-| `AuthenticationRateLimit__PermitLimit` | Optional | Requests per client IP and account endpoint per window. Runtime default: `8`. |
+| `AuthenticationRateLimit__PermitLimit` | Optional | Anonymous requests per client IP and account endpoint per window. Runtime default: `8`. |
 | `AuthenticationRateLimit__WindowSeconds` | Optional | Fixed-window length in seconds. Runtime default: `60`. |
+| `AuthenticationRateLimit__AuthenticatedPermitLimit` | Optional | Authenticated self-service requests per user and endpoint per window. Runtime default: `20`. |
+| `AuthenticationRateLimit__AuthenticatedWindowSeconds` | Optional | Authenticated fixed-window length in seconds. Runtime default: `60`. |
+| `ForwardedHeaders__KnownProxies__0` | Behind a proxy | IP address of a trusted reverse proxy. Repeat with `__1`, `__2`, etc. Loopback is trusted by default. |
+| `ForwardedHeaders__KnownNetworks__0` | Behind a proxy | Trusted proxy CIDR, for example `10.0.0.0/8`. Repeat with `__1`, etc. |
+| `ForwardedHeaders__ForwardLimit` | Optional | Maximum number of forwarded hops. Runtime default: `1`. |
 | `GYM_TEST_CONNECTION_STRING` | Test runs only | Enables SQL integration/E2E/performance tests. Do not set in Production. |
 
 Do not fill values in `production.env.example`. Copy it to a secure location and keep the copy out of Git.
@@ -116,14 +124,36 @@ For orchestrators, populate the same names from the platform's secret mechanism 
 | Situation | Behavior |
 | --- | --- |
 | `ASPNETCORE_ENVIRONMENT=Production` | HSTS and the error page are enabled; `/dev-mailbox/*` is never mapped. |
+| `AllowedHosts` missing or `*` | The app fails fast at startup; the config checker also fails. Set an explicit host list before launch. |
 | AutoMapper key missing or malformed | The app fails fast at startup with a message naming the accepted variables. A well-formed key has three JWT-shaped segments; AutoMapper validates the signature. |
-| Seed password missing | A warning is logged and identity seeding is skipped. Set a password only to bootstrap missing default users; changing it later does not reset existing accounts. |
+| Seed password missing or opt-in absent | A warning is logged and default user creation is skipped (roles are still ensured). In Production set both a password and `GYM_SEED_USERS_ENABLED=true` only to bootstrap; change the predictable passwords immediately. |
 | SMTP host missing | Each attempted confirmation/reset email is logged as an error and skipped. Registration still succeeds, but the user cannot sign in until confirmed. |
-| Pending EF migrations | Applied automatically at startup before seeding. |
-| HTTPS redirection | Enabled only when an HTTPS URL/port is configured. |
-| Too many login/reset requests from one IP | The endpoint returns `429` with `Retry-After`; other endpoints are unaffected. |
+| Pending EF migrations | Applied automatically at startup before seeding. Run `scripts/sql/check-booking-duplicates.sql` first when upgrading an existing database (see below). |
+| HTTPS redirection | Enabled only when an HTTPS URL/port is configured. Forwarded headers from configured proxies are trusted first. |
+| Too many login/register/reset requests from one IP | The endpoint returns `429` with `Retry-After`; other endpoints are unaffected. |
+| Too many member profile edits from one user | `[Authorize]` endpoints such as `EditProfile` use a separate authenticated budget and return `429` when exceeded. |
 
 Because `SignIn.RequireConfirmedAccount` is `true`, Production must have working email delivery for self-service registration, password recovery, and member email changes.
+
+## Before applying `20261128102032_BookingUniqueIndex`
+
+The booking migration adds a surrogate `Id` key and a unique `(MemberId, SessionId)` index. It will fail if the existing database already contains duplicate bookings.
+
+1. Take a verified backup of the production database.
+2. Run `scripts/sql/check-booking-duplicates.sql` against that backup restore or directly against the target during a maintenance window.
+3. The detection query must return **zero rows**. If it returns rows, review them, decide which booking to keep, and only then use the commented remediation transaction in the same script.
+4. Re-run the detection query to confirm zero rows, then start the application so the migration applies.
+
+Do not edit an already-applied migration; the check is a deployment step, not a schema change.
+
+## Forwarded headers and generated links
+
+When the app runs behind a reverse proxy, configure `ForwardedHeaders__KnownProxies__0` or `ForwardedHeaders__KnownNetworks__0`. Otherwise the app cannot know the original client IP or the external scheme:
+
+- rate limits would partition on the proxy address and group all users together;
+- confirmation and reset links could be generated with an internal `http` scheme.
+
+Only loopback proxies are trusted by default. Do not trust unknown networks or clients can spoof `X-Forwarded-For`.
 
 ## Email delivery monitoring
 

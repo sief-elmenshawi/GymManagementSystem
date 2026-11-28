@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GymManagement.BLL.Services.Interfaces
 {
-    public interface IAttachementService
+    public interface IAttachmentService
     {
         // Upload 
         Task<string?> UploadAsync(Stream fileStream, string fileName, string folderName, CancellationToken ct = default);

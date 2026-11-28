@@ -1,9 +1,9 @@
-using GymManagement.DAL.Data.DbContexts;
+﻿using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
-using GymManagement.DAL.Repositorities.Interfaces;
+using GymManagement.DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace GymManagement.DAL.Repositorities.Classes;
+namespace GymManagement.DAL.Repositories.Classes;
 
 public class MemberRepository : GenericRepository<Member>, IMemberRepository
 {

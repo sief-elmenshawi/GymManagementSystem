@@ -224,7 +224,7 @@ In Package Manager Console, set **Default project** to `GymManagement.DAL` and r
 
 Seeding creates missing roles/users only. If no password is configured, identity seeding is skipped with a warning. Changing the configured password later does not reset existing users.
 
-The development database was verified with `20261127102651_AddMemberUserLink` applied (no pending migrations).
+The development database is up to date through `20261128102032_BookingUniqueIndex` (no pending model changes). When upgrading an existing database, run `scripts/sql/check-booking-duplicates.sql` first and resolve any duplicate bookings before that migration applies.
 
 ## 5. Run
 
@@ -277,7 +277,7 @@ EF tooling can also be checked without starting the web app:
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full test verification: build `0 Warning(s), 0 Error(s)`, tests `133 Passed / 0 Failed / 4 Skipped / 137 Total` (browser tests are opt-in). With `GYM_RUN_BROWSER_TESTS=1`: `137 Passed / 0 Failed / 0 Skipped / 137 Total`.
+Last full verification: build `0 Warning(s), 0 Error(s)`, full default suite `143 Passed / 0 Failed / 4 Skipped / 147 Total` (browser tests opt-in), opt-in browser suite `4 Passed / 0 Failed / 0 Skipped / 4 Total`, and `dotnet ef migrations has-pending-model-changes` reported no pending changes.
 
 ---
 

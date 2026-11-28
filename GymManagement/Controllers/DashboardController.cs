@@ -1,4 +1,4 @@
-using GymManagement.BLL.Services.Interfaces;
+﻿using GymManagement.BLL.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +16,7 @@ namespace GymManagement.Controllers
 
         public async Task<IActionResult> Index(CancellationToken ct = default)
         {
-            var analytics = await _analyticsService.GetAnalyticsDataAysnc(ct);
+            var analytics = await _analyticsService.GetAnalyticsDataAsync(ct);
             return View(analytics);
         }
     }

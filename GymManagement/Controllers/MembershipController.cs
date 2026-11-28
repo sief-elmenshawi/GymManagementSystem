@@ -28,7 +28,7 @@ namespace GymManagementPL.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(CreateMemberShipViewModel model, CancellationToken ct)
+        public async Task<IActionResult> Create(CreateMembershipViewModel model, CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {
