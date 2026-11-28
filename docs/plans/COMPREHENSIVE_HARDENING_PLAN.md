@@ -8,7 +8,8 @@ This document tracks the remaining production hardening work. It is intentionall
 - OPS-2: Done for the local staging database — the unique-index migration is already applied and the duplicate check returned zero rows. No user-supplied env var was available; the local `skip-worktree` connection string was used without printing or committing it.
 - OPS-3: Skipped/deferred by user — no SMTP relay was configured. Missing SMTP is logged and skipped as designed; registration still succeeds but confirmation/reset emails are not delivered.
 - A1–A16: Done, verified, committed, and pushed to `master`; no secrets are included.
-- A17: Done and verified by build/tests/staging smoke; awaiting explicit commit/push confirmation.
+- A17: Done, verified, committed, and pushed to `master`.
+- A18: Done and verified by build/tests; included in this batch.
 
 ## Constraints
 
@@ -46,7 +47,8 @@ This document tracks the remaining production hardening work. It is intentionall
 | A14 | Cover new hardening behavior with tests | unit + E2E tests | A1–A13 | New and updated tests pass with SQL backing | Focused suite: 37/37 passed | Done |
 | A15 | Clean up misspelled names and duplicate helpers | repository folders, services, view models, controllers | A1–A14 | Misspelled identifiers removed; shared helpers consolidated; build has no warnings/errors | Build: 0 warnings, 0 errors | Done |
 | A16 | Final verification and documentation refresh | full suite, browser suite, EF model check, plan | A15 | Full suite green; browser suite green; no pending model changes; statuses current | See evidence log | Done |
-| A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done (pending commit) |
+| A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done |
+| A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
 
 ## Evidence log
 
@@ -65,6 +67,9 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — A17 staging smoke with `ASPNETCORE_ENVIRONMENT=Staging`, `GYM_SEED_DEMO_DATA=true`, explicit `AllowedHosts`, and AutoMapper license: login `200`, protected pages redirect to login, row counts Trainers/Members/HealthRecords/Audits/Memberships/Sessions = `3`, Bookings = `2`, Plans = `4`, Categories = `5`, demo user = `1`.
 - `2026-11-28` — Full default suite after A17: `Failed: 0, Passed: 147, Skipped: 4, Total: 151` (the 4 skips are the opt-in browser/UI tests).
 - `2026-11-28` — Browser suite after A17 (`GYM_RUN_BROWSER_TESTS=1`): `Failed: 0, Passed: 4, Skipped: 0, Total: 4`.
+- `2026-11-28` — A17 commit `6f7e738` pushed to `master`; CI run `46150074398` green in 3m1s.
+- `2026-11-28` — A18: renamed the 4 C# files that had trailing spaces; glob `**/* .cs` returns no matches; build `0 Warning(s), 0 Error(s)`.
+- `2026-11-28` — Full default suite after A18: `Failed: 0, Passed: 147, Skipped: 4, Total: 151`; browser suite `Failed: 0, Passed: 4, Skipped: 0, Total: 4`.
 
 ## Remaining work
 
