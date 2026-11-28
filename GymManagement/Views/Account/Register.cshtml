@@ -8,53 +8,26 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Member Registration - Route Fitness</title>
-    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <meta name="theme-color" content="#f7f4ed" />
+    <title>Route Fitness — Member registration</title>
+    <link rel="stylesheet" href="~/lib/fonts/google/type.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" />
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 32px 16px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .register-card {
-            max-width: 820px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
-        }
-
-        .brand-color {
-            color: #0a1172;
-        }
-
-        .btn-register {
-            background: #0a1172;
-            color: #fff;
-        }
-
-            .btn-register:hover {
-                background: #1a2396;
-                color: #fff;
-            }
-    </style>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/style.css" />
 </head>
 <body>
-    <div class="card register-card mx-auto">
-        <div class="card-body p-4 p-md-5">
-            <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary text-white mb-3" style="width:64px;height:64px;">
-                    <i class="bi bi-person-plus-fill fs-3"></i>
-                </div>
-                <h1 class="h3 brand-color mb-1">Create your member account</h1>
-                <p class="text-muted mb-0">Registration never grants administrative access.</p>
-                <div class="alert alert-info mt-3 mb-0" role="alert">
-                    After registering, open the confirmation link we email to you before signing in.
-                </div>
-            </div>
+    <div class="auth-shell">
+        <section class="auth-panel">
+            <a class="auth-brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-symbol" aria-hidden="true">RF</span>
+                <span class="brand-text">Route Fitness<small>Training studio</small></span>
+            </a>
 
-            <form asp-action="Register" asp-controller="Account" method="post">
+            <p class="eyebrow">New member</p>
+            <h1 class="auth-title">Join the<br /><em>floor.</em></h1>
+            <p class="auth-subtitle">Create your member account. One account, one member record, no staff access. Confirm your email before signing in.</p>
+
+            <form asp-action="Register" asp-controller="Account" method="post" class="auth-form">
                 <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
                 <div class="row g-3">
@@ -119,20 +92,36 @@
                     </div>
                 </div>
 
+                <div class="auth-note">
+                    After registering, open the confirmation link we email to you before signing in.
+                </div>
+
                 <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-register">
-                        <i class="bi bi-person-plus me-1"></i> Register
+                    <button type="submit" class="btn btn-accent">
+                        Create account <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
                     </button>
-                    <a asp-action="Login" asp-controller="Account" class="btn btn-outline-secondary">
-                        Already registered? Back to login
-                    </a>
+                    <a asp-action="Login" asp-controller="Account" class="btn btn-outline">Already registered? Sign in</a>
                 </div>
             </form>
-        </div>
+        </section>
+
+        <aside class="auth-aside">
+            <img src="~/images/gym-floor.jpg" class="auth-photo" alt="Group training session in progress on the gym floor" />
+            <div class="auth-aside-content">
+                <p class="eyebrow">Membership / member only</p>
+                <h2>Your record.<br />Your <span>slots.</span></h2>
+                <p>Book only what you need, see only your own bookings, and keep your details in one place.</p>
+                <div class="auth-meta">
+                    <div>Booking<strong>Self service</strong></div>
+                    <div>Profile<strong>One place</strong></div>
+                    <div>Access<strong>Member only</strong></div>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
 </body>
 </html>

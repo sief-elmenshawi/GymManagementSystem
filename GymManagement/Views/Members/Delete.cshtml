@@ -1,4 +1,4 @@
-﻿﻿@{
+﻿@{
 ViewData["Title"] = "Delete Member";
 Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -8,7 +8,7 @@ Layout = "~/Views/Shared/_Layout.cshtml";
     <div id="Alert" class="alert alert-danger alert-dismissible fade show">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 <div class="container mt-5">
@@ -23,8 +23,8 @@ Layout = "~/Views/Shared/_Layout.cshtml";
 
                 <form asp-action="DeleteConfirmed" method="post" asp-route-id="@Context.Request.RouteValues["id"]" class="mt-4">
                     <div class="buttons d-flex justify-content-between gap-3">
-                        <a asp-controller="Members" asp-action="Index" class="btn-outline flex-fill">NO</a>
-                        <button type="submit" class="btn-fill flex-fill">Yes</button>
+                        <a asp-controller="Members" asp-action="Index" class="btn btn-outline flex-fill">NO</a>
+                        <button type="submit" class="btn btn-accent flex-fill">Yes</button>
                     </div>
                 </form>
             </div>

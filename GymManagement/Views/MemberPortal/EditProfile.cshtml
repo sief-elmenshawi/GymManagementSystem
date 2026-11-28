@@ -1,74 +1,69 @@
 @model MemberToUpdateViewModel
 @{
-    ViewData["Title"] = "Edit Profile";
+    ViewData["Title"] = "Edit profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary-color text-white py-3">
-                    <h3 class="h5 mb-0">Edit my profile</h3>
+<div class="shell">
+    <header class="page-head">
+        <div>
+            <p class="kicker">Member / details</p>
+            <h1 class="page-title">Edit my profile</h1>
+            <p>Contact details and address are shared with the gym and update your sign-in record.</p>
+        </div>
+        <a asp-controller="MemberPortal" asp-action="Index" class="btn btn-outline">Back to my file</a>
+    </header>
+
+    <div class="detail-panel" style="max-width:880px;">
+        <p class="text-muted">
+            Enter your current password to save. If you change your email, you will receive a
+            confirmation link and must confirm the new address before signing in again.
+        </p>
+
+        <form asp-controller="MemberPortal" asp-action="EditProfile" method="post">
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="Name" class="form-label">Name</label>
+                    <input asp-for="Name" class="form-control" readonly />
                 </div>
-                <div class="card-body p-4">
-                    <p class="text-muted">
-                        Your contact details and address are shared with the gym. They also update your
-                        sign-in email and phone number. Enter your current password to save changes.
-                        If you change your email, you will receive a confirmation link and must confirm
-                        the new address before signing in again.
-                    </p>
-
-                    <form asp-controller="MemberPortal" asp-action="EditProfile" method="post">
-                        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
-
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label text-muted">Name</label>
-                                <input asp-for="Name" class="form-control" readonly />
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Email" class="form-label">Email</label>
-                                <input asp-for="Email" class="form-control" />
-                                <span asp-validation-for="Email" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Phone" class="form-label">Phone</label>
-                                <input asp-for="Phone" class="form-control" />
-                                <span asp-validation-for="Phone" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="BuildingNumber" class="form-label">Building number</label>
-                                <input asp-for="BuildingNumber" class="form-control" />
-                                <span asp-validation-for="BuildingNumber" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="City" class="form-label">City</label>
-                                <input asp-for="City" class="form-control" />
-                                <span asp-validation-for="City" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Street" class="form-label">Street</label>
-                                <input asp-for="Street" class="form-control" />
-                                <span asp-validation-for="Street" class="text-danger"></span>
-                            </div>
-                            <div class="col-12">
-                                <label asp-for="CurrentPassword" class="form-label">Current password</label>
-                                <input asp-for="CurrentPassword" class="form-control" autocomplete="current-password" />
-                                <span asp-validation-for="CurrentPassword" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between gap-2 mt-4">
-                            <a asp-controller="MemberPortal" asp-action="Index" class="btn btn-outline-secondary">
-                                Back to profile
-                            </a>
-                            <button type="submit" class="btn btn-primary">Save changes</button>
-                        </div>
-                    </form>
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label">Email</label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Phone" class="form-label">Phone</label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="BuildingNumber" class="form-label">Building number</label>
+                    <input asp-for="BuildingNumber" class="form-control" />
+                    <span asp-validation-for="BuildingNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="City" class="form-label">City</label>
+                    <input asp-for="City" class="form-control" />
+                    <span asp-validation-for="City" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Street" class="form-label">Street</label>
+                    <input asp-for="Street" class="form-control" />
+                    <span asp-validation-for="Street" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="CurrentPassword" class="form-label">Current password</label>
+                    <input asp-for="CurrentPassword" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="CurrentPassword" class="text-danger"></span>
                 </div>
             </div>
-        </div>
+
+            <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+                <button type="submit" class="btn btn-accent">Save changes</button>
+            </div>
+        </form>
     </div>
 </div>
 

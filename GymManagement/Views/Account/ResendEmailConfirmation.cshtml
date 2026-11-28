@@ -8,42 +8,50 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resend Confirmation - Route Fitness</title>
-    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Route Fitness — Resend confirmation</title>
+    <link rel="stylesheet" href="~/lib/fonts/google/type.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/style.css" />
 </head>
-<body class="bg-light">
-    <div class="container py-5">
-        <div class="card mx-auto shadow-sm border-0" style="max-width: 480px;">
-            <div class="card-body p-4 p-md-5">
-                <div class="text-center mb-4">
-                    <i class="bi bi-envelope-arrow-up fs-1 text-primary"></i>
-                    <h1 class="h4 mt-3 mb-1">Resend confirmation email</h1>
-                    <p class="text-muted mb-0">We will send a fresh confirmation link.</p>
+<body>
+    <div class="auth-shell">
+        <section class="auth-panel auth-shell-single w-100">
+            <a class="auth-brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-symbol" aria-hidden="true">RF</span>
+                <span class="brand-text">Route Fitness<small>Training studio</small></span>
+            </a>
+
+            <p class="eyebrow">Email confirmation</p>
+            <h1 class="auth-title">One more<br /><em>email.</em></h1>
+            <p class="auth-subtitle">Enter your address and we'll send a fresh confirmation link.</p>
+
+            <form asp-action="ResendEmailConfirmation" method="post" class="auth-form">
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" autocomplete="email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
                 </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-accent"><i class="bi bi-send me-2" aria-hidden="true"></i>Send confirmation link</button>
+                    <a asp-action="Login" class="btn btn-outline">Back to login</a>
+                </div>
+            </form>
+        </section>
 
-                <form asp-action="ResendEmailConfirmation" method="post">
-                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
-
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" class="form-control" autocomplete="email" />
-                        <span asp-validation-for="Email" class="text-danger small"></span>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send me-1"></i> Send confirmation link
-                        </button>
-                        <a asp-action="Login" class="btn btn-outline-secondary">Back to login</a>
-                    </div>
-                </form>
+        <aside class="auth-aside">
+            <img src="~/images/gym-floor.jpg" class="auth-photo" alt="Members training together on the gym floor" />
+            <div class="auth-aside-content">
+                <p class="eyebrow">Membership</p>
+                <h2>Confirm, then<br /><span>train.</span></h2>
+                <p>One quick step before your account can book a slot on the floor.</p>
             </div>
-        </div>
+        </aside>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <partial name="_ValidationScriptsPartial" />
 </body>
 </html>

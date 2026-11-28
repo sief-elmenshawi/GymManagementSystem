@@ -1,6 +1,47 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="shell">
+    <header class="page-head">
+        <div>
+            <p class="kicker">Route Fitness / policy</p>
+            <h1 class="page-title">Privacy Policy</h1>
+            <p>What this gym app stores, who can see it, and why.</p>
+        </div>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline">
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Back to the studio
+        </a>
+    </header>
+
+    <div class="detail-grid">
+        <section class="detail-panel">
+            <p class="eyebrow">What we keep</p>
+            <dl>
+                <dt>Member record</dt>
+                <dd>Name, contact details, date of birth, address, and optional profile photo.</dd>
+                <dt>Health data</dt>
+                <dd>Only the fields a member or staff member explicitly enters.</dd>
+                <dt>Activity</dt>
+                <dd>Session bookings and attendance, kept with your member record.</dd>
+            </dl>
+        </section>
+
+        <section class="detail-panel">
+            <p class="eyebrow">Who can see it</p>
+            <dl>
+                <dt>Members</dt>
+                <dd>Only their own file and bookings through the member portal.</dd>
+                <dt>Staff</dt>
+                <dd>Only the records needed for coaching, scheduling, and administration.</dd>
+                <dt>Access</dt>
+                <dd>Role-based. Sign-in and confirmation are required before member access.</dd>
+            </dl>
+            <div class="auth-note">
+                This page is a starting template. Replace it with the gym's reviewed privacy notice
+                before collecting real member data.
+            </div>
+        </section>
+    </div>
+</div>

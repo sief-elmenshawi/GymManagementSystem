@@ -6,120 +6,133 @@
         .ToArray();
     var isMemberOnly = roles.Length == 1 &&
         string.Equals(roles[0], "Member", StringComparison.OrdinalIgnoreCase);
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="author" />
-    <link rel="stylesheet" href="~/lib/fonts/google/fonts.css" />
+    <meta name="theme-color" content="#f7f4ed" />
+    <link rel="stylesheet" href="~/lib/fonts/google/type.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/style.css" />
-    <title>Power fitness | @ViewData["Title"] </title>
+    <title>Route Fitness — @ViewData["Title"]</title>
 </head>
 <body>
-    <header>
-        <!-- ^ navbar -->
-        <nav class="navbar navbar-expand-lg bg-white my-3">
-            <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/logo.jpg" alt="" />
+    <header class="site-header">
+        <nav class="navbar navbar-expand-lg site-nav">
+            <div class="shell">
+                <a class="brand" asp-controller="Home" asp-action="Index" aria-label="Route Fitness home">
+                    <span class="brand-symbol" aria-hidden="true">RF</span>
+                    <span class="brand-text">Route Fitness<small>Training studio</small></span>
                 </a>
+
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent"
-                        aria-controls="navbarSupportedContent"
+                        data-bs-target="#siteMenu"
+                        aria-controls="siteMenu"
                         aria-expanded="false"
                         aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav m-auto mb-2 mb-lg-0 mt-3 mt-lg-0">
+                <div class="collapse navbar-collapse" id="siteMenu">
+                    <ul class="navbar-nav ms-lg-auto site-menu">
                         <li class="nav-item">
-                            <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Home" ? "active" : "text-black-alternative")"
-                               asp-action="Index" asp-controller="Home">Home</a>
+                            <a class="nav-link site-link @(currentController == "Home" ? "active" : "")"
+                               asp-action="Index" asp-controller="Home">The studio</a>
                         </li>
-                        @if (User.IsInRole("SuperAdmin"))
+                        @if (isAuthenticated && User.IsInRole("SuperAdmin"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Dashboard" ? "active" : "text-black-alternative")"
-                                   asp-action="Index" asp-controller="Dashboard">Dashboard</a>
+                                <a class="nav-link site-link @(currentController == "Dashboard" ? "active" : "")"
+                                   asp-action="Index" asp-controller="Dashboard">Overview</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Users" ? "active" : "text-black-alternative")"
+                                <a class="nav-link site-link @(currentController == "Users" ? "active" : "")"
                                    asp-action="Index" asp-controller="Users">Users</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Members" ? "active" : "text-black-alternative")"
+                                <a class="nav-link site-link @(currentController == "Members" ? "active" : "")"
                                    asp-action="Index" asp-controller="Members">Members</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Trainers" ? "active" : "text-black-alternative")"
+                                <a class="nav-link site-link @(currentController == "Trainers" ? "active" : "")"
                                    asp-action="Index" asp-controller="Trainers">Trainers</a>
                             </li>
                         }
-                        @if (isMemberOnly)
+                        @if (isAuthenticated && isMemberOnly)
                         {
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "MemberPortal" ? "active" : "text-black-alternative")"
-                                   asp-action="Index" asp-controller="MemberPortal">My Profile</a>
+                                <a class="nav-link site-link @(currentController == "MemberPortal" ? "active" : "")"
+                                   asp-action="Index" asp-controller="MemberPortal">My file</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 text-black-alternative"
-                                   asp-action="EditProfile" asp-controller="MemberPortal">Edit Profile</a>
+                                <a class="nav-link site-link"
+                                   asp-action="EditProfile" asp-controller="MemberPortal">Edit profile</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 text-black-alternative"
-                                   asp-action="Sessions" asp-controller="MemberPortal">Book a Session</a>
+                                <a class="nav-link site-link"
+                                   asp-action="Sessions" asp-controller="MemberPortal">Book a session</a>
                             </li>
                         }
-                        else
+                        else if (isAuthenticated)
                         {
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Sessions" ? "active" : "text-black-alternative")"
+                                <a class="nav-link site-link @(currentController == "Sessions" ? "active" : "")"
                                    asp-action="Index" asp-controller="Sessions">Sessions</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Plans" ? "active" : "text-black-alternative")"
+                                <a class="nav-link site-link @(currentController == "Plans" ? "active" : "")"
                                    asp-action="Index" asp-controller="Plans">Plans</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Membership" ? "active" : "text-black-alternative")"
+                                <a class="nav-link site-link @(currentController == "Membership" ? "active" : "")"
                                    asp-action="Index" asp-controller="Membership">Memberships</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link px-3 py-2 mx-2 fw-bolder fs-5 @(currentController == "Booking" ? "active" : "text-black-alternative")"
-                                   asp-action="Index" asp-controller="Booking">Sessions Schedule</a>
+                                <a class="nav-link site-link @(currentController == "Booking" ? "active" : "")"
+                                   asp-action="Index" asp-controller="Booking">Schedule</a>
                             </li>
                         }
-                        <li class="nav-item">
-                            <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-link nav-link px-3 py-2 mx-2 fw-bolder fs-5 text-black-alternative">
-                                    Logout
-                                </button>
-                            </form>
-                        </li>
                     </ul>
+
+                    @if (isAuthenticated)
+                    {
+                        <form asp-action="Logout" asp-controller="Account" method="post" class="ms-lg-3 mt-3 mt-lg-0">
+                            <button type="submit" class="signout">
+                                <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Sign out
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-action="Login" asp-controller="Account" class="signout ms-lg-3 mt-3 mt-lg-0">Sign in</a>
+                    }
                 </div>
             </div>
         </nav>
-
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+    <div class="app-shell">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
+    <footer class="site-footer">
+        <div class="shell d-flex flex-wrap gap-2 justify-content-between">
+            <span><strong>Route Fitness</strong> — training floor &amp; member records</span>
+            <span>Cairo / Established 2019</span>
+        </div>
+    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
     @RenderSection("Scripts", required: false)
 </body>
 </html>

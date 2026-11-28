@@ -1,25 +1,29 @@
 ﻿@model ErrorViewModel
 @{
     ViewData["Title"] = "Error";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="shell">
+    <header class="page-head">
+        <div>
+            <p class="kicker">Something went wrong</p>
+            <h1 class="page-title">Error.</h1>
+            <p>An error occurred while processing your request.</p>
+        </div>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-accent">
+            <i class="bi bi-house me-2" aria-hidden="true"></i>Back to the studio
+        </a>
+    </header>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
-
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+    <div class="detail-panel">
+        @if (Model.ShowRequestId)
+        {
+            <p class="eyebrow">Request ID</p>
+            <p class="mono mb-4">@Model.RequestId</p>
+        }
+        <p class="text-muted mb-0">
+            If the problem continues, note the request ID and ask an administrator to check the logs.
+        </p>
+    </div>
+</div>

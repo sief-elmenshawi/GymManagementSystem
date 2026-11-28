@@ -4,16 +4,16 @@
     ViewData["Title"] = "Active Memberships";
 }
 
-<div class="container-fluid">
-    <header class="bg-primary text-white rounded-3 p-4 shadow-sm mt-5 mb-4">
+<div class="shell">
+    <header class="page-head">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h2 class="mb-1 fw-semibold">Active Memberships</h2>
-                <p class="mb-0 text-light opacity-75">Members That have Active Plans</p>
+                <p class="mb-0 text-muted">Members That have Active Plans</p>
             </div>
             <div class="col text-end">
                 <a asp-action="Create" class="btn btn-light">
-                    <i class="fas fa-plus"></i> New Membership
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i> New Membership
                 </a>
             </div>
         </div>
@@ -24,7 +24,7 @@
         <div id="Alert" class="alert alert-success alert-dismissible fade show">
             <i class="bi bi-check-circle-fill me-2"></i>
             @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
     else if (TempData["ErrorMessage"] != null)
@@ -32,7 +32,7 @@
         <div id="Alert" class="alert alert-danger alert-dismissible fade show">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
@@ -64,7 +64,7 @@
                                         <form method="post" asp-action="Cancel" class="m-0">
                                             <input type="hidden" name="id" value="@item.MemberId" />
                                             <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-times"></i> Cancel
+                                                <i class="bi bi-x-lg me-1" aria-hidden="true"></i> Cancel
                                             </button>
                                         </form>
                                     </div>

@@ -9,7 +9,7 @@
     <div id="Alert" class="alert alert-success alert-dismissible fade show">
         <i class="bi bi-check-circle-fill me-2"></i>
         @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 else if (TempData["ErrorMessage"] != null)
@@ -17,21 +17,21 @@ else if (TempData["ErrorMessage"] != null)
     <div id="Alert" class="alert alert-danger alert-dismissible fade show">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
-<header class="bg-primary text-white rounded-3 p-4 shadow-sm mt-5 mb-4">
+<header class="page-head shell">
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h2 class="mb-1 fw-semibold">Session Members</h2>
-            <p class="mb-0 text-light opacity-75">Members That Already Book Session</p>
+            <p class="mb-0 text-muted">Members That Already Book Session</p>
         </div>
         <div class="text-end">
             <a asp-action="Create"
                asp-route-id="@ViewContext.RouteData.Values["id"]"
                class="btn btn-light">
-                <i class="fas fa-plus me-1"></i> New Booking
+                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i> New Booking
             </a>
         </div>
     </div>
@@ -63,7 +63,7 @@ else if (TempData["ErrorMessage"] != null)
                                         <input type="hidden" name="SessionId" value="@item.SessionId" readonly />
                                         <button type="submit" class="btn btn-sm btn-danger"
                                                 onclick="return confirm('Are you sure you want to cancel this booking?');">
-                                            <i class="fas fa-times"></i> Cancel
+                                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i> Cancel
                                         </button>
                                     </form>
                                 </div>
@@ -87,5 +87,5 @@ else if (TempData["ErrorMessage"] != null)
 
 </div>
 @section Scripts {
-    <partial name="_AlertBoxScript.cshtml" />
+    @await Html.PartialAsync("_AlertBoxScript")
 }

@@ -1,151 +1,135 @@
 ﻿@model PagedResult<MemberViewModel>
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Members";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container">
-    <main role="main" class="pb-3">
+@if (TempData["SuccessMessage"] != null)
+{
+    <div id="Alert" class="alert alert-success alert-dismissible fade show shell">
+        <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+else if (TempData["ErrorMessage"] != null)
+{
+    <div id="Alert" class="alert alert-danger alert-dismissible fade show shell">
+        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div id="Alert" class="alert alert-success alert-dismissible fade show">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                @TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-        else if (TempData["ErrorMessage"] != null)
-        {
-            <div id="Alert" class="alert alert-danger alert-dismissible fade show">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                @TempData["ErrorMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-
-        <div class="container">
-            <header class="d-flex justify-content-end mt-5 mb-4 align-items-center">
-                <a asp-controller="Members" asp-action="Create" class="btn btn-fill fw-medium rounded-pill px-3 py-3"> + Add Member </a>
-            </header>
-
-            @if (Model?.Items.Any() == true)
-            {
-
-                <div class="table-responsive " style="overflow: visible;">
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th><span>@nameof(MemberViewModel.Photo)</span></th>
-                                <th><span>@nameof(MemberViewModel.Name)</span></th>
-                                <th><span>@nameof(MemberViewModel.Email)</span></th>
-                                <th><span>@nameof(MemberViewModel.Gender)</span></th>
-                                <th><span>@nameof(MemberViewModel.Phone)</span></th>
-                                <th><span>Action</span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @* loop through members and display their data *@
-                            @foreach (var member in Model.Items)
-                            {
-                                <tr>
-                                    <td>
-                                        <span class="avatar">
-                                            @if (member.HasPhoto)
-                                            {
-                                                <img src="@Url.Action("Picture", "Members", new { id = member.Id })"
-                                                     alt="@member.Name"
-                                                     class="rounded-circle"
-                                                     style="width: 50px; height: 50px;" />
-                                            }
-                                            else
-                                            {
-                                                <img src="~/images/Ellipse 7.jpg" alt="@member.Name" class="rounded-circle" style="width: 50px; height: 50px;" />
-                                            }
-                                        </span>
-                                    </td>
-                                    <td><span>@member.Name</span></td>
-                                    <td><span>@member.Email</span></td>
-                                    <td><span>@member.Gender</span></td>
-                                    <td><span>@member.Phone</span></td>
-                                    <td class="action position-relative">
-                                        <div class="dropdown">
-                                            <button class="btn btn-link p-0 border-0" type="button"
-                                                    id="dropdownMenuButton-@member.Id" data-bs-toggle="dropdown"
-                                                    aria-expanded="false">
-                                                <img src="~/images/action dots.jpg" alt="action icon" />
-                                            </button>
-
-                                            <ul class="dropdown-menu dropdown-menu-start"
-                                                aria-labelledby="dropdownMenuButton-@member.Id">
-                                                <li>
-                                                    <a asp-controller="Members" asp-action="MemberDetails" asp-route-id="@member.Id"
-                                                       class="dropdown-item d-flex align-items-center gap-3">
-                                                        <img src="~/images/info 1.jpg" alt="info icon"
-                                                             style="width: 20px; height: 20px;" />
-                                                        <span>View Member Data</span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a asp-controller="Members" asp-action="HealthRecordDetails" asp-route-id="@member.Id"
-                                                       class="dropdown-item d-flex align-items-center gap-3">
-                                                        <img src="~/images/info 1.jpg" alt="info icon"
-                                                             style="width: 20px; height: 20px;" />
-                                                        <span>View Health Record Data</span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li>
-                                                    <a asp-controller="Members" asp-action="EditMember" asp-route-id="@member.Id"
-                                                       class="dropdown-item d-flex align-items-center gap-3">
-                                                        <img src="~/images/edit.jpg" alt="edit icon"
-                                                             style="width: 20px; height: 20px;" />
-                                                        <span>Edit Member Data</span>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li>
-                                                    <a asp-controller="Members" asp-action="Delete" asp-route-id="@member.Id"
-                                                       class="dropdown-item d-flex align-items-center gap-3 text-danger">
-                                                        <img src="~/images/x-circle 1.jpg" alt="delete icon"
-                                                             style="width: 20px; height: 20px;" />
-                                                        <span>Delete</span>
-                                                    </a>
-                                                </li>
-                                            </ul>
-
-                             
-                                        </div>
-                                    </td>
-                                </tr>
-
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                @await Html.PartialAsync("_Pager", Model.Paging)
-            }
-            else
-            {
-                <div class="text-center py-5">
-                    <i class="bi bi-person-workspace display-1 text-muted"></i>
-                    <h4 class="mt-3 text-muted">No Members Available</h4>
-                    <p class="text-muted">Add your first Member to get started</p>
-                </div>
-
-            }
-
+<div class="shell">
+    <header class="page-head">
+        <div>
+            <p class="kicker">Directory / staff</p>
+            <h1 class="page-title">Members</h1>
+            <p>The people on the floor and their contact records.</p>
         </div>
-    </main>
+        <a asp-controller="Members" asp-action="Create" class="btn btn-accent">
+            <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Add Member
+        </a>
+    </header>
+
+    @if (Model?.Items.Any() == true)
+    {
+        <div class="detail-panel">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th><span>@nameof(MemberViewModel.Photo)</span></th>
+                            <th><span>@nameof(MemberViewModel.Name)</span></th>
+                            <th><span>@nameof(MemberViewModel.Email)</span></th>
+                            <th><span>@nameof(MemberViewModel.Gender)</span></th>
+                            <th><span>@nameof(MemberViewModel.Phone)</span></th>
+                            <th><span>Action</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var member in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (member.HasPhoto)
+                                    {
+                                        <img src="@Url.Action("Picture", "Members", new { id = member.Id })"
+                                             alt="@member.Name" class="avatar-fallback" />
+                                    }
+                                    else
+                                    {
+                                        <span class="avatar-fallback" aria-hidden="true">
+                                            <i class="bi bi-person"></i>
+                                        </span>
+                                    }
+                                </td>
+                                <td><span class="fw-bold">@member.Name</span></td>
+                                <td><span>@member.Email</span></td>
+                                <td><span>@member.Gender</span></td>
+                                <td><span>@member.Phone</span></td>
+                                <td class="action position-relative">
+                                    <div class="dropdown">
+                                        <button class="btn btn-link p-0 border-0" type="button"
+                                                id="dropdownMenuButton-@member.Id" data-bs-toggle="dropdown"
+                                                aria-expanded="false" aria-label="Actions for @member.Name">
+                                            <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-start"
+                                            aria-labelledby="dropdownMenuButton-@member.Id">
+                                            <li>
+                                                <a asp-controller="Members" asp-action="MemberDetails" asp-route-id="@member.Id"
+                                                   class="dropdown-item d-flex align-items-center gap-3">
+                                                    <i class="bi bi-info-circle text-primary-color" aria-hidden="true"></i>
+                                                    <span>View Member Data</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a asp-controller="Members" asp-action="HealthRecordDetails" asp-route-id="@member.Id"
+                                                   class="dropdown-item d-flex align-items-center gap-3">
+                                                    <i class="bi bi-heart-pulse text-primary-color" aria-hidden="true"></i>
+                                                    <span>View Health Record Data</span>
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider" /></li>
+                                            <li>
+                                                <a asp-controller="Members" asp-action="EditMember" asp-route-id="@member.Id"
+                                                   class="dropdown-item d-flex align-items-center gap-3">
+                                                    <i class="bi bi-pencil text-primary-color" aria-hidden="true"></i>
+                                                    <span>Edit Member Data</span>
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider" /></li>
+                                            <li>
+                                                <a asp-controller="Members" asp-action="Delete" asp-route-id="@member.Id"
+                                                   class="dropdown-item d-flex align-items-center gap-3 text-danger">
+                                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                                    <span>Delete</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("_Pager", Model.Paging)
+    }
+    else
+    {
+        <div class="detail-panel py-5 text-center">
+            <i class="bi bi-person-workspace d-block mb-3 text-muted" style="font-size:2.4rem" aria-hidden="true"></i>
+            <h2 class="h4">No Members Available</h2>
+            <p class="text-muted mb-0">Add your first member to get started.</p>
+        </div>
+    }
 </div>
 
-@section Scripts
-{
+@section Scripts {
     <partial name="_AlertBoxScript" />
 }

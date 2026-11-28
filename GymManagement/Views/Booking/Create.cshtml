@@ -1,57 +1,42 @@
 ﻿@model CreateBookingViewModel
-
 @{
     ViewData["Title"] = "Create Booking";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Create New Booking</h1>
-
-<hr />
-<div class="row">
-    <div class="d-flex justify-content-center align-items-center h-100">
-
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Booking Information</h5>
-            </div>
-            <div class="card-body">
-                <form asp-action="Create" method="post">
-                    <div asp-validation-summary="All" class="text-danger"></div>
-                        <div class="mb-3">
-                            <input type="hidden" asp-for="SessionId" value="@ViewContext.RouteData.Values["id"]" readonly />
-                            <label asp-for="MemberId" class="form-label">Member</label>
-                            <select asp-for="MemberId" asp-items="ViewBag.Members" class="form-select">
-                                <option value="">-- Select Member --</option>
-                            </select>
-                            <span asp-validation-for="MemberId" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Create Booking
-                            </button>
-                            <a asp-action="GetMembersForUpcomingSession" asp-route-id="@ViewContext.RouteData.Values["id"]" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to List
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<div class="shell">
+    <header class="page-head">
+        <div>
+            <p class="kicker">Schedule / new booking</p>
+            <h1 class="page-title">Create New Booking</h1>
+            <p>Add a member to this session's roster.</p>
         </div>
+        <a asp-action="GetMembersForUpcomingSession" asp-route-id="@ViewContext.RouteData.Values["id"]"
+           class="btn btn-outline">
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Back to List
+        </a>
+    </header>
 
+    <div class="detail-panel" style="max-width:720px;">
+        <form asp-action="Create" method="post">
+            <input type="hidden" asp-for="SessionId" value="@ViewContext.RouteData.Values["id"]" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <label asp-for="MemberId" class="form-label">Member</label>
+            <select asp-for="MemberId" asp-items="ViewBag.Members" class="form-select">
+                <option value="">-- Select Member --</option>
+            </select>
+            <span asp-validation-for="MemberId" class="text-danger"></span>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-accent">
+                    <i class="bi bi-check2 me-2" aria-hidden="true"></i>Create Booking
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        $(document).ready(function() {
-            // Initialize Select2 for better dropdown experience
-            $('#MemberId').select2({
-                placeholder: "Select a member",
-                allowClear: true,
-                width: '100%'
-            });
-        });
-    </script>
 }

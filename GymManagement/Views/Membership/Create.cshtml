@@ -8,7 +8,7 @@
     <div id="Alert" class="alert alert-danger alert-dismissible fade show">
         <i class="bi bi-check-circle-fill me-2"></i>
         @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 <div class="container">
@@ -19,7 +19,7 @@
                     <h4>@ViewData["Title"]</h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create">
+                    <form asp-action="Create" method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                         <div class="mb-3">

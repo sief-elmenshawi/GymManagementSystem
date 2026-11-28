@@ -1,13 +1,22 @@
 @model MemberPortalViewModel
 @{
-    ViewData["Title"] = "My Profile";
+    ViewData["Title"] = "My file";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-5 mb-5">
-    <header class="bg-primary-color text-white rounded-3 p-4 shadow-sm mb-4">
-        <h2 class="mb-1 fw-semibold">My Gym Profile</h2>
-        <p class="mb-0 text-light opacity-75">Your membership details and your bookings only</p>
+<div class="shell">
+    <header class="page-head">
+        <div>
+            <p class="kicker">Member / self service</p>
+            <h1 class="page-title">My file</h1>
+            <p>My Gym Profile — your membership details and your bookings only.</p>
+        </div>
+        @if (Model.HasLinkedMember)
+        {
+            <a asp-controller="MemberPortal" asp-action="Sessions" class="btn btn-accent">
+                <i class="bi bi-calendar-plus me-2" aria-hidden="true"></i>Book a session
+            </a>
+        }
     </header>
 
     @if (TempData["SuccessMessage"] is string success)
@@ -18,115 +27,102 @@
     {
         <div class="alert alert-danger" role="alert">@error</div>
     }
-
     @if (!string.IsNullOrEmpty(Model.Notice))
     {
         <div class="alert alert-warning" role="alert">@Model.Notice</div>
     }
 
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body p-4">
-                    <h4 class="text-primary-color mb-3">@Model.Name</h4>
-                    <dl class="row mb-0">
-                        <dt class="col-sm-5 text-muted">Email</dt>
-                        <dd class="col-sm-7">@Model.Email</dd>
-                        @if (Model.HasLinkedMember)
-                        {
-                            <dt class="col-sm-5 text-muted">Phone</dt>
-                            <dd class="col-sm-7">@Model.Phone</dd>
-                            <dt class="col-sm-5 text-muted">Date of birth</dt>
-                            <dd class="col-sm-7">@Model.DateOfBirth</dd>
-                            <dt class="col-sm-5 text-muted">Gender</dt>
-                            <dd class="col-sm-7">@Model.Gender</dd>
-                            <dt class="col-sm-5 text-muted">Address</dt>
-                            <dd class="col-sm-7">@Model.Address</dd>
-                            <dt class="col-sm-5 text-muted">Health record</dt>
-                            <dd class="col-sm-7">
-                                <span class="badge @(Model.HasHealthRecord ? "bg-success" : "bg-secondary")">
-                                    @(Model.HasHealthRecord ? "Recorded" : "Not recorded")
-                                </span>
-                            </dd>
-                        }
-                    </dl>
+    <div class="detail-grid">
+        <section class="detail-panel">
+            <p class="eyebrow">Member file</p>
+            <h2>My Profile</h2>
+            <dl>
+                <dt>Name</dt>
+                <dd>@Model.Name</dd>
+                <dt>Email</dt>
+                <dd>@Model.Email</dd>
+                @if (Model.HasLinkedMember)
+                {
+                    <dt>Phone</dt>
+                    <dd>@Model.Phone</dd>
+                    <dt>Date of birth</dt>
+                    <dd>@Model.DateOfBirth</dd>
+                    <dt>Gender</dt>
+                    <dd>@Model.Gender</dd>
+                    <dt>Address</dt>
+                    <dd>@Model.Address</dd>
+                    <dt>Health record</dt>
+                    <dd>
+                        <span class="status-pill @(Model.HasHealthRecord ? "ok" : "off")">
+                            @(Model.HasHealthRecord ? "Recorded" : "Not recorded")
+                        </span>
+                    </dd>
+                }
+            </dl>
 
-                    @if (Model.HasLinkedMember)
-                    {
-                        <div class="d-flex flex-wrap gap-2 mt-4">
-                            <a asp-controller="MemberPortal" asp-action="EditProfile" class="btn btn-outline-primary">
-                                <i class="bi bi-pencil-square me-1"></i> Edit profile
-                            </a>
-                            <a asp-controller="MemberPortal" asp-action="Sessions" class="btn btn-primary">
-                                <i class="bi bi-calendar-plus me-1"></i> Browse sessions
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
+            @if (Model.HasLinkedMember)
+            {
+                <a asp-controller="MemberPortal" asp-action="EditProfile" class="btn btn-outline mt-3">
+                    <i class="bi bi-pencil me-2" aria-hidden="true"></i>Edit profile
+                </a>
+            }
+        </section>
 
-        <div class="col-lg-7">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body p-4">
-                    <h4 class="text-primary-color mb-3">My Bookings</h4>
-                    @if (Model.Bookings.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Session</th>
-                                        <th>Category</th>
-                                        <th>Coach</th>
-                                        <th>Starts</th>
-                                        <th>Attended</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var booking in Model.Bookings)
-                                    {
-                                        <tr>
-                                            <td>@booking.Description</td>
-                                            <td>@booking.Category</td>
-                                            <td>@booking.Trainer</td>
-                                            <td>@booking.StartDate</td>
-                                            <td>
-                                                <span class="badge @(booking.IsAttended ? "bg-success" : "bg-secondary")">
-                                                    @(booking.IsAttended ? "Yes" : "No")
-                                                </span>
-                                            </td>
-                                            <td>
-                                                @if (booking.CanCancel)
-                                                {
-                                                    <form asp-controller="MemberPortal" asp-action="Cancel" method="post">
-                                                        <input type="hidden" name="sessionId" value="@booking.SessionId" />
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                            Cancel
-                                                        </button>
-                                                    </form>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">—</span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="bi bi-calendar-x display-5 text-muted"></i>
-                            <p class="text-muted mt-3 mb-0">No bookings yet.</p>
-                        </div>
-                    }
+        <section class="detail-panel">
+            <h2>My bookings</h2>
+            @if (Model.Bookings.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>Category</th>
+                                <th>Coach</th>
+                                <th>Starts</th>
+                                <th>Attended</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in Model.Bookings)
+                            {
+                                <tr>
+                                    <td>@booking.Description</td>
+                                    <td>@booking.Category</td>
+                                    <td>@booking.Trainer</td>
+                                    <td>@booking.StartDate</td>
+                                    <td>
+                                        <span class="status-pill @(booking.IsAttended ? "ok" : "off")">
+                                            @(booking.IsAttended ? "Yes" : "No")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (booking.CanCancel)
+                                        {
+                                            <form asp-controller="MemberPortal" asp-action="Cancel" method="post">
+                                                <input type="hidden" name="sessionId" value="@booking.SessionId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </div>
+            }
+            else
+            {
+                <div class="py-4 text-center">
+                    <i class="bi bi-calendar-x d-block mb-3 text-muted" style="font-size:2.2rem" aria-hidden="true"></i>
+                    <p class="text-muted mb-0">No bookings yet.</p>
+                </div>
+            }
+        </section>
     </div>
 </div>

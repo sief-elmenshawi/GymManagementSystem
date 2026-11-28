@@ -8,36 +8,41 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Route Fitness</title>
-    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Route Fitness — @ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/fonts/google/type.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/style.css" />
 </head>
-<body class="bg-light">
-    <div class="container py-5">
-        <div class="card mx-auto shadow-sm border-0 text-center" style="max-width: 480px;">
-            <div class="card-body p-4 p-md-5">
-                @if (Model.Succeeded)
-                {
-                    <i class="bi bi-envelope-check fs-1 text-success"></i>
-                }
-                else
-                {
-                    <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
-                }
+<body>
+    <div class="auth-shell">
+        <section class="auth-panel auth-shell-single w-100">
+            <a class="auth-brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-symbol" aria-hidden="true">RF</span>
+                <span class="brand-text">Route Fitness<small>Training studio</small></span>
+            </a>
 
-                <h1 class="h4 mt-3 mb-3">@ViewData["Title"]</h1>
-                <p class="text-muted">@Model.Message</p>
-                <div class="d-grid gap-2">
-                    <a asp-action="Login" class="btn btn-primary">Go to login</a>
-                    @if (!Model.Succeeded)
-                    {
-                        <a asp-action="ResendEmailConfirmation" class="btn btn-outline-primary">
-                            Resend confirmation email
-                        </a>
-                    }
-                </div>
+            <p class="eyebrow">Email confirmation</p>
+            <h1 class="auth-title">@ViewData["Title"]</h1>
+            <p class="auth-subtitle">@Model.Message</p>
+
+            <div class="d-grid gap-2">
+                <a asp-action="Login" class="btn btn-accent">Go to login</a>
+                @if (!Model.Succeeded)
+                {
+                    <a asp-action="ResendEmailConfirmation" class="btn btn-outline">Resend confirmation email</a>
+                }
             </div>
-        </div>
+        </section>
+
+        <aside class="auth-aside">
+            <img src="~/images/auth-team.jpg" class="auth-photo" alt="Two members training with weights" />
+            <div class="auth-aside-content">
+                <p class="eyebrow">Membership</p>
+                <h2>You're on<br /><span>the list.</span></h2>
+                <p>Your account is ready for the timetable once the email is confirmed.</p>
+            </div>
+        </aside>
     </div>
 </body>
 </html>
