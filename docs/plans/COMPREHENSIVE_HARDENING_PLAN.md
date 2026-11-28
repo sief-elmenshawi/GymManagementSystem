@@ -6,7 +6,7 @@ This document tracks the remaining production hardening work. It is intentionall
 
 - OPS-1: Done — CI secret confirmed and failed run is green.
 - OPS-2: Done for the local staging database — the unique-index migration is already applied and the duplicate check returned zero rows. No user-supplied env var was available; the local `skip-worktree` connection string was used without printing or committing it.
-- OPS-3: Blocked — SMTP values were not supplied; missing SMTP is logged and skipped as designed.
+- OPS-3: Skipped/deferred by user — no SMTP relay was configured. Missing SMTP is logged and skipped as designed; registration still succeeds but confirmation/reset emails are not delivered.
 - A1–A16: Done and verified by build/tests.
 - The batch is committed and pushed to `master`; no secrets are included.
 
@@ -29,7 +29,7 @@ This document tracks the remaining production hardening work. It is intentionall
 | --- | --- | --- | --- | --- | --- | --- |
 | OPS-1 | Verify CI secret and rerun failed CI | `.github/workflows/ci.yml`, GitHub secret | — | `GYM_CI_SA_PASSWORD` exists; rerun of `46135896202` green | `gh run watch 46135896202 --exit-status` | Done |
 | OPS-2 | Verify staging migration state and duplicate bookings | local staging DB, EF CLI, preflight SQL | Available local connection | Duplicate check returns zero; latest migration applied; no secret printed/committed | Duplicate query + migration history | Done (local staging) |
-| OPS-3 | Configure SMTP using user-supplied values | env vars, email sender, docs | User input | Mail sends in target environment; failures are logged without rolling back DB writes | Send a test confirmation email | Blocked |
+| OPS-3 | Configure SMTP using user-supplied values | env vars, email sender, docs | User input | Mail sends in target environment; failures are logged without rolling back DB writes | Send a test confirmation email | Skipped/deferred by user |
 | A1 | Add per-IP/per-user rate limits to account POSTs | `AuthenticationRateLimiting`, controllers, options, Program | — | Login/register/forgot/reset/edit-profile are limited; `Retry-After` is present on 429 | `AuthenticationRateLimitTests` | Done |
 | A2 | Harden forwarded headers and host filtering | `HostingConfiguration`, Program, config docs | — | Forwarded headers only from configured proxies; unexpected hosts are rejected | Build + configuration review | Done |
 | A3 | Prevent duplicate bookings at the database level | Booking unique index, migration, service handling, preflight SQL | OPS-2 | Existing DB checked; duplicate save produces a stable user message | SQL preflight + migration history + focused tests | Done (applied on local staging DB) |
@@ -58,11 +58,12 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — OPS-2 staging check: duplicate booking groups `0`; all 8 migrations applied, last `20261128102032_BookingUniqueIndex`.
 - `2026-11-28` — Staging smoke run: app started with `ASPNETCORE_ENVIRONMENT=Staging`, explicit `AllowedHosts`, AutoMapper license, and deliberate seed opt-in. Public pages returned 200; protected pages redirected to login; seeded users confirmed with `SuperAdmin`/`Admin` roles.
 - `2026-11-28` — A12 workflow was hardened after the green `46135896202` run. First pushed run `46145816401` failed only at the EF model check because the design-time DbContext needed `ConnectionStrings__DefaultConnection`; the step now passes it from `GYM_TEST_CONNECTION_STRING`. Final pushed run `46145977960` is green in 3m11s, including build, EF check, Playwright and the full test suite.
+- `2026-11-28` — OPS-3 was skipped/deferred by the user; no SMTP values were configured. Local `staging.env` template was removed. Existing log-and-skip behavior is unchanged.
 
 ## Remaining work
 
-1. OPS-3: the user must supply SMTP values or set the `Email__*` environment variables. Until then, delivery is logged and skipped without rolling back database writes.
-2. CI verification is complete (`46145977960` green); no other local work is pending.
+1. CI verification is complete (`46145977960` green); no local work is pending.
+2. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
 
