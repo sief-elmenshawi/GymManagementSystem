@@ -12,7 +12,7 @@ This document tracks the remaining production hardening work. It is intentionall
 - A18: Done, verified, committed, and pushed to `master`.
 - A19: Done, verified, committed, and pushed to `master`; CI run `46155835633` green.
 - A20: Done, verified, committed, and pushed to `master`; CI run `46161888007` green.
-- D1: Done, verified locally, and committed - fixed a rate-limit bypass caused by case/trailing-slash path aliases; CI pending.
+- D1: Done, verified, committed, and pushed to `master` - fixed a rate-limit bypass caused by case/trailing-slash path aliases; CI run `46164176095` green.
 
 ## Constraints
 
@@ -54,7 +54,7 @@ This document tracks the remaining production hardening work. It is intentionall
 | A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
 | A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done |
 | A20 | Migrate tests to xUnit v3 on Microsoft Testing Platform | test `.csproj`, 14 test/support files, `global.json`, `ci.yml`, docs | A19 | No deprecated test packages; build has 0 warnings/errors; `dotnet test --project ...` runs all 151 tests under MTP; old VSTest filter still works; CI green | Build + full suite (default and browser-enabled) + filtered browser suite + package audit + CI `46161888007` | Done |
-| D1 | Fix rate-limit bypass through endpoint path aliases | `AuthenticationRateLimiting`, `AuthenticationRateLimitTests`, this plan | A20 | Case/trailing-slash variants of the same endpoint share one budget; regression test fails before fix (`Expected 429`, `Actual 200`) and passes after it | Focused test + build + full default/browser suites | Done (CI pending) |
+| D1 | Fix rate-limit bypass through endpoint path aliases | `AuthenticationRateLimiting`, `AuthenticationRateLimitTests`, this plan | A20 | Case/trailing-slash variants of the same endpoint share one budget; regression test fails before fix (`Expected 429`, `Actual 200`) and passes after it | Focused test + build + full default/browser suites + CI `46164176095` | Done |
 
 ## Evidence log
 
@@ -97,11 +97,12 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` - D1 focused verification: `AuthenticationRateLimitTests` `total: 5, failed: 0, succeeded: 5, skipped: 0`; the casing/trailing-slash regression test also passes in isolation.
 - `2026-11-28` - D1 build: `dotnet build GymManagementSolution.slnx --nologo --no-restore` -> `0 Warning(s), 0 Error(s)`.
 - `2026-11-28` - D1 full suite after fix: default `total: 152, failed: 0, succeeded: 148, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 152, failed: 0, succeeded: 152, skipped: 0`.
+- `2026-11-28` - D1 commit `f23efa3` pushed to `master`; CI run `46164176095` green in 2m40s (restore, build, EF model check, Playwright, 152 tests).
 
 ## Remaining work
 
 1. A20 is complete; CI run `46161888007` is green.
-2. D1 is committed and pushed; CI should confirm the 152-test suite.
+2. D1 is complete; CI run `46164176095` is green.
 3. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
