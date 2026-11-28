@@ -58,7 +58,7 @@ jobs:
         run: dotnet tool install --global dotnet-ef --version 9.*
 
       - name: Check for pending model changes
-        run: dotnet ef migrations has-pending-model-changes --project GymManagement.DAL/GymManagement.DAL.csproj --startup-project GymManagement/GymManagement.PL.csproj
+        run: ConnectionStrings__DefaultConnection="$GYM_TEST_CONNECTION_STRING" dotnet ef migrations has-pending-model-changes --project GymManagement.DAL/GymManagement.DAL.csproj --startup-project GymManagement/GymManagement.PL.csproj
 
       - name: Install Playwright system dependencies
         run: sudo pwsh GymManagement.Tests/bin/Debug/net9.0/playwright.ps1 install-deps chromium
