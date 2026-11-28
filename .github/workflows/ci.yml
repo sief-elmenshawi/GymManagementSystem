@@ -34,7 +34,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 11.0.x
 
       - name: Wait for SQL Server
         run: |
@@ -55,16 +55,16 @@ jobs:
         run: dotnet build GymManagementSolution.slnx --no-restore --nologo
 
       - name: Install EF tool
-        run: dotnet tool install --global dotnet-ef --version 9.*
+        run: dotnet tool install --global dotnet-ef --version 11.*
 
       - name: Check for pending model changes
         run: ConnectionStrings__DefaultConnection="$GYM_TEST_CONNECTION_STRING" dotnet ef migrations has-pending-model-changes --project GymManagement.DAL/GymManagement.DAL.csproj --startup-project GymManagement/GymManagement.PL.csproj
 
       - name: Install Playwright system dependencies
-        run: sudo pwsh GymManagement.Tests/bin/Debug/net9.0/playwright.ps1 install-deps chromium
+        run: sudo pwsh GymManagement.Tests/bin/Debug/net11.0/playwright.ps1 install-deps chromium
 
       - name: Install Chromium
-        run: pwsh GymManagement.Tests/bin/Debug/net9.0/playwright.ps1 install chromium
+        run: pwsh GymManagement.Tests/bin/Debug/net11.0/playwright.ps1 install chromium
 
       - name: Test
         run: dotnet test GymManagementSolution.slnx --no-build --nologo

@@ -9,7 +9,8 @@ This document tracks the remaining production hardening work. It is intentionall
 - OPS-3: Skipped/deferred by user — no SMTP relay was configured. Missing SMTP is logged and skipped as designed; registration still succeeds but confirmation/reset emails are not delivered.
 - A1–A16: Done, verified, committed, and pushed to `master`; no secrets are included.
 - A17: Done, verified, committed, and pushed to `master`.
-- A18: Done and verified by build/tests; included in this batch.
+- A18: Done, verified, committed, and pushed to `master`.
+- A19: Done and verified by build/tests/staging smoke/CI-ready config; awaiting explicit commit/push confirmation.
 
 ## Constraints
 
@@ -49,6 +50,7 @@ This document tracks the remaining production hardening work. It is intentionall
 | A16 | Final verification and documentation refresh | full suite, browser suite, EF model check, plan | A15 | Full suite green; browser suite green; no pending model changes; statuses current | See evidence log | Done |
 | A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done |
 | A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
+| A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done (pending commit) |
 
 ## Evidence log
 
@@ -70,11 +72,19 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — A17 commit `6f7e738` pushed to `master`; CI run `46150074398` green in 3m1s.
 - `2026-11-28` — A18: renamed the 4 C# files that had trailing spaces; glob `**/* .cs` returns no matches; build `0 Warning(s), 0 Error(s)`.
 - `2026-11-28` — Full default suite after A18: `Failed: 0, Passed: 147, Skipped: 4, Total: 151`; browser suite `Failed: 0, Passed: 4, Skipped: 0, Total: 4`.
+- `2026-11-28` — A18 commit `502bb68` pushed to `master`; CI run `46154132016` green in 3m2s.
+- `2026-11-28` — Package audit: zero vulnerable packages; only `xunit 2.9.3` is flagged deprecated (migration to `xunit.v3` is a separate major change and was not part of A19).
+- `2026-11-28` — A19: installed local SDK `11.0.100` (user profile, not committed); all projects moved to `net11.0` with EF Core/Identity/ASP.NET Core `11.0.0` and AutoMapper `17.0.0`; CI `dotnet-version` and EF tool updated to `11`; `IPNetwork`/`KnownNetworks` replaced with `System.Net.IPNetwork`/`KnownIPNetworks` to clear ASPDEPR005 warnings.
+- `2026-11-28` — A19 build: `0 Warning(s), 0 Error(s)`; full suite `Failed: 0, Passed: 147, Skipped: 4, Total: 151`; browser suite `Failed: 0, Passed: 4, Skipped: 0, Total: 4`.
+- `2026-11-28` — A19 EF check with dotnet-ef `11.0.0`: `No changes have been made to the model since the last migration.`
+- `2026-11-28` — A19 staging smoke on `net11.0`: login `200`, protected pages redirect to login, demo row counts unchanged (3/3/3/3/3/3/2, plans 4, categories 5, demo user 1).
+- `2026-11-28` — A19 package audit after upgrade: zero vulnerable packages.
 
 ## Remaining work
 
-1. A17 is implemented and verified; commit and push only after the user explicitly confirms this batch.
-2. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
+1. A19 is implemented and verified; commit and push only after the user explicitly confirms this batch.
+2. `xunit 2.9.3` remains deprecated; migrating to `xunit.v3` is a separate test-framework change.
+3. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
 

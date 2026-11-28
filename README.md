@@ -140,7 +140,7 @@ Dependency direction: `GymManagement` → `GymManagement.BLL` → `GymManagement
 
 | Area | Stack |
 | --- | --- |
-| Backend | C#, .NET 9, ASP.NET Core MVC |
+| Backend | C#, .NET 11, ASP.NET Core MVC |
 | Data | SQL Server, EF Core 9, Code First migrations, Fluent API |
 | Mapping | AutoMapper 16.3.0 |
 | Identity | ASP.NET Core Identity with `IdentityRole` |
@@ -156,12 +156,12 @@ Patterns used: Repository, Unit of Work, Dependency Injection, and layered servi
 
 ## 1. Prerequisites
 
-* [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+* [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0)
 * SQL Server (LocalDB, Express, Developer, or remote)
 * EF Core CLI tools, only for manual migration commands:
 
 ```bash
-dotnet tool install --global dotnet-ef --version 9.0.16
+dotnet tool install --global dotnet-ef --version 11.0.0
 ```
 
 A local `dotnet-tools.json` may be used instead, but it is environment-specific and must not be committed.
@@ -260,7 +260,7 @@ SQL-dependent tests are skipped unless `GYM_TEST_CONNECTION_STRING` is set. With
 
 ```powershell
 # Once per machine / after a Playwright version upgrade
-powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net9.0\playwright.ps1 install chromium
+powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net11.0\playwright.ps1 install chromium
 
 $conn = (Get-Content GymManagement/appsettings.json -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
 $env:GYM_TEST_CONNECTION_STRING = $conn
