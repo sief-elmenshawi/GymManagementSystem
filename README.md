@@ -254,13 +254,19 @@ dotnet test GymManagementSolution.slnx --nologo --filter FullyQualifiedName~Brow
 
 The fixture starts the app on a free localhost port with a disposable `GymManagement_E2E_Browser_*` database and Development mailbox, then tears both down. Never set `GYM_RUN_BROWSER_TESTS` in Production.
 
+`BrowserUiFlowTests` also guard the login error regression: an unconfirmed account must show the confirmation message exactly once.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs the build and the full test suite (including browser tests) on push and pull requests. It expects one repository secret, `GYM_CI_SA_PASSWORD`, used only by the disposable CI SQL Server container. No password or connection string is committed.
+
 EF tooling can also be checked without starting the web app:
 
 ```bash
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full verification: build `0 Warning(s), 0 Error(s)`, tests `126 Passed / 0 Failed / 2 Skipped` (browser tests are opt-in), no vulnerable packages, EF tooling OK. With `GYM_RUN_BROWSER_TESTS=1` the browser subset passes `2 / 2`.
+Last full test verification: build `0 Warning(s), 0 Error(s)`, tests `130 Passed / 0 Failed / 4 Skipped` (browser tests are opt-in). With `GYM_RUN_BROWSER_TESTS=1`: `130 Passed / 0 Failed / 0 Skipped`.
 
 ---
 

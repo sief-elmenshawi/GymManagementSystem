@@ -1,0 +1,64 @@
+name: CI
+
+# Requires a repository secret named GYM_CI_SA_PASSWORD.
+# It is used only by the disposable SQL Server container below; no value is stored here.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: ${{ secrets.GYM_CI_SA_PASSWORD }}
+        ports:
+          - 1433:1433
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      GYM_TEST_CONNECTION_STRING: "Server=localhost,1433;Database=GymManagement_CI;User Id=sa;Password=${{ secrets.GYM_CI_SA_PASSWORD }};TrustServerCertificate=True;"
+      GYM_RUN_BROWSER_TESTS: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Wait for SQL Server
+        run: |
+          for i in $(seq 1 60); do
+            if (echo > /dev/tcp/localhost/1433) 2>/dev/null; then
+              sleep 5
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "SQL Server did not become ready on port 1433."
+          exit 1
+
+      - name: Restore
+        run: dotnet restore GymManagementSolution.slnx
+
+      - name: Build
+        run: dotnet build GymManagementSolution.slnx --no-restore --nologo
+
+      - name: Install Playwright system dependencies
+        run: sudo pwsh GymManagement.Tests/bin/Debug/net9.0/playwright.ps1 install-deps chromium
+
+      - name: Install Chromium
+        run: pwsh GymManagement.Tests/bin/Debug/net9.0/playwright.ps1 install chromium
+
+      - name: Test
+        run: dotnet test GymManagementSolution.slnx --no-build --nologo

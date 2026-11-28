@@ -40,6 +40,14 @@ namespace GymManagementPL.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateBookingViewModel model, CancellationToken ct)
         {
+            if (!ModelState.IsValid)
+            {
+                var members = await _bookingService.GetMembersForDropDownAsync(model.SessionId, ct);
+                ViewBag.Members = new SelectList(members, "Id", "Name");
+                ViewBag.SessionId = model.SessionId;
+                return View(model);
+            }
+
             var result = await _bookingService.CreateNewBookingAsync(model, ct);
             TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
                 result.succes ? "Booking created successfully." : result.error;
@@ -49,6 +57,12 @@ namespace GymManagementPL.Controllers
         [HttpPost]
         public async Task<IActionResult> Cancel(int memberId, int sessionId, CancellationToken ct)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Invalid booking request.";
+                return RedirectToAction(nameof(GetMembersForUpcomingSession), new { id = sessionId });
+            }
+
             var result = await _bookingService.CancelBookingAsync(memberId, sessionId, ct);
             TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
                 result.succes ? "Booking cancelled successfully." : result.error;
@@ -58,6 +72,12 @@ namespace GymManagementPL.Controllers
         [HttpPost]
         public async Task<IActionResult> Attended(int memberId, int sessionId, CancellationToken ct)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Invalid booking request.";
+                return RedirectToAction(nameof(GetMembersForOngoingSessions), new { id = sessionId });
+            }
+
             var result = await _bookingService.MarkAttendedAsync(memberId, sessionId, ct);
             TempData[result.succes ? "SuccessMessage" : "ErrorMessage"] =
                 result.succes ? "Attendance recorded." : result.error;

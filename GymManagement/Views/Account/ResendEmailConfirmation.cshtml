@@ -27,7 +27,7 @@
             <p class="auth-subtitle">Enter your address and we'll send a fresh confirmation link.</p>
 
             <form asp-action="ResendEmailConfirmation" method="post" class="auth-form">
-                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 <div class="mb-3">
                     <label asp-for="Email" class="form-label"></label>
                     <input asp-for="Email" class="form-control" autocomplete="email" />

@@ -81,6 +81,36 @@ public sealed class BrowserUiFlowTests
         }
     }
 
+    [BrowserFact]
+    public async Task LoginWithUnconfirmedEmail_ShowsConfirmationMessageOnce()
+    {
+        const string message =
+            "Please confirm your email address before signing in. Check your inbox for the confirmation link.";
+
+        var app = await StartAsync();
+        try
+        {
+            var page = await app.NewPageAsync();
+            var email = NewEmail("browser.unconfirmed");
+
+            // Register stops before confirmation, leaving EmailConfirmed = false.
+            await RegisterAsync(page, app.BaseUrl, email);
+
+            await page.GotoAsync($"{app.BaseUrl}/Account/Login");
+            await page.Locator("input[name='Email']").FillAsync(email);
+            await page.Locator("input[name='Password']").FillAsync(Password);
+            await page.Locator("button[type='submit']").ClickAsync();
+
+            var error = page.GetByText(message, new() { Exact = true });
+            await error.First.WaitForAsync();
+            Assert.Equal(1, await error.CountAsync());
+        }
+        finally
+        {
+            await app.DisposeAsync();
+        }
+    }
+
     private static async Task<BrowserTestApp> StartAsync()
     {
         var connectionString = Environment.GetEnvironmentVariable("GYM_TEST_CONNECTION_STRING")

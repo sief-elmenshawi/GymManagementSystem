@@ -31,7 +31,7 @@ public sealed class AppEmailSender : IAppEmailSender
         _monitor = monitor;
     }
 
-    public async Task SendAsync(
+    public async Task<bool> SendAsync(
         string toEmail,
         string subject,
         string htmlBody,
@@ -50,7 +50,7 @@ public sealed class AppEmailSender : IAppEmailSender
                     htmlBody,
                     DateTimeOffset.UtcNow));
                 _monitor.RecordSuccess();
-                return;
+                return true;
             }
 
             _monitor.RecordFailure(new EmailDeliveryFailure(
@@ -59,7 +59,7 @@ public sealed class AppEmailSender : IAppEmailSender
                 subject,
                 smtp.Host,
                 Exception: null));
-            return;
+            return false;
         }
 
         try
@@ -85,6 +85,7 @@ public sealed class AppEmailSender : IAppEmailSender
 
             await client.SendMailAsync(message, ct);
             _monitor.RecordSuccess();
+            return true;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -98,6 +99,7 @@ public sealed class AppEmailSender : IAppEmailSender
                 subject,
                 smtp.Host,
                 ex));
+            return false;
         }
     }
 }

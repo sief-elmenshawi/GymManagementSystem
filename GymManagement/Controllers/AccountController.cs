@@ -175,11 +175,16 @@ namespace GymManagement.PL.Controllers
                 await transaction.CommitAsync(ct);
 
                 // Email delivery is outside the database transaction by design.
-                await SendConfirmationEmailAsync(user, ct);
+                var confirmationDelivered = await SendConfirmationEmailAsync(user, ct);
 
-                _logger.LogInformation("Registered member {Email}; confirmation email sent.", user.Email);
-                TempData["SuccessMessage"] =
-                    "Registration successful. Check your email to confirm your account before signing in.";
+                _logger.LogInformation(
+                    "Registered member {Email}; confirmation delivery succeeded: {Delivered}.",
+                    user.Email,
+                    confirmationDelivered);
+                TempData["SuccessMessage"] = confirmationDelivered
+                    ? "Registration successful. Check your email to confirm your account before signing in."
+                    : "Registration successful, but we could not send the confirmation email. " +
+                      "Contact support before signing in.";
                 return Redirect("/Account/Login");
             }
             catch (DbUpdateException ex)
@@ -256,13 +261,19 @@ namespace GymManagement.PL.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user is not null && !await _userManager.IsEmailConfirmedAsync(user))
             {
-                await SendConfirmationEmailAsync(user, ct);
-                _logger.LogInformation("Confirmation link reissued for user {UserId}.", user.Id);
+                var delivered = await SendConfirmationEmailAsync(user, ct);
+                _logger.LogInformation(
+                    "Confirmation link reissued for user {UserId}; delivery succeeded: {Delivered}.",
+                    user.Id,
+                    delivered);
             }
 
-            // Same non-disclosure response as ForgotPassword.
+            // Same non-disclosure response as ForgotPassword. Delivery failures are
+            // logged and alerted through IEmailDeliveryMonitor without revealing whether
+            // the address exists.
             TempData["SuccessMessage"] =
-                "If an unconfirmed account exists for that email, a new confirmation link has been sent.";
+                "If an unconfirmed account exists for that email, a new confirmation link " +
+                "has been sent. If you do not receive it, contact support.";
             return RedirectToAction(nameof(ResendEmailConfirmationConfirmation));
         }
 
@@ -297,7 +308,7 @@ namespace GymManagement.PL.Controllers
                     new { email = user.Email, token },
                     Request.Scheme) ?? "/Account/ResetPassword";
 
-                await _emailSender.SendAsync(
+                var delivered = await _emailSender.SendAsync(
                     user.Email!,
                     "Reset your gym account password",
                     $"<p>Hello {WebUtility.HtmlEncode(user.FirstName)},</p>" +
@@ -306,7 +317,10 @@ namespace GymManagement.PL.Controllers
                     $"<p><a href=\"{WebUtility.HtmlEncode(callbackUrl)}\">Reset password</a></p>",
                     ct);
 
-                _logger.LogInformation("Password reset link issued for user {UserId}.", user.Id);
+                _logger.LogInformation(
+                    "Password reset link issued for user {UserId}; delivery succeeded: {Delivered}.",
+                    user.Id,
+                    delivered);
             }
 
             TempData["SuccessMessage"] =
@@ -372,7 +386,7 @@ namespace GymManagement.PL.Controllers
 
         #endregion
 
-        private async Task SendConfirmationEmailAsync(ApplicationUser user, CancellationToken ct)
+        private async Task<bool> SendConfirmationEmailAsync(ApplicationUser user, CancellationToken ct)
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var callbackUrl = Url.Action(
@@ -381,7 +395,7 @@ namespace GymManagement.PL.Controllers
                 new { userId = user.Id, token },
                 Request.Scheme) ?? "/Account/ConfirmEmail";
 
-            await _emailSender.SendAsync(
+            return await _emailSender.SendAsync(
                 user.Email!,
                 "Confirm your gym account",
                 $"<p>Welcome to the gym, {WebUtility.HtmlEncode(user.FirstName)}.</p>" +

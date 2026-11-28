@@ -17,8 +17,9 @@ public sealed class AppEmailSenderTests
         var monitor = new RecordingMonitor();
         var sender = CreateSender(new EmailOptions(), "Production", monitor);
 
-        await sender.SendAsync("member@example.com", "Confirm your gym account", "<p>Hi</p>");
+        var delivered = await sender.SendAsync("member@example.com", "Confirm your gym account", "<p>Hi</p>");
 
+        Assert.False(delivered);
         var failure = Assert.Single(monitor.Failures);
         Assert.Equal(EmailDeliveryFailureReason.NotConfigured, failure.Reason);
         Assert.Equal("member@example.com", failure.ToEmail);
@@ -38,8 +39,9 @@ public sealed class AppEmailSenderTests
         var monitor = new RecordingMonitor();
         var sender = CreateSender(options, "Production", monitor);
 
-        await sender.SendAsync("member@example.com", "Reset your gym account password", "<p>Hi</p>");
+        var delivered = await sender.SendAsync("member@example.com", "Reset your gym account password", "<p>Hi</p>");
 
+        Assert.False(delivered);
         var failure = Assert.Single(monitor.Failures);
         Assert.Equal(EmailDeliveryFailureReason.SmtpError, failure.Reason);
         Assert.Equal("localhost", failure.SmtpHost);
@@ -54,8 +56,9 @@ public sealed class AppEmailSenderTests
         var monitor = new RecordingMonitor();
         var sender = CreateSender(new EmailOptions(), "Development", monitor, mailbox);
 
-        await sender.SendAsync("member@example.com", "Confirm your gym account", "<p>Link</p>");
+        var delivered = await sender.SendAsync("member@example.com", "Confirm your gym account", "<p>Link</p>");
 
+        Assert.True(delivered);
         Assert.Empty(monitor.Failures);
         Assert.Equal(1, monitor.SuccessCount);
         var message = Assert.Single(mailbox.GetByEmail("member@example.com"));

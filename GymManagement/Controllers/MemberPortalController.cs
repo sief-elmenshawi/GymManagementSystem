@@ -230,15 +230,28 @@ namespace GymManagement.Controllers
                 return View(model);
             }
 
+            var confirmationDelivered = false;
             if (emailChanged)
             {
                 // Email delivery is deliberately outside the database transaction.
-                await SendEmailChangeConfirmationAsync(current.User, ct);
+                confirmationDelivered = await SendEmailChangeConfirmationAsync(current.User, ct);
             }
 
-            TempData["SuccessMessage"] = emailChanged
-                ? "Your profile has been updated. Confirm your new email address before signing in again."
-                : "Your profile has been updated.";
+            if (!emailChanged)
+            {
+                TempData["SuccessMessage"] = "Your profile has been updated.";
+            }
+            else if (confirmationDelivered)
+            {
+                TempData["SuccessMessage"] =
+                    "Your profile has been updated. Confirm your new email address before signing in again.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] =
+                    "Your profile has been updated, but we could not send the confirmation email. " +
+                    "Contact support before signing in again.";
+            }
             return RedirectToAction(nameof(Index));
         }
 
@@ -300,7 +313,7 @@ namespace GymManagement.Controllers
         private static string FullName(ApplicationUser? user) =>
             $"{user?.FirstName} {user?.LastName}".Trim();
 
-        private async Task SendEmailChangeConfirmationAsync(
+        private async Task<bool> SendEmailChangeConfirmationAsync(
             ApplicationUser user,
             CancellationToken ct)
         {
@@ -311,7 +324,7 @@ namespace GymManagement.Controllers
                 new { userId = user.Id, token },
                 Request.Scheme) ?? "/Account/ConfirmEmail";
 
-            await _emailSender.SendAsync(
+            var delivered = await _emailSender.SendAsync(
                 user.Email!,
                 "Confirm your new gym email address",
                 $"<p>Hello {WebUtility.HtmlEncode(user.FirstName)},</p>" +
@@ -320,8 +333,10 @@ namespace GymManagement.Controllers
                 ct);
 
             _logger.LogInformation(
-                "Email change confirmation issued for user {UserId}.",
-                user.Id);
+                "Email change confirmation issued for user {UserId}; delivery succeeded: {Delivered}.",
+                user.Id,
+                delivered);
+            return delivered;
         }
 
         private void AddIdentityErrors(IdentityResult result)
