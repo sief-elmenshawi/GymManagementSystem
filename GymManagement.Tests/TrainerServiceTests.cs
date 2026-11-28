@@ -23,7 +23,7 @@ public sealed class TrainerServiceTests
     public async Task CreateTrainer_SetsHiringDateToToday()
     {
         var before = DateTime.UtcNow;
-        var result = await _service.CreateTrainerAsync(CreateModel());
+        var result = await _service.CreateTrainerAsync(CreateModel(), TestContext.Current.CancellationToken);
         var after = DateTime.UtcNow;
 
         Assert.True(result.succes);
@@ -47,7 +47,7 @@ public sealed class TrainerServiceTests
             .Setup(repository => repository.GetByIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
 
-        var result = await _service.UpdateTrainerDetailsAsync(7, UpdateModel());
+        var result = await _service.UpdateTrainerDetailsAsync(7, UpdateModel(), TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         Assert.Equal(hiredOn, trainer.HiringDate);

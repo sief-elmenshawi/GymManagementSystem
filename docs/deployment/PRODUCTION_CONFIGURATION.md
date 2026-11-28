@@ -206,7 +206,7 @@ Application checks:
 
 ```powershell
 dotnet build GymManagementSolution.slnx --nologo
-dotnet test GymManagementSolution.slnx --nologo
+dotnet test --project GymManagementSolution.slnx --nologo
 dotnet list package --vulnerable --include-transitive
 git status --short
 ```

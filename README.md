@@ -245,10 +245,12 @@ In Development, no AutoMapper license key is needed. In non-development environm
 
 ```bash
 dotnet build GymManagementSolution.slnx --nologo
-dotnet test GymManagementSolution.slnx --nologo
+dotnet test --project GymManagementSolution.slnx --nologo
 dotnet list package --vulnerable --include-transitive
 pwsh ./scripts/check-production-config.ps1 -EnvFile ./production.env
 ```
+
+Tests use xUnit v3 on Microsoft Testing Platform; `global.json` opts `dotnet test` into that runner, so the project/solution path is passed with `--project` instead of a positional argument.
 
 The production checker is optional for local runs; it validates names for a deployed environment and never prints values. See [Production configuration](docs/deployment/PRODUCTION_CONFIGURATION.md).
 
@@ -265,7 +267,7 @@ powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net11.0\playw
 $conn = (Get-Content GymManagement/appsettings.json -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
 $env:GYM_TEST_CONNECTION_STRING = $conn
 $env:GYM_RUN_BROWSER_TESTS = '1'
-dotnet test GymManagementSolution.slnx --nologo --filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"
+dotnet test --project GymManagementSolution.slnx --nologo --filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"
 ```
 
 The fixture starts the app on a free localhost port with a disposable `GymManagement_E2E_Browser_*` database and Development mailbox, then tears both down. Never set `GYM_RUN_BROWSER_TESTS` in Production.

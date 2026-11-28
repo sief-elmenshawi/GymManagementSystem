@@ -26,7 +26,7 @@ public class BookingServiceTests
     [Fact]
     public async Task CreateBooking_WhenSessionDoesNotExist_ReturnsNotFound()
     {
-        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -38,7 +38,7 @@ public class BookingServiceTests
     {
         SetupSession(TestData.FutureSession(start: DateTime.UtcNow.AddMinutes(-10), end: DateTime.UtcNow.AddHours(1)));
 
-        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -51,7 +51,7 @@ public class BookingServiceTests
         SetupSession(TestData.FutureSession());
         SetupMembership(active: false);
 
-        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -66,7 +66,7 @@ public class BookingServiceTests
         SetupMembership(active: true);
         SetupAlreadyBooked(true);
 
-        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -85,7 +85,7 @@ public class BookingServiceTests
             .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
-        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking());
+        var result = await _service.CreateNewBookingAsync(TestData.CreateBooking(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -105,7 +105,7 @@ public class BookingServiceTests
             .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(4);
 
-        var result = await _service.CreateNewBookingAsync(model);
+        var result = await _service.CreateNewBookingAsync(model, TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         _uow.BookingRepository.Verify(
@@ -131,7 +131,7 @@ public class BookingServiceTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateException("Duplicate key", new Exception()));
 
-        var result = await _service.CreateNewBookingAsync(model);
+        var result = await _service.CreateNewBookingAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -159,7 +159,7 @@ public class BookingServiceTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateException("Connection reset by peer", new Exception()));
 
-        var result = await _service.CreateNewBookingAsync(model);
+        var result = await _service.CreateNewBookingAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal("Booking could not be created. Please try again.", result.error);
@@ -168,7 +168,7 @@ public class BookingServiceTests
     [Fact]
     public async Task CancelBooking_WhenSessionDoesNotExist_ReturnsNotFound()
     {
-        var result = await _service.CancelBookingAsync(5, 30);
+        var result = await _service.CancelBookingAsync(5, 30, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -180,7 +180,7 @@ public class BookingServiceTests
     {
         SetupSession(TestData.FutureSession(start: DateTime.UtcNow.AddMinutes(-10), end: DateTime.UtcNow.AddHours(1)));
 
-        var result = await _service.CancelBookingAsync(5, 30);
+        var result = await _service.CancelBookingAsync(5, 30, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -192,7 +192,7 @@ public class BookingServiceTests
     {
         SetupSession(TestData.FutureSession());
 
-        var result = await _service.CancelBookingAsync(5, 30);
+        var result = await _service.CancelBookingAsync(5, 30, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -207,7 +207,7 @@ public class BookingServiceTests
         SetupSession(session);
         SetupBooking(booking);
 
-        var result = await _service.CancelBookingAsync(5, session.Id);
+        var result = await _service.CancelBookingAsync(5, session.Id, TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         _uow.BookingRepository.Verify(r => r.Delete(booking), Times.Once);
@@ -217,7 +217,7 @@ public class BookingServiceTests
     [Fact]
     public async Task MarkAttended_WhenBookingDoesNotExist_ReturnsNotFound()
     {
-        var result = await _service.MarkAttendedAsync(5, 30);
+        var result = await _service.MarkAttendedAsync(5, 30, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -230,7 +230,7 @@ public class BookingServiceTests
         var booking = new Booking { Id = 1, MemberId = 5, SessionId = 30 };
         SetupBooking(booking);
 
-        var result = await _service.MarkAttendedAsync(5, 30);
+        var result = await _service.MarkAttendedAsync(5, 30, TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         Assert.True(booking.IsAttended);
@@ -252,7 +252,7 @@ public class BookingServiceTests
             .Setup(r => r.GetBySessionIdAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync(bookings);
 
-        var result = (await _service.GetMembersForOngoingBySessionIdAsync(30)).ToList();
+        var result = (await _service.GetMembersForOngoingBySessionIdAsync(30, TestContext.Current.CancellationToken)).ToList();
 
         Assert.Equal(2, result.Count);
         Assert.Equal("Member One", result[0].MemberName);

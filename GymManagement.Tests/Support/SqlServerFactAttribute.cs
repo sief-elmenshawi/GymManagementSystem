@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace GymManagement.Tests.Support;
@@ -7,7 +8,10 @@ namespace GymManagement.Tests.Support;
 /// </summary>
 public sealed class SqlServerFactAttribute : FactAttribute
 {
-    public SqlServerFactAttribute()
+    public SqlServerFactAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
     {
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GYM_TEST_CONNECTION_STRING")))
         {

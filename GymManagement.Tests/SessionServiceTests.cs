@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.DAL.Models;
@@ -26,7 +26,7 @@ public class SessionServiceTests
         var model = TestData.ValidCreateSession();
         model.EndDate = model.StartDate;
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.ValidationFailed, result.kind);
@@ -40,7 +40,7 @@ public class SessionServiceTests
         model.StartDate = DateTime.UtcNow.AddMinutes(-1);
         model.EndDate = DateTime.UtcNow.AddHours(1);
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.ValidationFailed, result.kind);
@@ -55,7 +55,7 @@ public class SessionServiceTests
         var model = TestData.ValidCreateSession();
         model.Capacity = capacity;
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.ValidationFailed, result.kind);
@@ -70,7 +70,7 @@ public class SessionServiceTests
             .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestData.Category());
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -86,7 +86,7 @@ public class SessionServiceTests
             .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestData.Trainer());
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -100,7 +100,7 @@ public class SessionServiceTests
         var model = TestData.ValidCreateSession();
         SetupTrainerAndCategory(trainerSpecialty: Specialty.Yoga, categoryName: "Cardio");
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.ValidationFailed, result.kind);
@@ -113,7 +113,7 @@ public class SessionServiceTests
         var model = TestData.ValidCreateSession();
         SetupTrainerAndCategory();
 
-        var result = await _service.CreateSessionAsync(model);
+        var result = await _service.CreateSessionAsync(model, TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         _uow.SessionRepositoryGeneric.Verify(
@@ -128,7 +128,7 @@ public class SessionServiceTests
     [Fact]
     public async Task UpdateSession_WhenSessionDoesNotExist_ReturnsNotFound()
     {
-        var result = await _service.UpdateSessionAsync(99, TestData.ValidUpdateSession());
+        var result = await _service.UpdateSessionAsync(99, TestData.ValidUpdateSession(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -143,7 +143,7 @@ public class SessionServiceTests
             .Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(session);
 
-        var result = await _service.UpdateSessionAsync(session.Id, TestData.ValidUpdateSession());
+        var result = await _service.UpdateSessionAsync(session.Id, TestData.ValidUpdateSession(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -161,7 +161,7 @@ public class SessionServiceTests
             .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var result = await _service.UpdateSessionAsync(session.Id, TestData.ValidUpdateSession());
+        var result = await _service.UpdateSessionAsync(session.Id, TestData.ValidUpdateSession(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -178,7 +178,7 @@ public class SessionServiceTests
         var model = TestData.ValidUpdateSession();
         model.EndDate = model.StartDate;
 
-        var result = await _service.UpdateSessionAsync(session.Id, model);
+        var result = await _service.UpdateSessionAsync(session.Id, model, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.ValidationFailed, result.kind);
@@ -196,7 +196,7 @@ public class SessionServiceTests
             .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TestData.Category());
 
-        var result = await _service.UpdateSessionAsync(session.Id, TestData.ValidUpdateSession());
+        var result = await _service.UpdateSessionAsync(session.Id, TestData.ValidUpdateSession(), TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -213,7 +213,7 @@ public class SessionServiceTests
             .ReturnsAsync(session);
         SetupTrainerAndCategory();
 
-        var result = await _service.UpdateSessionAsync(session.Id, model);
+        var result = await _service.UpdateSessionAsync(session.Id, model, TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         _uow.SessionRepository.Verify(
@@ -228,7 +228,7 @@ public class SessionServiceTests
     [Fact]
     public async Task RemoveSession_WhenSessionDoesNotExist_ReturnsNotFound()
     {
-        var result = await _service.RemoveSessionAsync(99);
+        var result = await _service.RemoveSessionAsync(99, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.NotFound, result.kind);
@@ -243,7 +243,7 @@ public class SessionServiceTests
             .Setup(r => r.GetByIdAsync(session.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(session);
 
-        var result = await _service.RemoveSessionAsync(session.Id);
+        var result = await _service.RemoveSessionAsync(session.Id, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -261,7 +261,7 @@ public class SessionServiceTests
             .Setup(r => r.GetCountOfBookedSlotsAsync(ended.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
-        var result = await _service.RemoveSessionAsync(ended.Id);
+        var result = await _service.RemoveSessionAsync(ended.Id, TestContext.Current.CancellationToken);
 
         Assert.False(result.succes);
         Assert.Equal(ResultKind.Conflict, result.kind);
@@ -276,7 +276,7 @@ public class SessionServiceTests
             .Setup(r => r.GetByIdAsync(ended.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ended);
 
-        var result = await _service.RemoveSessionAsync(ended.Id);
+        var result = await _service.RemoveSessionAsync(ended.Id, TestContext.Current.CancellationToken);
 
         Assert.True(result.succes);
         _uow.SessionRepository.Verify(r => r.Delete(ended), Times.Once);

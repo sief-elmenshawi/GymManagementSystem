@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace GymManagement.Tests.Support;
@@ -9,7 +10,10 @@ namespace GymManagement.Tests.Support;
 /// </summary>
 internal sealed class BrowserFactAttribute : FactAttribute
 {
-    public BrowserFactAttribute()
+    public BrowserFactAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
     {
         var reasons = new List<string>();
 

@@ -67,4 +67,4 @@ jobs:
         run: pwsh GymManagement.Tests/bin/Debug/net11.0/playwright.ps1 install chromium
 
       - name: Test
-        run: dotnet test GymManagementSolution.slnx --no-build --nologo
+        run: dotnet test --project GymManagementSolution.slnx --no-build --nologo

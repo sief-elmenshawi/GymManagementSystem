@@ -11,6 +11,7 @@ This document tracks the remaining production hardening work. It is intentionall
 - A17: Done, verified, committed, and pushed to `master`.
 - A18: Done, verified, committed, and pushed to `master`.
 - A19: Done, verified, committed, and pushed to `master`; CI run `46155835633` green.
+- A20: Implemented and verified locally; commit/push and CI confirmation pending.
 
 ## Constraints
 
@@ -50,7 +51,8 @@ This document tracks the remaining production hardening work. It is intentionall
 | A16 | Final verification and documentation refresh | full suite, browser suite, EF model check, plan | A15 | Full suite green; browser suite green; no pending model changes; statuses current | See evidence log | Done |
 | A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done |
 | A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
-| A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done (pending commit) |
+| A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done |
+| A20 | Migrate tests to xUnit v3 on Microsoft Testing Platform | test `.csproj`, 14 test/support files, `global.json`, `ci.yml`, docs | A19 | No deprecated test packages; build has 0 warnings/errors; `dotnet test --project ...` runs all 151 tests under MTP; old VSTest filter still works | Build + full suite (default and browser-enabled) + filtered browser suite + package audit | Done (pending commit) |
 
 ## Evidence log
 
@@ -80,12 +82,17 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — A19 staging smoke on `net11.0`: login `200`, protected pages redirect to login, demo row counts unchanged (3/3/3/3/3/3/2, plans 4, categories 5, demo user 1).
 - `2026-11-28` — A19 package audit after upgrade: zero vulnerable packages.
 - `2026-11-28` — A19 commit `e845e4e` pushed to `master`; CI run `46155835633` green in 3m6s (setup-dotnet 11.0.x, EF tool 11, Playwright net11.0, full suite).
+- `2026-11-28` — A20: replaced `xunit 2.9.3` with `xunit.v3 4.0.3`, runner `4.0.1`, Test SDK `18.12.0`; test project is now an `Exe`; 12 `IAsyncLifetime` implementations use `ValueTask`.
+- `2026-11-28` — A20: fixed analyzer findings instead of suppressing them — source-info constructors on `BrowserFactAttribute`/`SqlServerFactAttribute` (xUnit3003) and `TestContext.Current.CancellationToken` passed to async service calls (xUnit1051).
+- `2026-11-28` — A20 build: `0 Warning(s), 0 Error(s)`.
+- `2026-11-28` — A20: added root `global.json` with `"test": { "runner": "Microsoft.Testing.Platform" }`; updated `dotnet test` invocations in `ci.yml`, README, and production checklist to `--project <path>`; the existing VSTest-style `--filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"` still selects the 4 browser/UI tests.
+- `2026-11-28` — A20 full suite via `dotnet test --project GymManagementSolution.slnx --no-build --nologo`: default `total: 151, failed: 0, succeeded: 147, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 151, failed: 0, succeeded: 151, skipped: 0`; filtered browser suite `total: 4, failed: 0, succeeded: 4, skipped: 0`.
+- `2026-11-28` — A20 package audit: zero vulnerable and zero deprecated packages across all projects.
 
 ## Remaining work
 
-1. A19 is complete; CI run `46155835633` is green.
-2. `xunit 2.9.3` remains deprecated; migrating to `xunit.v3` is a separate test-framework change.
-3. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
+1. A20 is implemented and verified locally; commit/push and CI confirmation are pending explicit approval.
+2. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
 

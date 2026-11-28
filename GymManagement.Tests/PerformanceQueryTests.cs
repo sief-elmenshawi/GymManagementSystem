@@ -1,4 +1,4 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
 using GymManagement.DAL.Models.Enums;
@@ -25,7 +25,7 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
     private readonly CommandCounter _counter = new();
     private GymDbContext? _db;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         if (_connectionString is null)
         {
@@ -44,7 +44,7 @@ public sealed class PerformanceQueryTests : IAsyncLifetime
         _counter.Reset();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_db is not null)
         {

@@ -28,7 +28,7 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
 
     private GymTestAppFactory? _factory;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         if (_connectionString is null)
         {
@@ -40,7 +40,7 @@ public sealed class MemberAndBookingFlowTests : IAsyncLifetime
         using var startupClient = _factory.CreateClient(); // Force startup: migrations + seeding.
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _factory?.Dispose();
 

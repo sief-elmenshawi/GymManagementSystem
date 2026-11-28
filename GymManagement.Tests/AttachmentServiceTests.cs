@@ -1,4 +1,4 @@
-﻿using GymManagement.BLL.Services.Classes;
+using GymManagement.BLL.Services.Classes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -28,7 +28,7 @@ public sealed class AttachmentServiceTests : IDisposable
         var service = CreateService();
         await using var stream = new MemoryStream(PngBytes());
 
-        var stored = await service.UploadAsync(stream, "PHOTO.PNG", "uploads");
+        var stored = await service.UploadAsync(stream, "PHOTO.PNG", "uploads", TestContext.Current.CancellationToken);
 
         Assert.NotNull(stored);
         Assert.EndsWith(".png", stored!, StringComparison.OrdinalIgnoreCase);
@@ -41,7 +41,7 @@ public sealed class AttachmentServiceTests : IDisposable
         var service = CreateService();
         await using var stream = new MemoryStream(GifBytes());
 
-        var stored = await service.UploadAsync(stream, "photo.GIF", "uploads");
+        var stored = await service.UploadAsync(stream, "photo.GIF", "uploads", TestContext.Current.CancellationToken);
 
         Assert.NotNull(stored);
         Assert.EndsWith(".gif", stored!, StringComparison.OrdinalIgnoreCase);
@@ -53,7 +53,7 @@ public sealed class AttachmentServiceTests : IDisposable
         var service = CreateService();
         await using var stream = new MemoryStream("not an image"u8.ToArray());
 
-        var stored = await service.UploadAsync(stream, "photo.png", "uploads");
+        var stored = await service.UploadAsync(stream, "photo.png", "uploads", TestContext.Current.CancellationToken);
 
         Assert.Null(stored);
         Assert.False(Directory.Exists(Path.Combine(_root, "uploads")));
@@ -66,7 +66,7 @@ public sealed class AttachmentServiceTests : IDisposable
         var service = CreateService(options);
         await using var stream = new MemoryStream(PngBytes());
 
-        var stored = await service.UploadAsync(stream, "photo.png", "uploads");
+        var stored = await service.UploadAsync(stream, "photo.png", "uploads", TestContext.Current.CancellationToken);
 
         Assert.Null(stored);
     }

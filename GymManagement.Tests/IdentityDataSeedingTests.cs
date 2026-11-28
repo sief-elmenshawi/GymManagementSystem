@@ -30,7 +30,7 @@ public sealed class IdentityDataSeedingTests
             }));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), "P@ssw0rd"));
+            IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), "P@ssw0rd", TestContext.Current.CancellationToken));
 
         Assert.Contains("RoleAssignFailed", exception.Message, StringComparison.Ordinal);
     }
@@ -52,7 +52,7 @@ public sealed class IdentityDataSeedingTests
             }));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), "weak"));
+            IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), "weak", TestContext.Current.CancellationToken));
 
         Assert.Contains("PasswordTooWeak", exception.Message, StringComparison.Ordinal);
     }
@@ -65,7 +65,7 @@ public sealed class IdentityDataSeedingTests
 
         var userManager = CreateUserManager();
 
-        await IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), null);
+        await IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), null, TestContext.Current.CancellationToken);
 
         userManager.Verify(
             manager => manager.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
@@ -82,7 +82,7 @@ public sealed class IdentityDataSeedingTests
 
         var userManager = CreateUserManager();
 
-        await IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), null);
+        await IdentityDataSeeding.SeedAsync(roleManager.Object, userManager.Object, Mock.Of<ILogger>(), null, TestContext.Current.CancellationToken);
 
         roleManager.Verify(
             manager => manager.CreateAsync(It.Is<IdentityRole>(role => role.Name == "Member")),
@@ -122,7 +122,8 @@ public sealed class IdentityDataSeedingTests
             roleManager.Object,
             userManager.Object,
             Mock.Of<ILogger>(),
-            "P@ssw0rd");
+            "P@ssw0rd",
+            TestContext.Current.CancellationToken);
 
         Assert.True(existing.EmailConfirmed);
         userManager.Verify(
