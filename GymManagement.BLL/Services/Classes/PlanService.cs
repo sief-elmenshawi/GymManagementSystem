@@ -26,11 +26,21 @@ namespace GymManagement.BLL.Services.Classes
 
 
 
-        public async Task<IEnumerable<PlanViewModel>> GetAllPlansAsync(CancellationToken ct = default)
+        public async Task<PagedResult<PlanViewModel>> GetAllPlansAsync(
+            CancellationToken ct = default, int page = 1, int pageSize = 12)
         {
-            var plans = await unitOfWork.GetRepository<Plan>().GetAllAsync(ct : ct);
-           
-            return mapper.Map<IEnumerable<PlanViewModel>>(plans);
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
+            var repo = unitOfWork.GetRepository<Plan>();
+            var plans = await repo.GetPagedAsync(page: page, pageSize: pageSize, ct: ct);
+            var totalCount = await repo.CountAsync(ct: ct);
+
+            return new PagedResult<PlanViewModel>
+            {
+                Items = mapper.Map<List<PlanViewModel>>(plans),
+                Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
+            };
         }
 
         public async Task<PlanViewModel?> GetPlanByIdAsync(int PlanId, CancellationToken ct = default)

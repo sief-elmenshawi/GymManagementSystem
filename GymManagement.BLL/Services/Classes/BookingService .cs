@@ -8,6 +8,7 @@ using GymManagement.BLL.ViewModels.SessionViewModels;
 using GymManagement.DAL.Models;
 using GymManagement.DAL.Repositorities.Classes;
 using GymManagement.DAL.Repositorities.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,37 +57,56 @@ namespace GymManagement.BLL.Services.Classes
         }
         public async Task<Result> CreateNewBookingAsync(CreateBookingViewModel model, CancellationToken ct = default)
         {
-            var session = await unitOfWork.SessionRepository.GetByIdAsync(model.SessionId, ct);
-            if (session is null) return Result.NotFound("Session not found.");
+            // The checks and the insert share one transaction so a concurrent request
+            // cannot observe a stale slot count and commit a conflicting booking.
+            await using var transaction = await unitOfWork.BeginTransactionAsync(ct);
 
-            if (session.StartDate <= DateTime.Now)
-                return Result.Fail("Cannot book a session that has already started.");
-
-            var hasActiveMembership = await unitOfWork.MembershipRepository
-                .AnyAsync(m => m.MemberId == model.MemberId && m.EndDate > DateTime.Now, ct);
-            if (!hasActiveMembership)
-                return Result.Fail("Member does not have an active membership.");
-
-            // Prevent double-booking the same member into the same session.
-            var alreadyBooked = await unitOfWork.BookingRepository
-                .AnyAsync(b => b.SessionId == model.SessionId && b.MemberId == model.MemberId, ct);
-            if (alreadyBooked)
-                return Result.Fail("Member is already booked for this session.");
-
-            var booked = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(model.SessionId, ct);
-            if (booked >= session.Capacity)
-                return Result.Fail("Session is full.");
-
-            unitOfWork.BookingRepository.Add(new Booking
+            try
             {
-                MemberId = model.MemberId,
-                SessionId = model.SessionId,
-                IsAttended = false,
-                CreatedAt = DateTime.Now,
-            });
+                var session = await unitOfWork.SessionRepository.GetByIdAsync(model.SessionId, ct);
+                if (session is null) return Result.NotFound("Session not found.");
 
-            var result = await unitOfWork.SaveChangesAsync(ct);
-            return result > 0 ? Result.Ok() : Result.Fail("Failed To Book Session");
+                if (session.StartDate <= DateTime.Now)
+                    return Result.Fail("Cannot book a session that has already started.");
+
+                var hasActiveMembership = await unitOfWork.MembershipRepository
+                    .AnyAsync(m => m.MemberId == model.MemberId && m.EndDate > DateTime.Now, ct);
+                if (!hasActiveMembership)
+                    return Result.Fail("Member does not have an active membership.");
+
+                var alreadyBooked = await unitOfWork.BookingRepository
+                    .AnyAsync(b => b.SessionId == model.SessionId && b.MemberId == model.MemberId, ct);
+                if (alreadyBooked)
+                    return Result.Fail("Member is already booked for this session.");
+
+                var booked = await unitOfWork.SessionRepository.GetCountOfBookedSlotsAsync(model.SessionId, ct);
+                if (booked >= session.Capacity)
+                    return Result.Fail("Session is full.");
+
+                unitOfWork.BookingRepository.Add(new Booking
+                {
+                    MemberId = model.MemberId,
+                    SessionId = model.SessionId,
+                    IsAttended = false,
+                    CreatedAt = DateTime.Now,
+                });
+
+                var result = await unitOfWork.SaveChangesAsync(ct);
+                if (result <= 0)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Result.Fail("Failed To Book Session");
+                }
+
+                await transaction.CommitAsync(ct);
+                return Result.Ok();
+            }
+            catch (DbUpdateException)
+            {
+                // The unique (MemberId, SessionId) key is the final concurrency guard.
+                await transaction.RollbackAsync(ct);
+                return Result.Fail("Member is already booked for this session.");
+            }
         }
         public async Task<PagedResult<SessionViewModel>> GetAllSessionsAsync(
             CancellationToken ct = default, int page = 1, int pageSize = 12)

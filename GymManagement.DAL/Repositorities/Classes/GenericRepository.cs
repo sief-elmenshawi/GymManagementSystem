@@ -44,6 +44,28 @@ namespace GymManagement.DAL.Repositorities.Classes
             if (predicate is not null) query = query.Where(predicate);
             return await query.ToListAsync(ct);
         }
+
+        public async Task<IEnumerable<TEntity>> GetPagedAsync(
+            Expression<Func<TEntity, bool>>? predicate = null,
+            int page = 1,
+            int pageSize = 20,
+            bool tracking = false,
+            CancellationToken ct = default)
+        {
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
+            IQueryable<TEntity> query = tracking ? _set : _set.AsNoTracking();
+            if (predicate is not null) query = query.Where(predicate);
+
+            var skip = (long)(page - 1) * pageSize;
+
+            return await query
+                .OrderBy(entity => entity.Id)
+                .Skip(skip > int.MaxValue ? int.MaxValue : (int)skip)
+                .Take(pageSize)
+                .ToListAsync(ct);
+        }
         public async Task<TEntity?> GetByIdAsync(int id, CancellationToken ct = default) => await _set.FindAsync([id], ct);
 
     }

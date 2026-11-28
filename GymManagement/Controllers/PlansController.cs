@@ -18,9 +18,9 @@ namespace GymManagement.Controllers
         }
         // Index Action 
         // GET BaseUrl/Plans/Index -> Listing All Plans
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
         {
-            var plans = await planService.GetAllPlansAsync(ct);
+            var plans = await planService.GetAllPlansAsync(ct, page);
             return View(plans);
         }
 

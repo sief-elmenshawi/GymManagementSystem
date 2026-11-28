@@ -61,6 +61,7 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 ## 🏋️ Trainer management
 
 * Create, edit, delete, and list trainers
+* Trainer list is ordered and paged in SQL
 * Maintain specialty and contact details
 * Assign trainers to sessions
 
@@ -74,6 +75,7 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 ## 💳 Membership management
 
 * Create and manage plans
+* Plan list is ordered and paged in SQL
 * Create and cancel member memberships
 * List active memberships with member and plan names via a flat SQL projection
 * Membership list is ordered and paged in SQL
@@ -84,6 +86,7 @@ An ASP.NET Core MVC application for managing gym members, trainers, plans, membe
 * Prevent bookings that violate business rules (membership, capacity, timing, duplicates)
 * Track attendance
 * Anti-join query for available members instead of loading all bookings into memory
+* Booking creation runs in one transaction; a unique `(MemberId, SessionId)` index stops concurrent duplicate bookings
 
 ## 📊 Analytics
 
@@ -240,7 +243,7 @@ SQL-dependent tests are skipped unless `GYM_TEST_CONNECTION_STRING` is set. With
 
 ### Browser-driven UI tests
 
-`BrowserUiFlowTests` use Playwright with headless Chromium against a real Kestrel process. They are skipped by default; the skip message lists any missing prerequisite. To run them locally:
+`BrowserUiFlowTests` and `UiRenderingSmokeTests` use Playwright with headless Chromium against a real Kestrel process. They are skipped by default; the skip message lists any missing prerequisite. To run them locally:
 
 ```powershell
 # Once per machine / after a Playwright version upgrade
@@ -249,12 +252,12 @@ powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net9.0\playwr
 $conn = (Get-Content GymManagement/appsettings.json -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
 $env:GYM_TEST_CONNECTION_STRING = $conn
 $env:GYM_RUN_BROWSER_TESTS = '1'
-dotnet test GymManagementSolution.slnx --nologo --filter FullyQualifiedName~BrowserUiFlowTests
+dotnet test GymManagementSolution.slnx --nologo --filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"
 ```
 
 The fixture starts the app on a free localhost port with a disposable `GymManagement_E2E_Browser_*` database and Development mailbox, then tears both down. Never set `GYM_RUN_BROWSER_TESTS` in Production.
 
-`BrowserUiFlowTests` also guard the login error regression: an unconfirmed account must show the confirmation message exactly once.
+`BrowserUiFlowTests` also guard the login error regression: an unconfirmed account must show the confirmation message exactly once. `UiRenderingSmokeTests` walks every linked public, staff, and member page at desktop width plus representative pages at a 390px mobile width, checking broken images, duplicate ids, missing accessible names, overflow, and console errors.
 
 ### Continuous integration
 
@@ -266,7 +269,7 @@ EF tooling can also be checked without starting the web app:
 dotnet ef migrations list --project GymManagement.DAL --startup-project GymManagement --configuration Production
 ```
 
-Last full test verification: build `0 Warning(s), 0 Error(s)`, tests `130 Passed / 0 Failed / 4 Skipped` (browser tests are opt-in). With `GYM_RUN_BROWSER_TESTS=1`: `130 Passed / 0 Failed / 0 Skipped`.
+Last full test verification: build `0 Warning(s), 0 Error(s)`, tests `133 Passed / 0 Failed / 4 Skipped / 137 Total` (browser tests are opt-in). With `GYM_RUN_BROWSER_TESTS=1`: `137 Passed / 0 Failed / 0 Skipped / 137 Total`.
 
 ---
 
@@ -280,8 +283,10 @@ List pages were changed to avoid N+1 queries and unbounded result sets:
 | Booking | 961 commands, full list | 2 commands: filtered SQL page + count |
 | Members | All entities including photo payload | 20-row `MemberListInfo` projection + count |
 | Memberships | `Include(Member)` + `Include(Plan)` over all rows | 20-row `MembershipListInfo` projection + count |
+| Plans | Full table load | 12-row SQL-ordered page + count |
+| Trainers | Full table load | 12-row SQL-ordered page + count |
 
-Indexes were added by migration `20261127005950_AddPerformanceIndexes` for session dates, ongoing sessions, membership end dates, and membership/plan foreign keys. Analytics queries were measured and left unchanged because alternatives were not clearly faster.
+Indexes were added by migration `20261127005950_AddPerformanceIndexes` for session dates, ongoing sessions, membership end dates, and membership/plan foreign keys. Migration `20261128102032_BookingUniqueIndex` adds a surrogate booking key and the unique `(MemberId, SessionId)` index used as the final duplicate-booking guard. Analytics queries were measured and left unchanged because alternatives were not clearly faster.
 
 ---
 
@@ -294,7 +299,7 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 | `Trainer` | No | Not seeded by `IdentityDataSeeding` |
 | `Member` | No | Not seeded by `IdentityDataSeeding` |
 
-`HomeController` requires authentication only and redirects by role. `MemberPortalController` requires `Member`. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public registration, login, email confirmation, forgot password, and reset password are anonymous. The development mailbox endpoints are mapped only in Development.
+`HomeController` requires authentication only and redirects by role. `MemberPortalController` requires `Member`. Management controllers (`Sessions`, `Trainers`, `Plans`, `Membership`, `Booking`) require `SuperAdmin` or `Admin`. `DashboardController`, `UsersController`, and `MembersController` require `SuperAdmin`. Public account actions are explicitly anonymous. `AuthorizationMatrixTests` covers every combination, including denied cross-role access. The development mailbox endpoints are mapped only in Development.
 
 ---
 
@@ -303,7 +308,6 @@ Indexes were added by migration `20261127005950_AddPerformanceIndexes` for sessi
 * Add a RESTful Web API version
 * Add payment integration
 * Add notification system using SignalR
-* Expand role-based authorization to more controllers
 
 ---
 

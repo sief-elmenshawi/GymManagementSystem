@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.BLL.ViewModels.TrainerViewModels;
 using GymManagement.DAL.Models;
@@ -50,6 +51,43 @@ public sealed class TrainerServiceTests
 
         Assert.True(result.succes);
         Assert.Equal(hiredOn, trainer.HiringDate);
+    }
+
+    [Fact]
+    public async Task GetAllTrainers_UsesDatabasePaging()
+    {
+        _uow.TrainerRepository
+            .Setup(repository => repository.GetPagedAsync(
+                It.IsAny<Expression<Func<Trainer, bool>>?>(),
+                2, 10, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Trainer>
+            {
+                new() { Id = 11, Name = "Paged Trainer", Address = new Address() },
+            });
+        _uow.TrainerRepository
+            .Setup(repository => repository.CountAsync(
+                It.IsAny<Expression<Func<Trainer, bool>>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(25);
+
+        var result = await _service.GetAllTrainersAsync(CancellationToken.None, 2, 10);
+
+        Assert.Single(result.Items);
+        Assert.Equal("Paged Trainer", result.Items[0].Name);
+        Assert.Equal(2, result.Paging.Page);
+        Assert.Equal(10, result.Paging.PageSize);
+        Assert.Equal(25, result.Paging.TotalCount);
+        _uow.TrainerRepository.Verify(
+            repository => repository.GetPagedAsync(
+                It.IsAny<Expression<Func<Trainer, bool>>?>(),
+                2, 10, false, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _uow.TrainerRepository.Verify(
+            repository => repository.GetAllAsync(
+                It.IsAny<Expression<Func<Trainer, bool>>?>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private static CreateTrainerViewModel CreateModel() => new()

@@ -1,5 +1,6 @@
 ﻿using GymManagement.DAL.Data.DbContexts;
 using GymManagement.DAL.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 using GymManagement.DAL.Repositorities.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -49,5 +50,8 @@ namespace GymManagement.DAL.Repositorities.Classes
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken ct = default) => await dbContext.SaveChangesAsync(ct);
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default) =>
+            await dbContext.Database.BeginTransactionAsync(ct);
     }
 }

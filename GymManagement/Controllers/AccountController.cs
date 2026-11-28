@@ -37,11 +37,13 @@ namespace GymManagement.PL.Controllers
             _logger = logger;
         }
         #region Login
+        [AllowAnonymous]
         public IActionResult Login()
         {
             return View();
         }
         [HttpPost]
+        [AllowAnonymous]
         [EnableRateLimiting(AuthenticationRateLimiting.PolicyName)]
         public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct = default)
         {
@@ -424,6 +426,7 @@ namespace GymManagement.PL.Controllers
             return RedirectToAction(nameof(Login));
         }
         #endregion
+        [AllowAnonymous]
         public IActionResult AccessDenied() => View();
 
     }

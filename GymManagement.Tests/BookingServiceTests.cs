@@ -3,6 +3,7 @@ using GymManagement.BLL.Common;
 using GymManagement.BLL.Services.Classes;
 using GymManagement.DAL.Models;
 using GymManagement.Tests.Support;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
 
@@ -109,6 +110,34 @@ public class BookingServiceTests
                                        && !b.IsAttended)),
             Times.Once);
         _uow.UnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateBooking_WhenUniqueKeyRaceOccurs_ReturnsFriendlyConflict()
+    {
+        var session = TestData.FutureSession(capacity: 10);
+        var model = TestData.CreateBooking(memberId: 5, sessionId: session.Id);
+        SetupSession(session);
+        SetupMembership(active: true);
+        SetupAlreadyBooked(false);
+        _uow.SessionRepository
+            .Setup(r => r.GetCountOfBookedSlotsAsync(session.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(4);
+        _uow.UnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateException("Duplicate key", new Exception()));
+
+        var result = await _service.CreateNewBookingAsync(model);
+
+        Assert.False(result.succes);
+        Assert.Equal(ResultKind.Conflict, result.kind);
+        Assert.Equal("Member is already booked for this session.", result.error);
+        _uow.UnitOfWork.Verify(
+            u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+        _uow.UnitOfWork.Verify(
+            u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

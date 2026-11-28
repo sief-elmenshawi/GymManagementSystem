@@ -21,6 +21,21 @@ public sealed class UiRenderingSmokeTests
 
             if (doc.documentElement.scrollWidth > width + 2) {
                 issues.push('horizontal overflow: ' + doc.documentElement.scrollWidth + 'px > ' + width + 'px');
+                const wide = Array.from(doc.querySelectorAll('body *'))
+                    .map(el => ({ el, rect: el.getBoundingClientRect() }))
+                    .filter(item => item.rect.right > width + 2 && item.rect.width > 0)
+                    .sort((a, b) => b.rect.right - a.rect.right)
+                    .slice(0, 5);
+                for (const item of wide) {
+                    const el = item.el;
+                    issues.push('overflow source: ' + el.tagName.toLowerCase() +
+                        (el.id ? '#' + el.id : '') +
+                        (el.className && typeof el.className === 'string'
+                            ? '.' + el.className.trim().split(/\\s+/).slice(0, 2).join('.')
+                            : '') +
+                        ' right=' + Math.round(item.rect.right) +
+                        ' width=' + Math.round(item.rect.width));
+                }
             }
 
             for (const img of Array.from(doc.images)) {
@@ -63,9 +78,6 @@ public sealed class UiRenderingSmokeTests
                     name = el.closest('label').textContent.trim();
                 }
                 if (!name) name = (el.getAttribute('title') || '').trim();
-                if (!name && el.tagName === 'INPUT' && el.type !== 'submit' && el.type !== 'button') {
-                    name = (el.getAttribute('placeholder') || '').trim();
-                }
                 if (!name && (el.tagName === 'BUTTON' || el.type === 'submit' || el.type === 'button')) {
                     name = (el.textContent || el.value || '').trim();
                 }
@@ -88,7 +100,7 @@ public sealed class UiRenderingSmokeTests
         "/Account/Login", "/Account/Register", "/Account/ForgotPassword",
         "/Account/ForgotPasswordConfirmation", "/Account/ResendEmailConfirmation",
         "/Account/ResendEmailConfirmationConfirmation", "/Account/ResetPasswordConfirmation",
-        "/Account/AccessDenied",
+        "/Account/ConfirmEmail", "/Account/ResetPassword", "/Account/AccessDenied",
     ];
 
     private static readonly string[] AuthenticatedRoutes =
@@ -123,6 +135,13 @@ public sealed class UiRenderingSmokeTests
                 problems.AddRange(await AuditRouteAsync(page, app.BaseUrl, route));
             }
 
+            await page.SetViewportSizeAsync(390, 844);
+            foreach (var route in PublicRoutes.Take(6))
+            {
+                problems.AddRange(await AuditRouteAsync(page, app.BaseUrl, route));
+            }
+            await page.SetViewportSizeAsync(1440, 900);
+
             // Staff pages, including authenticated utility pages and every safe GET link found.
             await LoginAsync(page, app.BaseUrl, SuperAdminEmail, Password);
             foreach (var route in AuthenticatedRoutes)
@@ -132,12 +151,20 @@ public sealed class UiRenderingSmokeTests
 
             var staffRoutes = await DiscoverAsync(
                 page, app.BaseUrl,
-                ["/Dashboard", "/Members", "/Trainers", "/Sessions", "/Plans", "/Membership", "/Booking", "/Users"],
+                ["/Dashboard", "/Members/Index", "/Trainers/Index", "/Sessions/Index",
+                 "/Plans/Index", "/Membership/Index", "/Booking/Index", "/Users"],
                 80);
             foreach (var route in staffRoutes)
             {
                 problems.AddRange(await AuditRouteAsync(page, app.BaseUrl, route));
             }
+
+            await page.SetViewportSizeAsync(390, 844);
+            foreach (var route in staffRoutes.Take(6))
+            {
+                problems.AddRange(await AuditRouteAsync(page, app.BaseUrl, route));
+            }
+            await page.SetViewportSizeAsync(1440, 900);
 
             // Member portal pages.
             var memberEmail = $"ui-audit-{Guid.NewGuid():N}@example.com";
@@ -147,6 +174,12 @@ public sealed class UiRenderingSmokeTests
             var memberRoutes = await DiscoverAsync(
                 page, app.BaseUrl, ["/Member", "/Member/EditProfile", "/Member/Sessions"], 12);
             foreach (var route in memberRoutes)
+            {
+                problems.AddRange(await AuditRouteAsync(page, app.BaseUrl, route));
+            }
+
+            await page.SetViewportSizeAsync(390, 844);
+            foreach (var route in memberRoutes.Take(4))
             {
                 problems.AddRange(await AuditRouteAsync(page, app.BaseUrl, route));
             }

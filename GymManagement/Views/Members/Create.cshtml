@@ -1,7 +1,6 @@
-﻿@model CreateMemberViewModel
+@model CreateMemberViewModel
 @{
     ViewData["Title"] = "Create Member";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 @if (TempData["ErrorMessage"] != null)
@@ -29,11 +28,13 @@
         <ul class="nav nav-tabs mb-4" id="addMemberTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="member-tab" data-bs-toggle="tab"
-                        data-bs-target="#member-info" type="button" role="tab">Member Info</button>
+                        data-bs-target="#member-info" aria-controls="member-info"
+                        aria-selected="true" type="button" role="tab">Member Info</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="health-tab" data-bs-toggle="tab"
-                        data-bs-target="#health-info" type="button" role="tab">Health Data</button>
+                        data-bs-target="#health-info" aria-controls="health-info"
+                        aria-selected="false" type="button" role="tab">Health Data</button>
             </li>
         </ul>
 

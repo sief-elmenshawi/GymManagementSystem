@@ -97,11 +97,11 @@ namespace GymManagement.DAL.Data.Migrations
 
             modelBuilder.Entity("GymManagement.DAL.Models.Booking", b =>
                 {
-                    b.Property<int>("SessionId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int>("MemberId")
-                        .HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -112,12 +112,22 @@ namespace GymManagement.DAL.Data.Migrations
                     b.Property<bool>("IsAttended")
                         .HasColumnType("bit");
 
+                    b.Property<int>("MemberId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SessionId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("SessionId", "MemberId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("MemberId");
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("MemberId", "SessionId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Bookings_MemberId_SessionId");
 
                     b.ToTable("Bookings");
                 });

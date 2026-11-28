@@ -1,7 +1,6 @@
-﻿@model IEnumerable<TrainerViewModel>
+@model PagedResult<TrainerViewModel>
 @{
     ViewData["Title"] = "Trainers";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 @if (TempData["SuccessMessage"] != null)
@@ -33,7 +32,7 @@ else if (TempData["ErrorMessage"] != null)
         </a>
     </header>
 
-    @if (Model != null && Model.Any())
+    @if (Model?.Items.Count > 0)
     {
         <div class="detail-panel">
             <div class="table-responsive">
@@ -48,7 +47,7 @@ else if (TempData["ErrorMessage"] != null)
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var trainer in Model)
+                        @foreach (var trainer in Model.Items)
                         {
                             <tr>
                                 <td><span class="fw-bold">@trainer.Name</span></td>
@@ -96,6 +95,7 @@ else if (TempData["ErrorMessage"] != null)
                 </table>
             </div>
         </div>
+        @await Html.PartialAsync("_Pager", Model.Paging)
     }
     else
     {

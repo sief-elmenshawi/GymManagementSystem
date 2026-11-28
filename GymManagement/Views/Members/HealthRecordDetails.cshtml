@@ -1,7 +1,6 @@
-﻿@model HealthRecordViewModel
+@model HealthRecordViewModel
 @{
     ViewData["Title"] = "Health Record Details";
-    Layout = "~/Views/Shared/_Layout.cshtml";
     var auditTrail = ViewBag.AuditTrail as IReadOnlyList<HealthRecordAuditViewModel>;
 }
 

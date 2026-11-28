@@ -37,11 +37,21 @@ namespace GymManagement.BLL.Services.Classes
             return result > 0 ? Result.Ok() : Result.Fail("Can Not Create This Trainer");
         }
 
-        public async Task<IEnumerable<TrainerViewModel>> GetAllTrainersAsync(CancellationToken ct = default)
+        public async Task<PagedResult<TrainerViewModel>> GetAllTrainersAsync(
+            CancellationToken ct = default, int page = 1, int pageSize = 12)
         {
-            var trainers = await unitOfWork.GetRepository<Trainer>().GetAllAsync(ct: ct);
-            
-             return mapper.Map<IEnumerable<Trainer>, IEnumerable <TrainerViewModel>>(trainers);
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
+            var repo = unitOfWork.GetRepository<Trainer>();
+            var trainers = await repo.GetPagedAsync(page: page, pageSize: pageSize, ct: ct);
+            var totalCount = await repo.CountAsync(ct: ct);
+
+            return new PagedResult<TrainerViewModel>
+            {
+                Items = mapper.Map<List<TrainerViewModel>>(trainers),
+                Paging = new PagingInfo { Page = page, PageSize = pageSize, TotalCount = totalCount },
+            };
         }
         public async Task<TrainerViewModel?> GetTrainerDetailsAsync(int TrainerId, CancellationToken ct = default)
         {

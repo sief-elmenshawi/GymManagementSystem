@@ -37,7 +37,7 @@ Let staff add or update a member's health record after registration, without col
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `133 Passed / 0 Failed / 4 Skipped / 137 Total` (browser tests opt-in)
 * E2E coverage: create, details, edit, invalid blood-type rejection, audit entries for create/update/delete, audit preserved after member deletion
 * `dotnet ef migrations list` includes `20261127201350_AddHealthRecordAudit`; `has-pending-model-changes` reports none
 

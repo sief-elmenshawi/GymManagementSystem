@@ -18,7 +18,7 @@ Included:
 
 Non-goals:
 
-- README `Future improvements` (REST API, payments, SignalR, browser-driven UI tests).
+- README `Future improvements` (REST API, payments, SignalR).
 - Changing `RequireConfirmedAccount = true`, seeded-user auto-confirmation, or SMTP log-and-skip behavior.
 - Adding a new rate-limiting/notification infrastructure.
 
@@ -28,7 +28,7 @@ Non-goals:
 - No retrying execution strategy is configured, so `BeginTransactionAsync` is valid. If one is added later, wrap transactions in `CreateExecutionStrategy().ExecuteAsync(...)`.
 - Billing/email delivery cannot be part of a DB transaction; SMTP failures remain logged, as already decided.
 - The dev mailbox is intentionally in-memory and Development-only.
-- Migration `AddHealthRecordAudit` must be applied to the development database before final EF verification.
+- Migrations through `20261128102032_BookingUniqueIndex` must be applied to the development database before final EF verification.
 
 ## Tasks
 
@@ -54,4 +54,4 @@ Non-goals:
 - F3: `dotnet test ... --filter FullyQualifiedName~UserManagementFlowTests` -> `Passed: 5, Failed: 0, Skipped: 0` (final full-suite rerun still pending at F7).
 - F4: `dotnet test ... --filter "FullyQualifiedName~HealthRecordManagementFlowTests|FullyQualifiedName~MemberPhotoTests"` -> `Passed: 5, Failed: 0, Skipped: 0`; `dotnet ef database update` applied `20261127201350_AddHealthRecordAudit`.
 - F5/F6: `dotnet test ... --filter "FullyQualifiedName~MemberSelfServiceFlowTests|FullyQualifiedName~MemberPortalFlowTests"` -> `Passed: 6, Failed: 0, Skipped: 0`.
-- F7 verification: `dotnet build GymManagementSolution.slnx --nologo` -> `0 Warning(s), 0 Error(s)`; full suite with `GYM_TEST_CONNECTION_STRING` -> `Passed: 119, Failed: 0, Skipped: 0`; `dotnet list ... package --vulnerable --include-transitive` -> no vulnerable packages; `dotnet ef migrations list` includes `20261127201350_AddHealthRecordAudit`; `dotnet ef migrations has-pending-model-changes` -> no changes.
+- F7 verification: `dotnet build GymManagementSolution.slnx --nologo` -> `0 Warning(s), 0 Error(s)`; full suite with `GYM_TEST_CONNECTION_STRING` -> `Passed: 133, Failed: 0, Skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` -> `Passed: 137, Failed: 0, Skipped: 0`; `dotnet list ... package --vulnerable --include-transitive` -> no vulnerable packages; `dotnet ef migrations list` is current through `20261128102032_BookingUniqueIndex`; `dotnet ef migrations has-pending-model-changes` -> no changes.

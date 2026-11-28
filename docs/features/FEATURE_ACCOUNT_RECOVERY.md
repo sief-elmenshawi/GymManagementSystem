@@ -65,7 +65,7 @@ All account actions allow anonymous access. The development mailbox endpoints ar
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `133 Passed / 0 Failed / 4 Skipped / 137 Total` (browser tests opt-in)
 * E2E coverage: blocked login before confirmation, confirmation link, resend for unconfirmed email, no resend for confirmed/unknown email, reset link, old password rejection, new password login, unknown-email non-disclosure
 * Unit coverage: existing seeded users are confirmed on startup
 

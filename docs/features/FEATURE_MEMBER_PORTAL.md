@@ -46,7 +46,7 @@ Give a registered `Member` a safe landing page after login that shows their own 
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `126 Passed / 0 Failed / 2 Skipped` (browser tests opt-in)
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `133 Passed / 0 Failed / 4 Skipped / 137 Total` (browser tests opt-in)
 * E2E coverage: login redirect to `/Member`, own booking visible, other member's booking hidden, unlinked-account notice and AccessDenied redirect, self-edit with Identity sync, wrong-current-password rollback, unchanged-email confirmation preserved, fresh confirmation after email change, self-book/self-cancel, started-session and missing-membership rejection
 
 ## Risks and follow-ups

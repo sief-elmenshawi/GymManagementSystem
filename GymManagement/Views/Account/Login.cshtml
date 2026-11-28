@@ -2,22 +2,9 @@
 @model LoginViewModel
 @{
     ViewData["Title"] = "Sign in";
-    Layout = null;
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f7f4ed" />
-    <title>Route Fitness — Sign in</title>
-    <link rel="stylesheet" href="~/lib/fonts/google/type.css" />
-    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/style.css" />
-</head>
-<body>
-    <div class="auth-shell">
+<div class="auth-shell">
         <section class="auth-panel">
             <a class="auth-brand" asp-controller="Home" asp-action="Index">
                 <span class="brand-symbol" aria-hidden="true">RF</span>
@@ -88,9 +75,7 @@
         </aside>
     </div>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <partial name="_ValidationScriptsPartial" />
+@section Scripts {
     <script>
         $(function () {
             $('#loginForm').on('submit', function () {
@@ -102,5 +87,4 @@
             });
         });
     </script>
-</body>
-</html>
+}

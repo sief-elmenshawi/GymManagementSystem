@@ -16,9 +16,9 @@ namespace GymManagement.PL.Controllers
             this.trainerService = trainerService;
         }
 
-        public async Task<IActionResult> Index(CancellationToken ct)
+        public async Task<IActionResult> Index(int page = 1, CancellationToken ct = default)
         {
-            var trainers = await trainerService.GetAllTrainersAsync(ct);
+            var trainers = await trainerService.GetAllTrainersAsync(ct, page);
             return View(trainers);
         }
 

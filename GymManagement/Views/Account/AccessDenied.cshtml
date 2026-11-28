@@ -1,21 +1,8 @@
-﻿@{
+@{
     ViewData["Title"] = "Access denied";
-    Layout = null;
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f7f4ed" />
-    <title>Route Fitness — Access denied</title>
-    <link rel="stylesheet" href="~/lib/fonts/google/type.css" />
-    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/style.css" />
-</head>
-<body>
-    <div class="auth-shell">
+<div class="auth-shell">
         <section class="auth-panel auth-shell-single w-100">
             <a class="auth-brand" asp-controller="Home" asp-action="Index">
                 <span class="brand-symbol" aria-hidden="true">RF</span>
@@ -29,7 +16,7 @@
                 a mistake, ask the administrator to review your role.
             </p>
 
-            <div class="auth-note mono">Error code: 403 — Forbidden access</div>
+            <div class="auth-note mono">Error code: 403 � Forbidden access</div>
 
             <div class="d-flex flex-wrap gap-2 mt-4">
                 <a asp-action="Index" asp-controller="Home" class="btn btn-accent">Return to the studio</a>
@@ -46,5 +33,3 @@
             </div>
         </aside>
     </div>
-</body>
-</html>

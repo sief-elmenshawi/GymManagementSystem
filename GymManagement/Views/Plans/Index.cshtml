@@ -1,7 +1,6 @@
-﻿@model IEnumerable<PlanViewModel>
+@model PagedResult<PlanViewModel>
 @{
     ViewData["Title"] = "Plans";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @if (TempData["SuccessMessage"] != null)
 {
@@ -27,10 +26,10 @@ else if (TempData["ErrorMessage"] != null)
             <p class="text-muted">Manage your gym membership packages</p>
         </div>
     </header>
-    @if (Model != null && Model.Any())
+    @if (Model?.Items.Count > 0)
     {
         <div class="row g-4">
-            @foreach (var plan in Model)
+            @foreach (var plan in Model.Items)
             {
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 plan-card">
@@ -86,6 +85,7 @@ else if (TempData["ErrorMessage"] != null)
                 </div>
             }
         </div>
+        @await Html.PartialAsync("_Pager", Model.Paging)
     }
     else
     {

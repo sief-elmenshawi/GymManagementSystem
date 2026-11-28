@@ -1,8 +1,7 @@
-﻿@using GymManagement.BLL.ViewModels.AnalyticsViewModels
+@using GymManagement.BLL.ViewModels.AnalyticsViewModels
 @model AnalyticsViewModel
 @{
     ViewData["Title"] = "The studio";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="landing">
@@ -12,7 +11,7 @@
             <h1 class="hero-title">A gym that<br />remembers<br /><em>your name.</em></h1>
             <p class="hero-lede">
                 Coached sessions, open floor time, and a record of what you actually did.
-                No sales pitch — just people, weights, and the work.
+                No sales pitch � just people, weights, and the work.
             </p>
             <div class="hero-actions">
                 <a asp-controller="Account" asp-action="Register" class="btn btn-accent">
@@ -99,7 +98,7 @@
                     <footer>
                         <span class="num">01 / Strength</span>
                         <h3>Barbell room</h3>
-                        <a asp-controller="Sessions" asp-action="Index">View sessions →</a>
+                        <a asp-controller="Sessions" asp-action="Index">View sessions ?</a>
                     </footer>
                 </article>
                 <article class="class-card">
@@ -109,7 +108,7 @@
                     <footer>
                         <span class="num">02 / Conditioning</span>
                         <h3>Floor circuits</h3>
-                        <a asp-controller="Sessions" asp-action="Index">View sessions →</a>
+                        <a asp-controller="Sessions" asp-action="Index">View sessions ?</a>
                     </footer>
                 </article>
                 <article class="class-card">
@@ -119,7 +118,7 @@
                     <footer>
                         <span class="num">03 / Mobility</span>
                         <h3>Movement lab</h3>
-                        <a asp-controller="Sessions" asp-action="Index">View sessions →</a>
+                        <a asp-controller="Sessions" asp-action="Index">View sessions ?</a>
                     </footer>
                 </article>
             </div>

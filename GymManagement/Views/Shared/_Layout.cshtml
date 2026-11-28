@@ -21,6 +21,8 @@
     <title>Route Fitness — @ViewData["Title"]</title>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
     <header class="site-header">
         <nav class="navbar navbar-expand-lg site-nav">
             <div class="shell">
@@ -118,7 +120,7 @@
     </header>
 
     <div class="app-shell">
-        <main role="main">
+        <main id="main-content" role="main">
             @RenderBody()
         </main>
     </div>

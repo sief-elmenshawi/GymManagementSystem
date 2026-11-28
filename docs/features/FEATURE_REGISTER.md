@@ -63,7 +63,7 @@ Allow a visitor to create a gym member account without administrator interventio
 ## Verification evidence
 
 * `dotnet build GymManagementSolution.slnx --nologo`: `0 Warning(s), 0 Error(s)`
-* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `119 Passed / 0 Failed / 0 Skipped`
+* `dotnet test GymManagementSolution.slnx` with `GYM_TEST_CONNECTION_STRING`: `133 Passed / 0 Failed / 4 Skipped / 137 Total` (browser tests opt-in)
 * E2E coverage: role and link creation, duplicate email rejection, ignored admin-role field, blocked pre-confirmation login, login after confirmation, member forbidden from staff booking pages, missing-role rollback
 * EF migration `AddMemberUserLink` applied by the test host during startup
 
