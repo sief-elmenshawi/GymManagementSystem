@@ -2,6 +2,14 @@
 
 An ASP.NET Core MVC application for managing gym members, trainers, plans, memberships, sessions, and bookings. It uses a layered architecture, EF Core with SQL Server, ASP.NET Core Identity, AutoMapper, and Razor views.
 
+## 🆕 Latest update — 28 November 2026
+
+- Explicit role-matrix coverage for anonymous, `SuperAdmin`, `Admin`, and `Member` routes.
+- Shared account layout plus a stricter responsive/accessibility rendering audit; mobile overflow on member/home pages fixed.
+- Booking creation now runs in one EF transaction with a unique `(MemberId, SessionId)` index from migration `20261128102032_BookingUniqueIndex`.
+- SQL-backed paging for plan and trainer lists; documentation and verification numbers refreshed.
+- Verified: build `0 Warning(s), 0 Error(s)`, default tests `133 Passed / 4 Skipped / 137 Total`, browser-enabled tests `137 Passed / 137 Total`.
+
 ---
 
 # 🚀 Features
