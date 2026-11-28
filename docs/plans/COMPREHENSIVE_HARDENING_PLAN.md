@@ -11,7 +11,7 @@ This document tracks the remaining production hardening work. It is intentionall
 - A17: Done, verified, committed, and pushed to `master`.
 - A18: Done, verified, committed, and pushed to `master`.
 - A19: Done, verified, committed, and pushed to `master`; CI run `46155835633` green.
-- A20: Implemented and verified locally; commit/push and CI confirmation pending.
+- A20: Done, verified, committed, and pushed to `master`; CI run `46161888007` green.
 
 ## Constraints
 
@@ -52,7 +52,7 @@ This document tracks the remaining production hardening work. It is intentionall
 | A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done |
 | A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
 | A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done |
-| A20 | Migrate tests to xUnit v3 on Microsoft Testing Platform | test `.csproj`, 14 test/support files, `global.json`, `ci.yml`, docs | A19 | No deprecated test packages; build has 0 warnings/errors; `dotnet test --project ...` runs all 151 tests under MTP; old VSTest filter still works | Build + full suite (default and browser-enabled) + filtered browser suite + package audit | Done (pending commit) |
+| A20 | Migrate tests to xUnit v3 on Microsoft Testing Platform | test `.csproj`, 14 test/support files, `global.json`, `ci.yml`, docs | A19 | No deprecated test packages; build has 0 warnings/errors; `dotnet test --project ...` runs all 151 tests under MTP; old VSTest filter still works; CI green | Build + full suite (default and browser-enabled) + filtered browser suite + package audit + CI `46161888007` | Done |
 
 ## Evidence log
 
@@ -88,10 +88,11 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — A20: added root `global.json` with `"test": { "runner": "Microsoft.Testing.Platform" }`; updated `dotnet test` invocations in `ci.yml`, README, and production checklist to `--project <path>`; the existing VSTest-style `--filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"` still selects the 4 browser/UI tests.
 - `2026-11-28` — A20 full suite via `dotnet test --project GymManagementSolution.slnx --no-build --nologo`: default `total: 151, failed: 0, succeeded: 147, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 151, failed: 0, succeeded: 151, skipped: 0`; filtered browser suite `total: 4, failed: 0, succeeded: 4, skipped: 0`.
 - `2026-11-28` — A20 package audit: zero vulnerable and zero deprecated packages across all projects.
+- `2026-11-28` — A20 commit `ff3f73f` pushed to `master`; CI run `46161888007` green in 2m56s (MTP `dotnet test --project GymManagementSolution.slnx --no-build --nologo`, 151 tests including browser).
 
 ## Remaining work
 
-1. A20 is implemented and verified locally; commit/push and CI confirmation are pending explicit approval.
+1. A20 is complete; CI run `46161888007` is green.
 2. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
