@@ -69,6 +69,28 @@ public sealed class AuthenticationRateLimitTests : IAsyncLifetime
     }
 
     [SqlServerFact]
+    public async Task Login_ExceededLimit_WithDifferentPathCasing_Returns429()
+    {
+        var factory = RequireFactory();
+        using var browser = CreateBrowser(factory);
+        var email = $"unknown-{Guid.NewGuid():N}@example.com";
+
+        // Routing is case-insensitive, so "/account/login" is the same endpoint
+        // as "/Account/Login" and must consume the same rate-limit budget.
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            using var response = await PostLoginAsync(browser, email);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        using var rejectedByCase = await PostLoginAsync(browser, email, "/account/login");
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejectedByCase.StatusCode);
+
+        using var rejectedBySlash = await PostLoginAsync(browser, email, "/Account/Login/");
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejectedBySlash.StatusCode);
+    }
+
+    [SqlServerFact]
     public async Task Register_ExceededLimit_Returns429WithRetryAfter()
     {
         var factory = RequireFactory();
@@ -134,11 +156,14 @@ public sealed class AuthenticationRateLimitTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
     }
 
-    private static async Task<HttpResponseMessage> PostLoginAsync(BrowserClient browser, string email)
+    private static async Task<HttpResponseMessage> PostLoginAsync(
+        BrowserClient browser,
+        string email,
+        string path = "/Account/Login")
     {
-        var loginPage = await browser.GetStringAsync("/Account/Login");
+        var loginPage = await browser.GetStringAsync(path);
         return await browser.PostFormAsync(
-            "/Account/Login",
+            path,
             new Dictionary<string, string>
             {
                 ["Email"] = email,

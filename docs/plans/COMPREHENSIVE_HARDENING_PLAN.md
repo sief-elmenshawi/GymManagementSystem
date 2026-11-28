@@ -12,6 +12,7 @@ This document tracks the remaining production hardening work. It is intentionall
 - A18: Done, verified, committed, and pushed to `master`.
 - A19: Done, verified, committed, and pushed to `master`; CI run `46155835633` green.
 - A20: Done, verified, committed, and pushed to `master`; CI run `46161888007` green.
+- D1: Done, verified locally, and committed - fixed a rate-limit bypass caused by case/trailing-slash path aliases; CI pending.
 
 ## Constraints
 
@@ -53,6 +54,7 @@ This document tracks the remaining production hardening work. It is intentionall
 | A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
 | A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done |
 | A20 | Migrate tests to xUnit v3 on Microsoft Testing Platform | test `.csproj`, 14 test/support files, `global.json`, `ci.yml`, docs | A19 | No deprecated test packages; build has 0 warnings/errors; `dotnet test --project ...` runs all 151 tests under MTP; old VSTest filter still works; CI green | Build + full suite (default and browser-enabled) + filtered browser suite + package audit + CI `46161888007` | Done |
+| D1 | Fix rate-limit bypass through endpoint path aliases | `AuthenticationRateLimiting`, `AuthenticationRateLimitTests`, this plan | A20 | Case/trailing-slash variants of the same endpoint share one budget; regression test fails before fix (`Expected 429`, `Actual 200`) and passes after it | Focused test + build + full default/browser suites | Done (CI pending) |
 
 ## Evidence log
 
@@ -88,12 +90,19 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — A20: added root `global.json` with `"test": { "runner": "Microsoft.Testing.Platform" }`; updated `dotnet test` invocations in `ci.yml`, README, and production checklist to `--project <path>`; the existing VSTest-style `--filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"` still selects the 4 browser/UI tests.
 - `2026-11-28` — A20 full suite via `dotnet test --project GymManagementSolution.slnx --no-build --nologo`: default `total: 151, failed: 0, succeeded: 147, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 151, failed: 0, succeeded: 151, skipped: 0`; filtered browser suite `total: 4, failed: 0, succeeded: 4, skipped: 0`.
 - `2026-11-28` — A20 package audit: zero vulnerable and zero deprecated packages across all projects.
-- `2026-11-28` — A20 commit `ff3f73f` pushed to `master`; CI run `46161888007` green in 2m56s (MTP `dotnet test --project GymManagementSolution.slnx --no-build --nologo`, 151 tests including browser).
+- `2026-11-28` - A20 commit `ff3f73f` pushed to `master`; CI run `46161888007` green in 2m56s (MTP `dotnet test --project GymManagementSolution.slnx --no-build --nologo`, 151 tests including browser).
+- `2026-11-28` - D1 reproduction: new `Login_ExceededLimit_WithDifferentPathCasing_Returns429` failed before the fix with `Expected: TooManyRequests`, `Actual: OK` after two canonical POSTs followed by `/account/login`.
+- `2026-11-28` - D1 root cause: the fixed-window partition key used the raw `context.Request.Path.Value`. MVC routing is case-insensitive and accepts trailing slashes, so each alias created a fresh limiter and multiplied the anonymous/authenticated budget.
+- `2026-11-28` - D1 fix: both policies now partition on the matched endpoint's `DisplayName`, falling back to a lowercased, trailing-slash-trimmed path when endpoint metadata is unavailable. No routes, form fields, redirects, limits, or assertion strings changed.
+- `2026-11-28` - D1 focused verification: `AuthenticationRateLimitTests` `total: 5, failed: 0, succeeded: 5, skipped: 0`; the casing/trailing-slash regression test also passes in isolation.
+- `2026-11-28` - D1 build: `dotnet build GymManagementSolution.slnx --nologo --no-restore` -> `0 Warning(s), 0 Error(s)`.
+- `2026-11-28` - D1 full suite after fix: default `total: 152, failed: 0, succeeded: 148, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 152, failed: 0, succeeded: 152, skipped: 0`.
 
 ## Remaining work
 
 1. A20 is complete; CI run `46161888007` is green.
-2. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
+2. D1 is committed and pushed; CI should confirm the 152-test suite.
+3. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
 

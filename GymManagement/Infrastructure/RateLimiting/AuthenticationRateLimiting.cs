@@ -54,10 +54,10 @@ public static class AuthenticationRateLimiting
 
             options.AddPolicy<string>(PolicyName, context =>
             {
-                // Path is part of the partition key so login attempts do not consume
+                // Endpoint is part of the partition key so login attempts do not consume
                 // the same budget as password-recovery requests.
                 var partitionKey =
-                    $"{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}:{context.Request.Path.Value}";
+                    $"{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}:{GetEndpointKey(context)}";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey,
@@ -76,7 +76,7 @@ public static class AuthenticationRateLimiting
                 // kept in the limiter partition key. Anonymous callers fall back to IP.
                 var userKey = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var partitionKey =
-                    $"{userKey ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}:{context.Request.Path.Value}";
+                    $"{userKey ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}:{GetEndpointKey(context)}";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey,
@@ -114,5 +114,16 @@ public static class AuthenticationRateLimiting
         });
 
         return services;
+    }
+
+    private static string GetEndpointKey(HttpContext context)
+    {
+        // MVC routing is case-insensitive and ignores trailing slashes, so the raw
+        // request path is not a stable partition key. Use the matched endpoint when
+        // available; otherwise fall back to a normalized path.
+        var endpointKey = context.GetEndpoint()?.DisplayName;
+        return string.IsNullOrEmpty(endpointKey)
+            ? context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant() ?? "unknown"
+            : endpointKey;
     }
 }
