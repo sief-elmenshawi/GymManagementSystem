@@ -57,12 +57,12 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — `dotnet ef migrations has-pending-model-changes` → `No changes have been made to the model since the last migration.`
 - `2026-11-28` — OPS-2 staging check: duplicate booking groups `0`; all 8 migrations applied, last `20261128102032_BookingUniqueIndex`.
 - `2026-11-28` — Staging smoke run: app started with `ASPNETCORE_ENVIRONMENT=Staging`, explicit `AllowedHosts`, AutoMapper license, and deliberate seed opt-in. Public pages returned 200; protected pages redirected to login; seeded users confirmed with `SuperAdmin`/`Admin` roles.
-- `2026-11-28` — A12 workflow was hardened after the green `46135896202` run. First pushed run `46145816401` failed only at the EF model check because the design-time DbContext needed `ConnectionStrings__DefaultConnection`; the step now passes it from `GYM_TEST_CONNECTION_STRING`.
+- `2026-11-28` — A12 workflow was hardened after the green `46135896202` run. First pushed run `46145816401` failed only at the EF model check because the design-time DbContext needed `ConnectionStrings__DefaultConnection`; the step now passes it from `GYM_TEST_CONNECTION_STRING`. Final pushed run `46145977960` is green in 3m11s, including build, EF check, Playwright and the full test suite.
 
 ## Remaining work
 
 1. OPS-3: the user must supply SMTP values or set the `Email__*` environment variables. Until then, delivery is logged and skipped without rolling back database writes.
-2. Confirm the CI run triggered by the push; no other local work is pending.
+2. CI verification is complete (`46145977960` green); no other local work is pending.
 
 ## Deployment notes for the user
 
