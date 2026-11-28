@@ -10,12 +10,14 @@ public sealed class SeedCredentialsTests : IDisposable
 {
     private readonly EnvironmentVariableScope _environment = new(
         SeedCredentials.EnabledEnvironmentVariable,
-        SeedCredentials.EnvironmentVariable);
+        SeedCredentials.EnvironmentVariable,
+        SeedCredentials.DemoDataEnabledEnvironmentVariable);
 
     public SeedCredentialsTests()
     {
         _environment.Clear(SeedCredentials.EnabledEnvironmentVariable);
         _environment.Clear(SeedCredentials.EnvironmentVariable);
+        _environment.Clear(SeedCredentials.DemoDataEnabledEnvironmentVariable);
     }
 
     public void Dispose() => _environment.Dispose();
@@ -44,6 +46,29 @@ public sealed class SeedCredentialsTests : IDisposable
         var configuration = CreateConfiguration((SeedCredentials.EnabledConfigurationKey, "true"));
 
         Assert.False(SeedCredentials.ResolveUserSeedingEnabled(configuration, isDevelopment: false));
+    }
+
+    [Fact]
+    public void ResolveDemoDataEnabled_DefaultsToFalse()
+    {
+        Assert.False(SeedCredentials.ResolveDemoDataEnabled(CreateConfiguration()));
+    }
+
+    [Fact]
+    public void ResolveDemoDataEnabled_ConfigurationCanOptIn()
+    {
+        var configuration = CreateConfiguration((SeedCredentials.DemoDataEnabledConfigurationKey, "true"));
+
+        Assert.True(SeedCredentials.ResolveDemoDataEnabled(configuration));
+    }
+
+    [Fact]
+    public void ResolveDemoDataEnabled_EnvironmentOverridesConfiguration()
+    {
+        _environment.Set(SeedCredentials.DemoDataEnabledEnvironmentVariable, "false");
+        var configuration = CreateConfiguration((SeedCredentials.DemoDataEnabledConfigurationKey, "true"));
+
+        Assert.False(SeedCredentials.ResolveDemoDataEnabled(configuration));
     }
 
     private static IConfiguration CreateConfiguration(params (string Key, string? Value)[] values) =>

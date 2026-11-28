@@ -189,6 +189,9 @@ Environment variables:
 | --- | --- |
 | `ConnectionStrings__DefaultConnection` | SQL Server database |
 | `GYM_SEED_PASSWORD` | Password for seeded admin users; takes precedence over `SeedUsers:Password` |
+| `GYM_SEED_USERS_ENABLED` | Bootstrap opt-in for predictable default users outside Development |
+| `GYM_SEED_DEMO_DATA` | Opt-in for demo trainers/members/sessions/bookings; default `false` |
+| `SeedDemoData__Enabled` | Configuration equivalent of `GYM_SEED_DEMO_DATA` |
 | `AUTOMAPPER_LICENSE_KEY` | AutoMapper key required outside Development |
 | `LUCKYPENNY_LICENSE_KEY` | Shared fallback for the AutoMapper key |
 | `GYM_TEST_CONNECTION_STRING` | Enables SQL Server integration/E2E/performance tests |
@@ -223,6 +226,8 @@ dotnet ef database update --project GymManagement.DAL --startup-project GymManag
 In Package Manager Console, set **Default project** to `GymManagement.DAL` and run `Update-Database`.
 
 Seeding creates missing roles/users only. If no password is configured, identity seeding is skipped with a warning. Changing the configured password later does not reset existing users.
+
+Optional demo domain data (3 trainers, 3 members, health records, memberships, sessions, bookings, and a confirmed demo member user) is seeded only when `GYM_SEED_DEMO_DATA=true` or `SeedDemoData:Enabled=true`. It is disabled by default so tests and real deployments are unaffected. The seeder is idempotent: rerunning it does not duplicate rows. The demo member user also needs a seed password (`GYM_SEED_PASSWORD` or `SeedUsers:Password`); without one, that user is skipped with a warning while the rest of the demo data is still seeded.
 
 The development database is up to date through `20261128102032_BookingUniqueIndex` (no pending model changes). When upgrading an existing database, run `scripts/sql/check-booking-duplicates.sql` first and resolve any duplicate bookings before that migration applies.
 

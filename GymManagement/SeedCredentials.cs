@@ -14,6 +14,9 @@ public static class SeedCredentials
     public const string EnabledConfigurationKey = "SeedUsers:Enabled";
     public const string EnabledEnvironmentVariable = "GYM_SEED_USERS_ENABLED";
 
+    public const string DemoDataEnabledConfigurationKey = "SeedDemoData:Enabled";
+    public const string DemoDataEnabledEnvironmentVariable = "GYM_SEED_DEMO_DATA";
+
     public static string? ResolvePassword(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -52,5 +55,21 @@ public static class SeedCredentials
         }
 
         return isDevelopment;
+    }
+
+    /// <summary>
+    /// Demo domain data is always opt-in so tests and real deployments are unaffected.
+    /// </summary>
+    public static bool ResolveDemoDataEnabled(IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        if (bool.TryParse(Environment.GetEnvironmentVariable(DemoDataEnabledEnvironmentVariable), out var fromEnvironment))
+        {
+            return fromEnvironment;
+        }
+
+        return bool.TryParse(configuration[DemoDataEnabledConfigurationKey], out var fromConfiguration)
+            && fromConfiguration;
     }
 }

@@ -54,6 +54,11 @@ namespace GymManagement.PL
                 logger,
                 seedPassword,
                 warnOnPredictableAccounts: !isDevelopment && userSeedingEnabled);
+
+            if (SeedCredentials.ResolveDemoDataEnabled(Configuration))
+            {
+                await DemoDataSeeding.SeedAsync(dbContext, userManager, logger, seedPassword);
+            }
         }
     }
 }

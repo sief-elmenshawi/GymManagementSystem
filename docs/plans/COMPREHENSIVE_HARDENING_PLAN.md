@@ -7,8 +7,8 @@ This document tracks the remaining production hardening work. It is intentionall
 - OPS-1: Done — CI secret confirmed and failed run is green.
 - OPS-2: Done for the local staging database — the unique-index migration is already applied and the duplicate check returned zero rows. No user-supplied env var was available; the local `skip-worktree` connection string was used without printing or committing it.
 - OPS-3: Skipped/deferred by user — no SMTP relay was configured. Missing SMTP is logged and skipped as designed; registration still succeeds but confirmation/reset emails are not delivered.
-- A1–A16: Done and verified by build/tests.
-- The batch is committed and pushed to `master`; no secrets are included.
+- A1–A16: Done, verified, committed, and pushed to `master`; no secrets are included.
+- A17: Done and verified by build/tests/staging smoke; awaiting explicit commit/push confirmation.
 
 ## Constraints
 
@@ -46,6 +46,7 @@ This document tracks the remaining production hardening work. It is intentionall
 | A14 | Cover new hardening behavior with tests | unit + E2E tests | A1–A13 | New and updated tests pass with SQL backing | Focused suite: 37/37 passed | Done |
 | A15 | Clean up misspelled names and duplicate helpers | repository folders, services, view models, controllers | A1–A14 | Misspelled identifiers removed; shared helpers consolidated; build has no warnings/errors | Build: 0 warnings, 0 errors | Done |
 | A16 | Final verification and documentation refresh | full suite, browser suite, EF model check, plan | A15 | Full suite green; browser suite green; no pending model changes; statuses current | See evidence log | Done |
+| A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done (pending commit) |
 
 ## Evidence log
 
@@ -59,10 +60,15 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — Staging smoke run: app started with `ASPNETCORE_ENVIRONMENT=Staging`, explicit `AllowedHosts`, AutoMapper license, and deliberate seed opt-in. Public pages returned 200; protected pages redirected to login; seeded users confirmed with `SuperAdmin`/`Admin` roles.
 - `2026-11-28` — A12 workflow was hardened after the green `46135896202` run. First pushed run `46145816401` failed only at the EF model check because the design-time DbContext needed `ConnectionStrings__DefaultConnection`; the step now passes it from `GYM_TEST_CONNECTION_STRING`. Final pushed run `46145977960` is green in 3m11s, including build, EF check, Playwright and the full test suite.
 - `2026-11-28` — OPS-3 was skipped/deferred by the user; no SMTP values were configured. Local `staging.env` template was removed. Existing log-and-skip behavior is unchanged.
+- `2026-11-28` — A17 build: `0 Warning(s), 0 Error(s)`.
+- `2026-11-28` — A17 focused suite (`DemoDataSeedingTests` + `SeedCredentialsTests`): `Failed: 0, Passed: 7, Skipped: 0, Total: 7`.
+- `2026-11-28` — A17 staging smoke with `ASPNETCORE_ENVIRONMENT=Staging`, `GYM_SEED_DEMO_DATA=true`, explicit `AllowedHosts`, and AutoMapper license: login `200`, protected pages redirect to login, row counts Trainers/Members/HealthRecords/Audits/Memberships/Sessions = `3`, Bookings = `2`, Plans = `4`, Categories = `5`, demo user = `1`.
+- `2026-11-28` — Full default suite after A17: `Failed: 0, Passed: 147, Skipped: 4, Total: 151` (the 4 skips are the opt-in browser/UI tests).
+- `2026-11-28` — Browser suite after A17 (`GYM_RUN_BROWSER_TESTS=1`): `Failed: 0, Passed: 4, Skipped: 0, Total: 4`.
 
 ## Remaining work
 
-1. CI verification is complete (`46145977960` green); no local work is pending.
+1. A17 is implemented and verified; commit and push only after the user explicitly confirms this batch.
 2. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
