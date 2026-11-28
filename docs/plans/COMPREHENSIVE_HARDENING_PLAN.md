@@ -10,9 +10,10 @@ This document tracks the remaining production hardening work. It is intentionall
 - A1–A16: Done, verified, committed, and pushed to `master`; no secrets are included.
 - A17: Done, verified, committed, and pushed to `master`.
 - A18: Done, verified, committed, and pushed to `master`.
-- A19: Done, verified, committed, and pushed to `master`; CI run `46155835633` green.
+- A19: Done historically; its .NET 11 target was reverted to .NET 9 by R1.
 - A20: Done, verified, committed, and pushed to `master`; CI run `46161888007` green.
 - D1: Done, verified, committed, and pushed to `master` - fixed a rate-limit bypass caused by case/trailing-slash path aliases; CI run `46164176095` green.
+- R1: Done locally (uncommitted) - reverted A19's framework/dependency upgrades to .NET 9 while keeping A20 (xUnit v3/MTP) and D1.
 
 ## Constraints
 
@@ -52,9 +53,10 @@ This document tracks the remaining production hardening work. It is intentionall
 | A16 | Final verification and documentation refresh | full suite, browser suite, EF model check, plan | A15 | Full suite green; browser suite green; no pending model changes; statuses current | See evidence log | Done |
 | A17 | Add opt-in, idempotent demo domain data | `DemoDataSeeding`, `SeedCredentials`, `ProgramExtensions`, tests, docs | A16 | Demo rows seed only when opted in; second run adds no rows; normal runs/tests unchanged | Focused suite 7/7, full suite, staging smoke | Done |
 | A18 | Remove trailing spaces from C# file names | 4 renamed source files | — | No `*.cs` file name contains a space; build and tests stay green | Glob check + build + full/browser suites | Done |
-| A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done |
+| A19 | Upgrade to .NET 11, EF Core 11, and AutoMapper 17 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, docs | A18 | All projects target `net11.0`; CI installs 11.0.x + EF 11 tool; build has 0 warnings/errors; full and browser suites green; no pending model changes | Build + full/browser suites + EF check + staging smoke | Done (superseded by R1) |
 | A20 | Migrate tests to xUnit v3 on Microsoft Testing Platform | test `.csproj`, 14 test/support files, `global.json`, `ci.yml`, docs | A19 | No deprecated test packages; build has 0 warnings/errors; `dotnet test --project ...` runs all 151 tests under MTP; old VSTest filter still works; CI green | Build + full suite (default and browser-enabled) + filtered browser suite + package audit + CI `46161888007` | Done |
 | D1 | Fix rate-limit bypass through endpoint path aliases | `AuthenticationRateLimiting`, `AuthenticationRateLimitTests`, this plan | A20 | Case/trailing-slash variants of the same endpoint share one budget; regression test fails before fix (`Expected 429`, `Actual 200`) and passes after it | Focused test + build + full default/browser suites + CI `46164176095` | Done |
+| R1 | Revert framework/dependencies to .NET 9 | 4 `.csproj`, `ci.yml`, `HostingConfiguration`, `README.md`, deployment docs, this plan | A20 + D1 | All projects target `net9.0`; EF Core/Identity/ASP.NET Core back to 9.0.x; AutoMapper 16.3.0; CI uses 9.0.x SDK/EF 9 tool; xUnit v3/MTP and D1 retained; build has 0 warnings/errors | Build + full default/browser suites + package audit | Done locally (uncommitted) |
 
 ## Evidence log
 
@@ -98,12 +100,19 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` - D1 build: `dotnet build GymManagementSolution.slnx --nologo --no-restore` -> `0 Warning(s), 0 Error(s)`.
 - `2026-11-28` - D1 full suite after fix: default `total: 152, failed: 0, succeeded: 148, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 152, failed: 0, succeeded: 152, skipped: 0`.
 - `2026-11-28` - D1 commit `f23efa3` pushed to `master`; CI run `46164176095` green in 2m40s (restore, build, EF model check, Playwright, 152 tests).
+- `2026-11-28` - R1: all four projects target `net9.0`; EF Core/Identity/ASP.NET Core returned to `9.0.16`/`9.0.17`, AutoMapper to `16.3.0`, and `Microsoft.AspNetCore.Mvc.Testing` to `9.0.16`. A20's `OutputType=Exe`, xUnit v3/MTP packages and D1's rate-limit fix are retained.
+- `2026-11-28` - R1: `HostingConfiguration` reverted to `Microsoft.AspNetCore.HttpOverrides.IPNetwork`/`KnownNetworks` for .NET 9 compatibility; CI back to `9.0.x` SDK, EF tool `9.*` and `net9.0` Playwright paths.
+- `2026-11-28` - R1: removed `--nologo` from `dotnet test` commands because the .NET 9 SDK's MTP test app rejects it; CI already sets `DOTNET_NOLOGO=true`.
+- `2026-11-28` - R1 build with SDK `10.0.401`: `dotnet build GymManagementSolution.slnx --nologo --no-restore` -> `0 Warning(s), 0 Error(s)`.
+- `2026-11-28` - R1 full suite: default `total: 152, failed: 0, succeeded: 148, skipped: 4`; with `GYM_RUN_BROWSER_TESTS=1` `total: 152, failed: 0, succeeded: 152, skipped: 0`.
+- `2026-11-28` - R1 package audit: zero vulnerable and zero deprecated packages across all four projects.
 
 ## Remaining work
 
 1. A20 is complete; CI run `46161888007` is green.
 2. D1 is complete; CI run `46164176095` is green.
-3. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
+3. R1 is verified locally and left uncommitted pending explicit approval; CI should confirm the .NET 9 build and 152-test suite.
+4. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
 ## Deployment notes for the user
 

@@ -10,7 +10,7 @@ PowerShell examples use `pwsh`; on Windows PowerShell 5.1 run the same commands 
 
 ## Prerequisites
 
-* .NET 11 runtime and the published application files
+* .NET 9 runtime and the published application files
 * SQL Server database reachable from the application host
 * AutoMapper license key valid for non-Development use
 * SMTP relay credentials if confirmation/reset emails must be delivered
@@ -206,7 +206,7 @@ Application checks:
 
 ```powershell
 dotnet build GymManagementSolution.slnx --nologo
-dotnet test --project GymManagementSolution.slnx --nologo
+dotnet test --project GymManagementSolution.slnx
 dotnet list package --vulnerable --include-transitive
 git status --short
 ```

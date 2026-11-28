@@ -80,13 +80,13 @@ public static class HostingConfiguration
         foreach (var value in configuration.GetSection("ForwardedHeaders:KnownNetworks")
                      .Get<string[]>() ?? [])
         {
-            if (!System.Net.IPNetwork.TryParse(value, out var network))
+            if (!Microsoft.AspNetCore.HttpOverrides.IPNetwork.TryParse(value, out var network))
             {
                 throw new InvalidOperationException(
                     "ForwardedHeaders:KnownNetworks contains an invalid CIDR network. Value not shown.");
             }
 
-            options.KnownIPNetworks.Add(network);
+            options.KnownNetworks.Add(network);
         }
 
         return options;

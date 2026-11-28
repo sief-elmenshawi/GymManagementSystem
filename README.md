@@ -140,13 +140,13 @@ Dependency direction: `GymManagement` → `GymManagement.BLL` → `GymManagement
 
 | Area | Stack |
 | --- | --- |
-| Backend | C#, .NET 11, ASP.NET Core MVC |
+| Backend | C#, .NET 9, ASP.NET Core MVC |
 | Data | SQL Server, EF Core 9, Code First migrations, Fluent API |
 | Mapping | AutoMapper 16.3.0 |
 | Identity | ASP.NET Core Identity with `IdentityRole` |
 | Frontend | Razor, HTML5, CSS, Bootstrap, JavaScript, jQuery |
 | Assets | Frontend libraries vendored under `wwwroot/lib` for offline use |
-| Testing | xUnit, Moq, EF Core SQL Server integration tests, Playwright/Chromium UI tests |
+| Testing | xUnit v3 on Microsoft Testing Platform, Moq, EF Core SQL Server integration tests, Playwright/Chromium UI tests |
 
 Patterns used: Repository, Unit of Work, Dependency Injection, and layered services.
 
@@ -156,12 +156,12 @@ Patterns used: Repository, Unit of Work, Dependency Injection, and layered servi
 
 ## 1. Prerequisites
 
-* [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0)
+* [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (or a newer SDK that can target `net9.0`, such as `10.0.x`)
 * SQL Server (LocalDB, Express, Developer, or remote)
 * EF Core CLI tools, only for manual migration commands:
 
 ```bash
-dotnet tool install --global dotnet-ef --version 11.0.0
+dotnet tool install --global dotnet-ef --version 9.0.16
 ```
 
 A local `dotnet-tools.json` may be used instead, but it is environment-specific and must not be committed.
@@ -245,12 +245,12 @@ In Development, no AutoMapper license key is needed. In non-development environm
 
 ```bash
 dotnet build GymManagementSolution.slnx --nologo
-dotnet test --project GymManagementSolution.slnx --nologo
+dotnet test --project GymManagementSolution.slnx
 dotnet list package --vulnerable --include-transitive
 pwsh ./scripts/check-production-config.ps1 -EnvFile ./production.env
 ```
 
-Tests use xUnit v3 on Microsoft Testing Platform; `global.json` opts `dotnet test` into that runner, so the project/solution path is passed with `--project` instead of a positional argument.
+Tests use xUnit v3 on Microsoft Testing Platform; `global.json` opts `dotnet test` into that runner, so the project/solution path is passed with `--project` instead of a positional argument. Do not pass `--nologo` to `dotnet test` on the .NET 9 SDK because the MTP test app rejects it; CI sets `DOTNET_NOLOGO=true` instead.
 
 The production checker is optional for local runs; it validates names for a deployed environment and never prints values. See [Production configuration](docs/deployment/PRODUCTION_CONFIGURATION.md).
 
@@ -262,12 +262,12 @@ SQL-dependent tests are skipped unless `GYM_TEST_CONNECTION_STRING` is set. With
 
 ```powershell
 # Once per machine / after a Playwright version upgrade
-powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net11.0\playwright.ps1 install chromium
+powershell -ExecutionPolicy Bypass .\GymManagement.Tests\bin\Debug\net9.0\playwright.ps1 install chromium
 
 $conn = (Get-Content GymManagement/appsettings.json -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
 $env:GYM_TEST_CONNECTION_STRING = $conn
 $env:GYM_RUN_BROWSER_TESTS = '1'
-dotnet test --project GymManagementSolution.slnx --nologo --filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"
+dotnet test --project GymManagementSolution.slnx --filter "FullyQualifiedName~BrowserUiFlowTests|FullyQualifiedName~UiRenderingSmokeTests"
 ```
 
 The fixture starts the app on a free localhost port with a disposable `GymManagement_E2E_Browser_*` database and Development mailbox, then tears both down. Never set `GYM_RUN_BROWSER_TESTS` in Production.
