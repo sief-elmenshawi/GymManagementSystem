@@ -10,7 +10,7 @@ This document tracks the remaining production hardening work. It is intentionall
 - A1–A16: Done, verified, committed, and pushed to `master`; no secrets are included.
 - A17: Done, verified, committed, and pushed to `master`.
 - A18: Done, verified, committed, and pushed to `master`.
-- A19: Done and verified by build/tests/staging smoke/CI-ready config; awaiting explicit commit/push confirmation.
+- A19: Done, verified, committed, and pushed to `master`; CI run `46155835633` green.
 
 ## Constraints
 
@@ -79,10 +79,11 @@ This document tracks the remaining production hardening work. It is intentionall
 - `2026-11-28` — A19 EF check with dotnet-ef `11.0.0`: `No changes have been made to the model since the last migration.`
 - `2026-11-28` — A19 staging smoke on `net11.0`: login `200`, protected pages redirect to login, demo row counts unchanged (3/3/3/3/3/3/2, plans 4, categories 5, demo user 1).
 - `2026-11-28` — A19 package audit after upgrade: zero vulnerable packages.
+- `2026-11-28` — A19 commit `e845e4e` pushed to `master`; CI run `46155835633` green in 3m6s (setup-dotnet 11.0.x, EF tool 11, Playwright net11.0, full suite).
 
 ## Remaining work
 
-1. A19 is implemented and verified; commit and push only after the user explicitly confirms this batch.
+1. A19 is complete; CI run `46155835633` is green.
 2. `xunit 2.9.3` remains deprecated; migrating to `xunit.v3` is a separate test-framework change.
 3. OPS-3 can be revisited later if SMTP credentials are supplied; until then delivery is logged and skipped without rolling back database writes.
 
